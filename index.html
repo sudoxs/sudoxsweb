@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Offensive Security Technique Cookbook">
+    <meta name="author" content="sudoxs">
+    <title>sudoxs // offensive security cookbook</title>
+
+    <style>
+        /* ═══════════════════════ DESIGN TOKENS ═══════════════════════ */
+        :root {
+            --bg:          #070a08;
+            --bg-deep:     #040605;
+            --surface:     #0c100d;
+            --surface-raised: #111611;
+            --surface-active: #151b16;
+            --ink:         #b8beb7;
+            --ink-dim:     #687168;
+            --ink-faint:   #3e473f;
+            --ink-bright:  #e2e5df;
+            --danger:      #a9252b;
+            --danger-bright: #d34248;
+            --danger-dark: #4d1518;
+            --signal:      #8da27d;
+            --signal-bright: #b3c4a6;
+            --amber:       #a88747;
+            --border:      #202720;
+            --border-strong: #394039;
+            --font-mono:   "IBM Plex Mono","Cascadia Code",Consolas,"Liberation Mono",monospace;
+            --font-display:"Franklin Gothic Condensed","Liberation Sans Narrow","Nimbus Sans Narrow",sans-serif;
+            --page-gap:    clamp(1rem, 3vw, 2.5rem);
+            --content-max: 1400px;
+        }
+
+        /* ═══════════════════════ RESET ═══════════════════════ */
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        html{font-size:15px;scroll-behavior:smooth;background:var(--bg-deep)}
+        body{
+            min-height:100vh;overflow-x:hidden;
+            background:radial-gradient(circle at 78% 12%,rgba(74,91,65,.11),transparent 27rem),
+                       radial-gradient(circle at 13% 76%,rgba(126,23,29,8%),transparent 30rem),
+                       linear-gradient(135deg,var(--bg-deep),var(--bg) 46%,#090d0a);
+            color:var(--ink);font-family:var(--font-mono);line-height:1.7;
+            -webkit-font-smoothing:antialiased;
+        }
+        a{color:inherit}
+        a:focus-visible{outline:1px solid var(--danger-bright);outline-offset:5px}
+        img,video,svg{display:block;max-width:100%}
+
+        /* ═══════════════════════ AMBIENT FX ═══════════════════════ */
+        .ambient-grid,.noise,.scanlines,.scan-beam{position:fixed;inset:0;pointer-events:none}
+        .ambient-grid{
+            z-index:0;opacity:.24;
+            background-image:linear-gradient(rgba(132,150,122,.035) 1px,transparent 1px),
+                             linear-gradient(90deg,rgba(132,150,122,.035) 1px,transparent 1px);
+            background-size:48px 48px;
+        }
+        .noise{
+            z-index:1;opacity:.022;
+            background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size:180px 180px;
+        }
+        .scanlines{
+            z-index:2;opacity:.04;
+            background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.18) 2px,rgba(0,0,0,.18) 4px);
+        }
+        .scan-beam{
+            z-index:3;opacity:.03;
+            background:linear-gradient(180deg,transparent 0%,rgba(210,40,48,.12) 48%,transparent 100%);
+            animation:scan-page 7s ease-in-out infinite;
+        }
+
+        /* ═══════════════════════ EDGE MARKS ═══════════════════════ */
+        .edge-mark{
+            position:fixed;z-index:4;top:50%;transform:translateY(-50%);
+            color:var(--ink-faint);font-size:.48rem;letter-spacing:.18em;
+            writing-mode:vertical-rl;pointer-events:none;opacity:.45;
+        }
+        .edge-mark-left{left:.35rem}
+        .edge-mark-right{right:.35rem}
+
+        /* ═══════════════════════ CONTAINER ═══════════════════════ */
+        .container{
+            position:relative;z-index:5;
+            width:min(100% - var(--page-gap)*2, var(--content-max));
+            margin:0 auto;padding:1.4rem 0 3rem;
+        }
+
+        /* ═══════════════════════ HEADER ═══════════════════════ */
+        .site-header{
+            display:flex;align-items:center;justify-content:space-between;
+            flex-wrap:wrap;gap:.8rem 1.5rem;
+            padding:.7rem 0 1.1rem;margin-bottom:1.5rem;
+            border-bottom:1px solid var(--border);
+        }
+        .brand-lockup{display:flex;align-items:center;gap:.8rem}
+        .logo{
+            color:var(--ink-bright);font-family:var(--font-display);
+            font-size:1.18rem;font-weight:900;letter-spacing:.13em;
+            line-height:1;text-decoration:none;
+        }
+        .logo-bracket{color:var(--danger-bright)}
+        .brand-code{
+            padding-left:.8rem;border-left:1px solid var(--border-strong);
+            color:var(--ink-dim);font-size:.58rem;letter-spacing:.17em;
+        }
+        .header-controls{display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap}
+        .system-status{
+            display:flex;align-items:center;gap:.48rem;
+            color:var(--signal);font-size:.56rem;letter-spacing:.12em;
+        }
+        .status-light{
+            width:6px;height:6px;border-radius:50%;background:var(--signal);
+            box-shadow:0 0 0 3px rgba(141,162,125,8%);
+            animation:status-pulse 2.6s ease-in-out infinite;
+        }
+        .main-nav{display:flex;align-items:center;gap:.15rem;flex-wrap:wrap}
+
+        /* ── nav link ── */
+        .main-nav a,.nav-dropdown-trigger{
+            position:relative;padding:.45rem .65rem;
+            color:var(--ink-dim);font-size:.65rem;letter-spacing:.13em;
+            text-decoration:none;text-transform:uppercase;cursor:pointer;
+            transition:color 180ms ease,background 180ms ease;
+            white-space:nowrap;
+        }
+        .main-nav a::before,.nav-dropdown-trigger::before{
+            content:"";position:absolute;inset:auto 0 0;height:1px;
+            background:var(--danger-bright);transform:scaleX(0);
+            transform-origin:left;transition:transform 220ms ease;
+        }
+        .main-nav a:hover,.main-nav a.active,
+        .nav-dropdown-trigger:hover,.nav-dropdown-trigger.active{
+            color:var(--ink-bright);background:rgba(255,255,255,.018);
+        }
+        .main-nav a:hover::before,.main-nav a.active::before,
+        .nav-dropdown-trigger:hover::before,.nav-dropdown-trigger.active::before{
+            transform:scaleX(1);
+        }
+
+        /* ── dropdown ── */
+        .nav-dropdown{position:relative;display:inline-flex}
+        .nav-dropdown-trigger::after{content:" ▾";font-size:.55rem}
+        .nav-dropdown-menu{
+            display:none;position:absolute;top:100%;right:0;z-index:30;
+            min-width:160px;padding:.3rem 0;
+            border:1px solid var(--border-strong);
+            background:var(--surface-raised);
+            box-shadow:0 8px 24px rgba(0,0,0,.5);
+        }
+        .nav-dropdown.open .nav-dropdown-menu{display:block}
+        .nav-dropdown-menu a{
+            display:block;padding:.5rem 1rem;
+            font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;
+            text-decoration:none;color:var(--ink-dim);
+            transition:background 150ms ease,color 150ms ease;
+        }
+        .nav-dropdown-menu a:hover{background:var(--surface-active);color:var(--ink-bright)}
+
+        /* ═══════════════════════ HERO ═══════════════════════ */
+        .home-hero{
+            position:relative;display:grid;
+            grid-template-columns:minmax(0,1.45fr) minmax(270px,.55fr);
+            align-items:center;
+            gap:clamp(2.5rem,7vw,7rem);
+            min-height:560px;padding:1rem 0 5rem;
+        }
+        .home-hero::before{
+            content:"A-00";position:absolute;top:-2.5rem;left:-.2rem;
+            color:rgba(255,255,255,.025);font-family:var(--font-display);
+            font-size:clamp(8rem,20vw,17rem);font-weight:900;
+            letter-spacing:-.08em;line-height:1;pointer-events:none;
+        }
+        .hero-copy{position:relative;z-index:2}
+        .eyebrow{
+            display:flex;justify-content:space-between;
+            width:min(100%,590px);margin-bottom:2rem;
+            padding:.55rem 0;border-top:1px solid var(--danger-dark);
+            border-bottom:1px solid var(--border);
+            color:var(--ink-dim);font-size:.58rem;letter-spacing:.17em;
+        }
+        .tagline{
+            min-height:1.5em;margin-bottom:.65rem;
+            color:var(--signal);font-size:clamp(.7rem,1.2vw,.82rem);
+            letter-spacing:.16em;text-transform:uppercase;
+        }
+        .tagline::after{
+            content:"";display:inline-block;width:.55em;height:1em;
+            margin-left:.35em;background:var(--danger-bright);
+            vertical-align:-.12em;
+            animation:cursor-blink 1s steps(2,end) infinite;
+        }
+        .home-hero h1{
+            position:relative;width:max-content;max-width:100%;
+            margin-bottom:1.5rem;color:var(--ink-bright);
+            font-family:var(--font-display);
+            font-size:clamp(4.2rem,9.5vw,8.7rem);
+            font-stretch:condensed;font-weight:900;
+            letter-spacing:-.055em;line-height:.72;text-transform:uppercase;
+        }
+        .home-hero h1 span{
+            color:transparent;-webkit-text-stroke:1px var(--ink-dim);
+        }
+        .bio{
+            max-width:610px;margin-bottom:2rem;padding-left:1rem;
+            border-left:2px solid var(--danger-dark);
+            color:var(--ink-dim);font-size:.82rem;line-height:1.9;
+        }
+        .hero-actions{display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap}
+        .primary-action,.secondary-action{
+            display:inline-flex;align-items:center;justify-content:space-between;
+            gap:2.5rem;min-width:205px;padding:.85rem 1rem;
+            border:1px solid var(--danger-dark);
+            background:rgba(88,16,20,.18);color:var(--ink-bright);
+            font-size:.64rem;letter-spacing:.15em;text-decoration:none;
+            transition:background 180ms ease,border-color 180ms ease,transform 180ms ease;
+            cursor:pointer;
+        }
+        .primary-action:hover,.secondary-action:hover{
+            border-color:var(--danger-bright);
+            background:rgba(125,24,29,.28);transform:translateY(-2px);
+        }
+        .operator-id{color:var(--ink-faint);font-size:.58rem;letter-spacing:.13em}
+
+        /* ═══════════════════════ CONTAINMENT PANEL ═══════════════════════ */
+        .containment-panel{
+            position:relative;min-height:430px;
+            border:1px solid var(--border-strong);
+            background:linear-gradient(135deg,rgba(255,255,255,.025),transparent 33%),rgba(9,13,10,.76);
+            clip-path:polygon(0 0,calc(100% - 24px) 0,100% 24px,100% 100%,24px 100%,0 calc(100% - 24px));
+            box-shadow:22px 22px rgba(0,0,0,.14);
+        }
+        .containment-panel::before,.containment-panel::after{
+            content:"";position:absolute;z-index:2;background:var(--danger);
+        }
+        .containment-panel::before{top:0;right:24px;width:54px;height:2px}
+        .containment-panel::after{bottom:0;left:24px;width:54px;height:2px}
+        .panel-heading{
+            display:flex;align-items:center;justify-content:space-between;
+            padding:.8rem 1rem;border-bottom:1px solid var(--border);
+            color:var(--ink-dim);font-size:.55rem;letter-spacing:.13em;
+        }
+        .panel-state{color:var(--signal)}
+        .specimen-display{
+            position:relative;display:grid;place-items:center;
+            height:270px;overflow:hidden;
+            background:linear-gradient(rgba(141,162,125,.045) 1px,transparent 1px),
+                       linear-gradient(90deg,rgba(141,162,125,.045) 1px,transparent 1px);
+            background-size:24px 24px;
+        }
+        .specimen-display::before,.specimen-display::after{
+            content:"";position:absolute;background:rgba(141,162,125,.16);
+        }
+        .specimen-display::before{width:1px;height:100%}
+        .specimen-display::after{width:100%;height:1px}
+        .target-ring{
+            position:absolute;border:1px solid var(--ink-faint);border-radius:50%;
+        }
+        .target-ring::before,.target-ring::after{content:"";position:absolute;background:var(--danger)}
+        .target-ring::before{top:-3px;left:calc(50% - 10px);width:20px;height:5px}
+        .target-ring::after{top:calc(50% - 10px);right:-3px;width:5px;height:20px}
+        .ring-a{width:176px;height:176px;animation:target-spin 18s linear infinite}
+        .ring-b{width:116px;height:116px;border-style:dashed;animation:target-spin 11s linear infinite reverse}
+        .target-core{
+            display:grid;place-items:center;width:62px;height:62px;
+            border:1px solid var(--danger-dark);background:rgba(89,19,23,.18);
+            color:var(--danger-bright);font-family:var(--font-display);
+            font-size:1.5rem;font-weight:900;letter-spacing:.08em;
+            clip-path:polygon(22% 0,78% 0,100% 22%,100% 78%,78% 100%,22% 100%,0 78%,0 22%);
+        }
+        .coordinate{position:absolute;color:var(--ink-faint);font-size:.52rem;letter-spacing:.1em}
+        .coordinate-a{top:1rem;left:1rem}
+        .coordinate-b{top:1rem;right:1rem}
+        .coordinate-c{right:1rem;bottom:1rem;color:var(--danger)}
+        .panel-readout{
+            display:grid;grid-template-columns:repeat(3,1fr);
+            border-top:1px solid var(--border);
+        }
+        .panel-readout div{
+            display:flex;flex-direction:column;gap:.25rem;
+            padding:.85rem;border-right:1px solid var(--border);
+        }
+        .panel-readout div:last-child{border-right:0}
+        .panel-readout span{color:var(--ink-faint);font-size:.45rem;letter-spacing:.1em}
+        .panel-readout strong{color:var(--signal);font-size:.63rem;font-weight:500}
+
+        /* ═══════════════════════ STATS ROW ═══════════════════════ */
+        .stats-row{
+            display:grid;grid-template-columns:repeat(4,1fr);
+            margin-bottom:4rem;border:1px solid var(--border);
+            background:linear-gradient(rgba(255,255,255,.012),transparent 60%);
+        }
+        .stat-item{
+            display:flex;flex-direction:column;gap:.3rem;
+            padding:1.3rem 1.2rem;border-right:1px solid var(--border);
+        }
+        .stat-item:last-child{border-right:0}
+        .stat-index{color:var(--ink-faint);font-size:.5rem;letter-spacing:.14em}
+        .stat-num{
+            color:var(--danger-bright);font-family:var(--font-display);
+            font-size:1.7rem;font-weight:900;line-height:1;
+        }
+        .stat-label{color:var(--ink-dim);font-size:.52rem;letter-spacing:.08em;text-transform:uppercase}
+
+        /* ═══════════════════════ ARCHIVE / CARDS ═══════════════════════ */
+        .archive-heading{
+            display:flex;align-items:end;justify-content:space-between;
+            gap:2rem;margin-bottom:1.75rem;padding-bottom:1rem;
+            border-bottom:1px solid var(--border-strong);
+        }
+        .section-kicker{
+            display:block;margin-bottom:.45rem;
+            color:var(--danger-bright);font-size:.56rem;letter-spacing:.2em;
+        }
+        .archive-heading h2{
+            color:var(--ink-bright);font-family:var(--font-display);
+            font-size:clamp(2.15rem,5vw,4.4rem);font-weight:900;
+            letter-spacing:-.025em;line-height:.95;text-transform:uppercase;
+        }
+        .record-count{color:var(--ink-faint);font-size:.55rem;letter-spacing:.14em}
+
+        .recipe-grid{
+            display:grid;grid-template-columns:repeat(12,1fr);gap:1rem;
+        }
+        .card{
+            position:relative;grid-column:span 6;min-height:245px;overflow:hidden;
+            padding:1.25rem 1.25rem 1.1rem;
+            border:1px solid var(--border);
+            background:linear-gradient(135deg,rgba(255,255,255,.018),transparent 45%),rgba(9,13,10,.74);
+            color:var(--ink);text-decoration:none;
+            transition:border-color 220ms ease,background 220ms ease,transform 220ms ease;
+            cursor:pointer;
+        }
+        .card:nth-child(5n+1),.card:nth-child(5n+4){grid-column:span 7}
+        .card:nth-child(5n+2),.card:nth-child(5n+5){grid-column:span 5}
+        .card::before{
+            content:"";position:absolute;inset:0 auto 0 0;width:2px;
+            background:var(--danger-bright);transform:scaleY(0);
+            transform-origin:bottom;transition:transform 280ms ease;
+        }
+        .card::after{
+            content:"";position:absolute;top:-40%;left:-20%;
+            width:38%;height:180%;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,.035),transparent);
+            transform:translateX(-140%) rotate(14deg);
+            transition:transform 560ms ease;
+        }
+        .card:hover{border-color:var(--border-strong);background-color:var(--surface-raised);transform:translateY(-4px)}
+        .card:hover::before{transform:scaleY(1)}
+        .card:hover::after{transform:translateX(390%) rotate(14deg)}
+        .card-id{margin-bottom:2.4rem;color:var(--ink-faint);font-size:.52rem;letter-spacing:.15em}
+        .card-id::before{
+            content:"";display:inline-block;width:18px;height:1px;
+            margin-right:.6rem;background:var(--danger);vertical-align:middle;
+        }
+        .card-tag{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.65rem}
+        .card-tag span{
+            padding:.18rem .45rem;border:1px solid var(--danger-dark);
+            color:var(--danger-bright);font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;
+        }
+        .card h2{
+            max-width:92%;margin-bottom:.65rem;color:var(--ink-bright);
+            font-family:var(--font-display);
+            font-size:clamp(1.25rem,2.4vw,1.75rem);font-weight:800;
+            letter-spacing:.01em;line-height:1.12;
+        }
+        .card p{
+            max-width:92%;margin-bottom:2.2rem;
+            color:var(--ink-dim);font-size:.72rem;line-height:1.75;
+        }
+        .card-meta{
+            position:absolute;right:1.2rem;bottom:1rem;left:1.2rem;
+            display:flex;align-items:center;justify-content:space-between;gap:1rem;
+            color:var(--ink-faint);font-size:.49rem;letter-spacing:.09em;
+        }
+        .card-open{
+            position:absolute;top:1.15rem;right:1.15rem;
+            color:var(--ink-faint);font-size:.49rem;letter-spacing:.1em;
+            opacity:0;transform:translateX(-6px);
+            transition:opacity 180ms ease,transform 180ms ease;
+        }
+        .card:hover .card-open{opacity:1;transform:translateX(0)}
+        .archive-cta{margin-top:2rem;text-align:right}
+
+        /* ═══════════════════════ INTERACTIVE EXPLORER ═══════════════════════ */
+        .explorer-wrap{margin-top:1rem}
+        .breadcrumb{
+            display:flex;align-items:center;gap:.5rem;
+            color:var(--ink-dim);font-size:.58rem;letter-spacing:.1em;
+            margin-bottom:1.5rem;padding:.5rem 0;
+            border-bottom:1px solid var(--border);
+        }
+        .breadcrumb a{
+            color:var(--signal);text-decoration:none;
+            transition:color 150ms ease;
+        }
+        .breadcrumb a:hover{color:var(--danger-bright)}
+        .breadcrumb-sep{color:var(--ink-faint);font-size:.5rem}
+        .breadcrumb-current{color:var(--ink-bright)}
+
+        .explorer-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+            gap:1rem;
+        }
+        .explorer-item{
+            position:relative;display:flex;align-items:center;gap:.85rem;
+            padding:1rem 1.1rem;
+            border:1px solid var(--border);
+            background:linear-gradient(135deg,rgba(255,255,255,.018),transparent 45%),rgba(9,13,10,.74);
+            color:var(--ink);text-decoration:none;
+            transition:border-color 220ms ease,background 220ms ease,transform 220ms ease;
+            cursor:pointer;overflow:hidden;
+        }
+        .explorer-item::before{
+            content:"";position:absolute;inset:0 auto 0 0;width:2px;
+            background:var(--danger-bright);transform:scaleY(0);
+            transform-origin:bottom;transition:transform 280ms ease;
+        }
+        .explorer-item:hover{
+            border-color:var(--border-strong);
+            background-color:var(--surface-raised);
+            transform:translateY(-3px);
+        }
+        .explorer-item:hover::before{transform:scaleY(1)}
+        .explorer-item.folder{border-color:var(--border-strong);}
+        .explorer-item.folder:hover{border-color:var(--signal);}
+        .explorer-item.folder::before{background:var(--signal);}
+        .explorer-icon{
+            font-size:1.4rem;flex-shrink:0;width:2rem;text-align:center;
+            filter:grayscale(.3);
+            transition:filter 220ms ease,transform 220ms ease;
+        }
+        .explorer-item:hover .explorer-icon{filter:grayscale(0);transform:scale(1.1)}
+        .explorer-info{flex:1;min-width:0}
+        .explorer-name{
+            display:block;color:var(--ink-bright);
+            font-size:.82rem;letter-spacing:.04em;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+        }
+        .explorer-meta{
+            display:block;color:var(--ink-faint);
+            font-size:.5rem;letter-spacing:.08em;margin-top:.2rem;
+        }
+        .explorer-arrow{
+            color:var(--ink-faint);font-size:.7rem;
+            opacity:0;transform:translateX(-4px);
+            transition:opacity 180ms ease,transform 180ms ease,color 180ms ease;
+        }
+        .explorer-item:hover .explorer-arrow{opacity:1;transform:translateX(0);color:var(--danger-bright)}
+
+        /* ═══════════════════════ TREE LIST (legacy) ═══════════════════════ */
+        .tree-list{list-style:none;margin:0;padding:0}
+        .tree-item{
+            display:flex;align-items:center;gap:.7rem;
+            padding:.7rem 1rem;border-bottom:1px solid var(--border);
+            transition:background 150ms ease;
+        }
+        .tree-item:hover{background:rgba(255,255,255,.015)}
+        .tree-item a{
+            flex:1;text-decoration:none;color:var(--ink-bright);
+            font-size:.8rem;letter-spacing:.04em;
+            transition:color 150ms ease;
+        }
+        .tree-item a:hover{color:var(--danger-bright)}
+        .tree-icon{font-size:.75rem;flex-shrink:0;width:1.4rem;text-align:center}
+        .tree-icon.file{color:var(--ink-bright)}
+        .tree-icon.folder{color:var(--danger-bright)}
+        .tree-meta{color:var(--ink-faint);font-size:.5rem;letter-spacing:.08em;flex-shrink:0}
+        .tree-indent{margin-left:1.8rem}
+
+        /* ═══════════════════════ MARKDOWN CONTENT PAGE ═══════════════════════ */
+        .md-content{
+            max-width:900px;margin:0 auto;padding:2rem 0;
+            color:var(--ink);line-height:1.85;
+        }
+        .md-content h1,.md-content h2,.md-content h3,.md-content h4{
+            color:var(--ink-bright);font-family:var(--font-display);
+            letter-spacing:.01em;margin:2rem 0 .8rem;
+        }
+        .md-content h1{font-size:2rem;border-bottom:1px solid var(--border-strong);padding-bottom:.5rem}
+        .md-content h2{font-size:1.4rem}
+        .md-content h3{font-size:1.1rem}
+        .md-content p{margin-bottom:1rem}
+        .md-content code{
+            background:var(--surface-active);padding:.15rem .4rem;
+            border-radius:3px;font-size:.78rem;color:var(--signal-bright);
+            border:1px solid var(--border);
+        }
+        .md-content pre{
+            background:var(--surface);border:1px solid var(--border-strong);
+            padding:1rem 1.2rem;overflow-x:auto;margin-bottom:1.2rem;
+            font-size:.72rem;line-height:1.65;
+        }
+        .md-content pre code{background:none;border:0;padding:0;font-size:inherit}
+        .md-content blockquote{
+            border-left:2px solid var(--danger);padding:.4rem 1rem;
+            margin:1rem 0;color:var(--ink-dim);background:rgba(255,255,255,.01);
+        }
+        .md-content ul,.md-content ol{padding-left:1.5rem;margin-bottom:1rem}
+        .md-content li{margin-bottom:.35rem}
+        .md-content a{color:var(--danger-bright);text-decoration:underline}
+        .md-content table{width:100%;border-collapse:collapse;margin-bottom:1.2rem}
+        .md-content th,.md-content td{
+            border:1px solid var(--border);padding:.5rem .8rem;
+            text-align:left;font-size:.75rem;
+        }
+        .md-content th{background:var(--surface);color:var(--ink-bright)}
+        .md-content hr{border:0;border-top:1px solid var(--border);margin:2rem 0}
+        .md-content img{max-width:100%;border:1px solid var(--border)}
+
+        /* ═══════════════════════ 404 PAGE ═══════════════════════ */
+        .page-404{
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            min-height:60vh;text-align:center;gap:1.5rem;
+        }
+        .page-404 .err-code{
+            font-family:var(--font-display);font-size:clamp(6rem,15vw,12rem);
+            font-weight:900;color:var(--danger-bright);line-height:1;
+            letter-spacing:-.04em;
+        }
+        .page-404 .err-msg{color:var(--ink-dim);font-size:.82rem;max-width:480px}
+        .page-404 .err-action{
+            display:inline-flex;align-items:center;gap:.5rem;
+            padding:.7rem 1.3rem;border:1px solid var(--danger-dark);
+            background:rgba(88,16,20,.18);color:var(--ink-bright);
+            font-size:.6rem;letter-spacing:.12em;text-decoration:none;
+            cursor:pointer;transition:background 180ms ease,border-color 180ms ease;
+        }
+        .page-404 .err-action:hover{border-color:var(--danger-bright);background:rgba(125,24,29,.28)}
+
+        /* ═══════════════════════ FOOTER ═══════════════════════ */
+        .site-footer{margin-top:6rem;padding-top:1.5rem}
+        .footer-divider{
+            height:1px;margin-bottom:1.5rem;
+            background:linear-gradient(90deg,var(--danger),var(--border) 35%,transparent);
+        }
+        .footer-grid{
+            display:grid;grid-template-columns:1fr auto 1fr;
+            align-items:center;gap:2rem;
+        }
+        .footer-identity{display:flex;flex-direction:column;gap:.25rem}
+        .footer-mark{
+            color:var(--ink-bright);font-family:var(--font-display);
+            font-size:.9rem;font-weight:900;letter-spacing:.13em;
+        }
+        .footer-tagline{color:var(--ink-faint);font-size:.5rem;letter-spacing:.12em;text-transform:uppercase}
+        .footer-links{display:flex;align-items:center;justify-content:center;gap:1rem}
+        .footer-link{
+            display:flex;align-items:center;gap:.35rem;
+            color:var(--ink-dim);font-size:.56rem;letter-spacing:.1em;text-decoration:none;
+        }
+        .footer-link svg{width:13px;height:13px}
+        .footer-link:hover{color:var(--danger-bright)}
+        .footer-system{display:flex;align-items:center;justify-content:flex-end}
+
+        /* ═══════════════════════ ANIMATIONS ═══════════════════════ */
+        @keyframes scan-page{from{transform:translateY(-20vh)}to{transform:translateY(120vh)}}
+        @keyframes status-pulse{0%,100%{opacity:.55;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+        @keyframes target-spin{to{transform:rotate(360deg)}}
+        @keyframes cursor-blink{0%,48%{opacity:1}49%,100%{opacity:0}}
+
+        /* ═══════════════════════ RESPONSIVE ═══════════════════════ */
+        @media(max-width:1100px){
+            .edge-mark{display:none}
+            .brand-code,.system-status{display:none}
+            .home-hero{grid-template-columns:1fr 300px;gap:2rem}
+            .home-hero h1{font-size:clamp(4rem,10vw,6.5rem)}
+            .stats-row{grid-template-columns:repeat(2,1fr)}
+            .stat-item:nth-child(2){border-right:0}
+            .stat-item:nth-child(-n+2){border-bottom:1px solid var(--border)}
+            .footer-grid{grid-template-columns:1fr auto}
+            .footer-system{display:none}
+        }
+        @media(max-width:760px){
+            .site-header{align-items:flex-start;flex-direction:column;gap:1rem;padding:1rem 0}
+            .header-controls{width:100%}
+            .main-nav{width:100%;overflow-x:auto;padding-bottom:.35rem}
+            .main-nav a{flex:none}
+            .home-hero{grid-template-columns:1fr;min-height:auto;padding-top:2rem}
+            .home-hero::before{top:0}
+            .containment-panel{width:min(100%,440px);min-height:390px;margin-left:auto}
+            .recipe-grid{display:block}
+            .card{margin-bottom:1rem;min-height:230px}
+            .archive-heading{align-items:flex-start;flex-direction:column;gap:.7rem}
+            .footer-grid{grid-template-columns:1fr}
+            .footer-links{justify-content:flex-start;flex-wrap:wrap}
+            .explorer-grid{grid-template-columns:1fr}
+        }
+        @media(max-width:520px){
+            html{font-size:14px}
+            .container{width:min(calc(100% - 2rem),var(--content-max))}
+            .eyebrow span:last-child{display:none}
+            .home-hero h1{font-size:clamp(3.65rem,19vw,5.2rem)}
+            .hero-actions{align-items:flex-start;flex-direction:column}
+            .containment-panel{min-height:365px}
+            .specimen-display{height:235px}
+            .panel-readout span{letter-spacing:.04em}
+            .stats-row{grid-template-columns:1fr}
+            .stat-item,.stat-item:nth-child(2){border-right:0;border-bottom:1px solid var(--border)}
+            .stat-item:last-child{border-bottom:0}
+            .card-open{display:none}
+        }
+        @media(prefers-reduced-motion:reduce){
+            html{scroll-behavior:auto}
+            *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+        }
+
+        /* ═══════════════════════ MISC ═══════════════════════ */
+        ::selection{background:var(--danger-dark);color:var(--ink-bright)}
+        .hidden{display:none!important}
+        .loading-placeholder{
+            text-align:center;padding:3rem;color:var(--ink-faint);
+            font-size:.7rem;letter-spacing:.1em;
+        }
+    </style>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'&gt;&lt;rect fill='%230a0a0a' width='32' height='32' rx='2'/&gt;&lt;text x='16' y='22' text-anchor='middle' fill='%23cc0000' font-size='16' font-family='monospace'&gt;sx&lt;/text&gt;&lt;/svg&gt;">
+</head>
+<body>
+
+    <!-- ═══════════════════════ AMBIENT FX ═══════════════════════ -->
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <div class="noise" aria-hidden="true"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+    <div class="scan-beam" aria-hidden="true"></div>
+    <div class="edge-mark edge-mark-left" aria-hidden="true">SX // SECURE ARCHIVE</div>
+    <div class="edge-mark edge-mark-right" aria-hidden="true">CLEARANCE: PUBLIC</div>
+
+    <!-- ═══════════════════════ MAIN CONTAINER ═══════════════════════ -->
+    <div class="container">
+
+        <!-- ── HEADER ── -->
+        <header class="site-header">
+            <div class="brand-lockup">
+                <a href="#/" class="logo" aria-label="sudoxs home" onclick="SX.navigateHome();return false;">
+                    <span class="logo-bracket">[</span>SUDOXS<span class="logo-bracket">]</span>
+                </a>
+                <span class="brand-code">OFFSEC / ARCHIVE</span>
+            </div>
+            <div class="header-controls">
+                <div class="system-status" aria-label="Archive system online">
+                    <span class="status-light"></span>
+                    <span>SYS.ONLINE</span>
+                </div>
+                <nav class="main-nav" id="mainNav" aria-label="Primary navigation">
+                    <!-- dynamically filled by JS -->
+                </nav>
+            </div>
+        </header>
+
+        <!-- ── DYNAMIC CONTENT AREA ── -->
+        <main id="mainContent">
+            <div class="loading-placeholder">LOADING ARCHIVE…</div>
+        </main>
+
+        <!-- ── FOOTER ── -->
+        <footer class="site-footer">
+            <div class="footer-divider"></div>
+            <div class="footer-grid">
+                <div class="footer-identity">
+                    <span class="footer-mark">SUDOXS</span>
+                    <span class="footer-tagline">break · learn · document · repeat</span>
+                </div>
+                <div class="footer-links">
+                    <a href="https://app.hackthebox.com/public/users/2277802" target="_blank" rel="noopener" class="footer-link" aria-label="Hack The Box">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg> HTB
+                    </a>
+                    <a href="https://standoff365.com/en-US/profile/sudoxs/" target="_blank" rel="noopener" class="footer-link" aria-label="Standoff365">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5.0 000 20 14.5 14.5.0 000-20"></path><path d="M2 12h20"></path></svg> S365
+                    </a>
+                    <a href="https://www.linkedin.com/in/shayan-ghasemi-97b94341b" target="_blank" rel="noopener" class="footer-link" aria-label="LinkedIn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg> LinkedIn
+                    </a>
+                </div>
+                <div class="footer-system">
+                    <span class="status-light"></span>
+                    <span>ARCHIVE ACTIVE</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ═══════════════════════ MD LAYOUT OVERRIDE ═══════════════════════ -->
+    <script src="md-layout.js"></script>
+
+    <!-- ═══════════════════════ MAIN ENGINE ═══════════════════════ -->
+    <script>
+
+    /* ─────────────────────────────────────────────
+       SX — Offensive Security Cookbook Engine
+       Static-site version: reads tree.json + local .md files
+       No hardcoded paths — fully dynamic from tree.json
+       ───────────────────────────────────────────── */
+    const SX = (function(){
+
+    // ═══════════════════════ STATE ═══════════════════════
+    let tree        = null;
+    let flatFiles   = [];
+    let totalMd     = 0;
+
+    // ═══════════════════════ ROUTER ═══════════════════════
+    function getRoute(){
+        const h = location.hash.replace(/^#/,"") || "/";
+        const parts = h.split("/").filter(Boolean);
+        if(!parts.length) return {page:"home"};
+
+        if(parts[0]==="category" && parts.length > 1){
+            const catPath = parts.slice(1).map(decodeURIComponent).join("/");
+            return {page:"category", cat: catPath};
+        }
+        if(parts[0]==="file" && parts.length > 2){
+            const file = decodeURIComponent(parts[parts.length-1]);
+            const catPath = parts.slice(1, parts.length-1).map(decodeURIComponent).join("/");
+            return {page:"file", cat: catPath, file};
+        }
+        return {page:"404"};
+    }
+
+    function navigate(hash){ location.hash = hash; }
+    function encodePath(path){ return path.split("/").map(encodeURIComponent).join("/"); }
+
+    // ═══════════════════════ DATA LOADING ═══════════════════════
+    async function loadPlaybook(){
+        try{
+            const res = await fetch("tree.json");
+            if(!res.ok) throw new Error("tree.json not found ("+res.status+")");
+            tree = await res.json();
+            console.log("SX: Loaded tree.json — "+tree.length+" top folders");
+        }catch(e){
+            console.error("SX: Could not load tree.json", e);
+            tree = [];
+        }
+    }
+
+    // ═══════════════════════ TREE HELPERS ═══════════════════════
+    function findNodeByPath(path){
+        if(!tree || !path) return null;
+        const parts = path.split("/");
+        for(const root of tree){
+            if(root.name === parts[0]){
+                return findInNode(root, parts.slice(1));
+            }
+        }
+        return null;
+    }
+
+    function findInNode(node, parts){
+        if(parts.length === 0) return node;
+        if(node.type !== "dir" || !node.children) return null;
+        const child = node.children.find(c => c.name === parts[0]);
+        if(!child) return null;
+        return findInNode(child, parts.slice(1));
+    }
+
+    function flattenTree(nodeList, parentPath){
+        const out = [];
+        for(const n of nodeList){
+            const currentPath = parentPath ? parentPath + "/" + n.name : n.name;
+            if(n.type === "file" && n.name.endsWith(".md")){
+                out.push({ ...n, category: parentPath || "" });
+            }
+            if(n.type === "dir" && n.children){
+                out.push(...flattenTree(n.children, currentPath));
+            }
+        }
+        return out;
+    }
+
+    function getCategories(){
+        if(!tree || !tree.length) return [];
+        return tree.filter(n => n.type === "dir").map(n => n.name);
+    }
+
+    function hasData(){ return tree && tree.length > 0; }
+
+    // ═══════════════════════ MD LAYOUT ═══════════════════════
+    const MD_LAYOUT = Object.assign({
+        useAltHeader:   false,
+        useAltFooter:   false,
+        bodyClass:      "viewing-md",
+        beforeContent:  "",
+        afterContent:   "",
+        altHeaderHTML:  "",
+        altFooterHTML:  "",
+    }, window.SX_MD_LAYOUT || {});
+
+    // ═══════════════════════ NAV ═══════════════════════
+    function buildNav(categories){
+        const nav  = document.getElementById("mainNav");
+        const route = getRoute();
+        const rootActive = (route.page === "home") ? " active" : "";
+        let html = `<a href="#/" class="${rootActive}" onclick="SX.navigateHome();return false;">root</a>`;
+
+        const cats = categories.length ? categories : [];
+
+        if(cats.length){
+            const visibleCount = cats.length > 5 ? 4 : cats.length;
+            const visible = cats.slice(0, visibleCount);
+            const overflow = cats.length > 5 ? cats.slice(visibleCount) : [];
+
+            for(const c of visible){
+                const active = (route.page === "category" && route.cat === c) ? " active" : "";
+                html += `<a href="#/category/${encodeURIComponent(c)}" class="${active}">${escapeHTML(c)}</a>`;
+            }
+
+            if(overflow.length){
+                const anyActive = (route.page === "category" && overflow.includes(route.cat.split("/")[0])) ? " active" : "";
+                html += `<span class="nav-dropdown" id="navDropdown">`;
+                html += `<span class="nav-dropdown-trigger${anyActive}" onclick="SX.toggleDropdown(event)">more</span>`;
+                html += `<span class="nav-dropdown-menu">`;
+                for(const c of overflow){
+                    html += `<a href="#/category/${encodeURIComponent(c)}">${escapeHTML(c)}</a>`;
+                }
+                html += `</span></span>`;
+            }
+        }
+        nav.innerHTML = html;
+    }
+
+    function toggleDropdown(e){
+        e.stopPropagation();
+        const dd = document.getElementById("navDropdown");
+        if(dd) dd.classList.toggle("open");
+    }
+    document.addEventListener("click", ()=>{
+        const dd = document.getElementById("navDropdown");
+        if(dd) dd.classList.remove("open");
+    });
+
+    // ═══════════════════════ RENDERERS ═══════════════════════
+
+    function renderHome(){
+        const categories = getCategories();
+        buildNav(categories);
+
+        const sorted = [...flatFiles].sort((a,b) => b.name.localeCompare(a.name));
+        const recent = sorted.slice(0, 12);
+
+        let cardsHTML = "";
+        recent.forEach((f, i) => {
+            const caseNum = String(i+1).padStart(3, "0");
+            const title = f.name.replace(/\.md$/, "");
+            const catPath = f.category || "";
+            const catDisplay = catPath.split("/")[0] || "general";
+            cardsHTML += `
+                <a class="card" href="#/file/${encodePath(catPath)}/${encodeURIComponent(f.name)}" onclick="SX.navigateFile('${catPath.replace(/'/g, "\'")}','${f.name.replace(/'/g, "\'")}');return false;">
+                    <div class="card-id">CASE-${caseNum}</div>
+                    <div class="card-tag"><span>${escapeHTML(catDisplay)}</span></div>
+                    <h2>${escapeHTML(title)}</h2>
+                    <p>${escapeHTML(truncateText(title, 120))}</p>
+                    <div class="card-meta">
+                        <span>${getFileDate(f)}</span>
+                        <span>STATUS: ARCHIVED</span>
+                    </div>
+                    <span class="card-open" aria-hidden="true">OPEN FILE ↗</span>
+                </a>`;
+        });
+
+        const main = document.getElementById("mainContent");
+        main.innerHTML = `
+            <section class="home-hero">
+                <div class="hero-copy">
+                    <div class="eyebrow"><span>AUTHORIZED PERSONNEL</span><span>NODE 00-ROOT</span></div>
+                    <div class="tagline">&gt; offensive security technique repository</div>
+                    <h1>TECHNIQUE<br><span>ARCHIVE</span></h1>
+                    <p class="bio">A controlled repository of exploitation techniques, privilege escalation recipes, and lateral movement patterns. No walkthrough noise. Only repeatable tradecraft.</p>
+                    <div class="hero-actions">
+                        <a class="primary-action" href="#recent-recipes"><span>OPEN ARCHIVE</span><span aria-hidden="true">↘</span></a>
+                        <span class="operator-id">OPERATOR // sudoxs</span>
+                    </div>
+                </div>
+                <aside class="containment-panel" aria-label="Archive status">
+                    <div class="panel-heading"><span>CONTAINMENT INTERFACE</span><span class="panel-state">STABLE</span></div>
+                    <div class="specimen-display" aria-hidden="true">
+                        <div class="target-ring ring-a"></div><div class="target-ring ring-b"></div>
+                        <div class="target-core">SX</div>
+                        <span class="coordinate coordinate-a">X.35</span><span class="coordinate coordinate-b">Y.09</span><span class="coordinate coordinate-c">SIG/87</span>
+                    </div>
+                    <div class="panel-readout">
+                        <div><span>THREAT INDEX</span><strong>04.7</strong></div>
+                        <div><span>ARCHIVE STATE</span><strong>NOMINAL</strong></div>
+                        <div><span>ACCESS LEVEL</span><strong>PUBLIC</strong></div>
+                    </div>
+                </aside>
+            </section>
+            <section class="stats-row" aria-label="Archive statistics">
+                <div class="stat-item"><span class="stat-index">01</span><span class="stat-num" id="totalMdCount">${totalMd}</span><span class="stat-label">documented techniques</span></div>
+                <div class="stat-item"><span class="stat-index">02</span><span class="stat-num" id="totalCats">${String(categories.length).padStart(2, "0")}</span><span class="stat-label">attack surfaces</span></div>
+                <div class="stat-item"><span class="stat-index">03</span><span class="stat-num">24/7</span><span class="stat-label">archive availability</span></div>
+                <div class="stat-item"><span class="stat-index">04</span><span class="stat-num">0x01</span><span class="stat-label">operator clearance</span></div>
+            </section>
+            <div class="archive-heading" id="recent-recipes">
+                <div><span class="section-kicker">INDEX / RECENT</span><h2>Latest field notes</h2></div>
+                <span class="record-count">${flatFiles.length} RECORDS LOADED</span>
+            </div>
+            <div class="recipe-grid">${cardsHTML}</div>
+            ${totalMd > 0 && categories.length > 0 ? `<div class="archive-cta"><a href="#/category/${encodeURIComponent(categories[0])}" class="secondary-action">view all ${totalMd} records →</a></div>` : `<div class="archive-cta" style="color:var(--ink-faint);font-size:.55rem;letter-spacing:.08em;line-height:1.8">Create folders in this directory and put your <code>.md</code> files inside them.<br>Then run <code>python3 generate_tree.py</code> and deploy.</div>`}`;
+    }
+
+    function renderCategory(catPath){
+        const categories = getCategories();
+        buildNav(categories);
+
+        const node = findNodeByPath(catPath);
+        if(!node || node.type !== "dir"){
+            render404();
+            return;
+        }
+
+        const children = node.children || [];
+        const dirs  = children.filter(c => c.type === "dir");
+        const files = children.filter(c => c.type === "file");
+
+        // Breadcrumb
+        const parts = catPath.split("/");
+        let breadcrumbHTML = `<a href="#/">root</a>`;
+        let accum = "";
+        for(let i = 0; i < parts.length; i++){
+            accum = accum ? accum + "/" + parts[i] : parts[i];
+            if(i === parts.length - 1){
+                breadcrumbHTML += ` <span class="breadcrumb-sep">/</span> <span class="breadcrumb-current">${escapeHTML(parts[i])}</span>`;
+            } else {
+                breadcrumbHTML += ` <span class="breadcrumb-sep">/</span> <a href="#/category/${encodePath(accum)}">${escapeHTML(parts[i])}</a>`;
+            }
+        }
+
+        // Explorer grid
+        let explorerHTML = "";
+
+        dirs.forEach(d => {
+            const subPath = catPath ? catPath + "/" + d.name : d.name;
+            const childCount = (d.children || []).length;
+            const subDirs = (d.children || []).filter(x => x.type === "dir").length;
+            const subFiles = (d.children || []).filter(x => x.type === "file").length;
+            explorerHTML += `
+                <a class="explorer-item folder" href="#/category/${encodePath(subPath)}" onclick="SX.navigateCategory('${subPath.replace(/'/g, "\'")}');return false;">
+                    <span class="explorer-icon">📁</span>
+                    <span class="explorer-info">
+                        <span class="explorer-name">${escapeHTML(d.name)}</span>
+                        <span class="explorer-meta">${subDirs} dirs · ${subFiles} files</span>
+                    </span>
+                    <span class="explorer-arrow">→</span>
+                </a>`;
+        });
+
+        files.forEach(f => {
+            const displayName = f.name.replace(/\.md$/, "");
+            explorerHTML += `
+                <a class="explorer-item file" href="#/file/${encodePath(catPath)}/${encodeURIComponent(f.name)}" onclick="SX.navigateFile('${catPath.replace(/'/g, "\'")}','${f.name.replace(/'/g, "\'")}');return false;">
+                    <span class="explorer-icon">📄</span>
+                    <span class="explorer-info">
+                        <span class="explorer-name">${escapeHTML(displayName)}</span>
+                        <span class="explorer-meta">${getFileDate(f)} · ${f.name}</span>
+                    </span>
+                    <span class="explorer-arrow">↗</span>
+                </a>`;
+        });
+
+        if(!explorerHTML){
+            explorerHTML = `<div style="color:var(--ink-faint);padding:2rem;text-align:center;font-size:.7rem;letter-spacing:.1em">This directory is empty. Add .md files or subfolders here.</div>`;
+        }
+
+        const mdCount = files.filter(f => f.name.endsWith(".md")).length;
+        const main = document.getElementById("mainContent");
+        main.innerHTML = `
+            <div class="archive-heading">
+                <div>
+                    <span class="section-kicker">EXPLORER</span>
+                    <h2>${escapeHTML(node.name)}</h2>
+                    <div class="breadcrumb">${breadcrumbHTML}</div>
+                </div>
+                <span class="record-count">${mdCount} MD · ${dirs.length} FOLDER${dirs.length!==1?"S":""}</span>
+            </div>
+            <div class="explorer-wrap">
+                <div class="explorer-grid">${explorerHTML}</div>
+            </div>`;
+    }
+
+    async function renderFile(catPath, filename){
+        const categories = getCategories();
+        buildNav(categories);
+
+        const fullPath = catPath + "/" + filename;
+        const fileNode = findNodeByPath(fullPath);
+
+        const displayName = filename.replace(/\.md$/, "");
+        const main = document.getElementById("mainContent");
+
+        main.innerHTML = `
+            <div class="archive-heading">
+                <div><span class="section-kicker">${escapeHTML(catPath)}</span><h2>${escapeHTML(displayName)}</h2></div>
+                <a href="#/category/${encodePath(catPath)}" class="secondary-action" style="min-width:auto">← BACK</a>
+            </div>
+            <div class="loading-placeholder">LOADING DOCUMENT…</div>`;
+
+        let mdText = "";
+        let sourceNote = "";
+
+        const fetchPath = fileNode ? fileNode.path : fullPath;
+        try{
+            const res = await fetch(fetchPath);
+            if(res.ok) mdText = await res.text();
+            else sourceNote = `<!-- fetch failed: ${res.status} -->`;
+        }catch(e){ sourceNote = `<!-- fetch error: ${e.message} -->`; }
+
+        if(!mdText){
+            mdText = `# ${displayName}\n\n> Unable to load file content.\n>\n> \`${fetchPath}\`\n\n${sourceNote}`;
+        }
+
+        const mdHTML = simpleMarkdown(mdText);
+
+        const bodyClass = MD_LAYOUT.bodyClass || "";
+        document.body.className = document.body.className.replace(/\bviewing-md\b/g, "").trim();
+        if(bodyClass) document.body.classList.add(bodyClass);
+
+        const altH = (MD_LAYOUT.useAltHeader && MD_LAYOUT.altHeaderHTML) ? MD_LAYOUT.altHeaderHTML : "";
+        const altF = (MD_LAYOUT.useAltFooter && MD_LAYOUT.altFooterHTML) ? MD_LAYOUT.altFooterHTML : "";
+
+        main.innerHTML = `
+            ${altH}
+            <div class="archive-heading">
+                <div>
+                    <span class="section-kicker">${escapeHTML(catPath)}</span>
+                    <h2>${escapeHTML(displayName)}</h2>
+                    ${getFileDate(fileNode) ? `<span style="color:var(--ink-faint);font-size:.52rem;letter-spacing:.1em">${getFileDate(fileNode)}</span>` : ""}
+                </div>
+                <a href="#/category/${encodePath(catPath)}" class="secondary-action" style="min-width:auto">← BACK</a>
+            </div>
+            ${MD_LAYOUT.beforeContent || ""}
+            <div class="md-content">${mdHTML}</div>
+            ${MD_LAYOUT.afterContent || ""}
+            ${altF}`;
+    }
+
+    function render404(){
+        const categories = getCategories();
+        buildNav(categories);
+        const main = document.getElementById("mainContent");
+        main.innerHTML = `
+            <div class="page-404">
+                <div class="err-code">404</div>
+                <h2 style="color:var(--ink-bright);font-family:var(--font-display);font-size:1.5rem">TARGET NOT FOUND</h2>
+                <p class="err-msg">The requested resource does not exist in this archive. It may have been moved, deleted, or never existed.</p>
+                <a href="#/" class="err-action" onclick="SX.navigateHome();return false;">← RETURN TO ROOT</a>
+            </div>`;
+    }
+
+    // ═══════════════════════ UTILS ═══════════════════════
+    function escapeHTML(str){
+        const d = document.createElement("div");
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
+    function truncateText(text, max){
+        if(text.length <= max) return text;
+        return text.slice(0, max) + "…";
+    }
+
+    function getFileDate(f){
+        if(!f) return "";
+        const m = f.name.match(/^(\d{4}-\d{2}-\d{2})/);
+        if(m) return m[1];
+        return "";
+    }
+
+    /* ── Simple Markdown → HTML parser (no external deps) ── */
+    function simpleMarkdown(md){
+        let html = md;
+        const uidMap = {};
+        let uidCounter = 0;
+
+        // 1) Extract fenced code blocks BEFORE escaping HTML
+        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+            const uid = `%%CODEBLOCK_${uidCounter++}%%`;
+            uidMap[uid] = `<pre><code class="language-${lang}">${escapeHTML(code.trim())}</code></pre>`;
+            return uid;
+        });
+
+        // 2) Extract inline code spans
+        html = html.replace(/`([^`]+)`/g, (_, code) => {
+            const uid = `%%INLINECODE_${uidCounter++}%%`;
+            uidMap[uid] = `<code>${escapeHTML(code)}</code>`;
+            return uid;
+        });
+
+        // 3) Escape remaining HTML
+        html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+        // Bold **…** and __…__
+        html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        html = html.replace(/__([^_]+)__/g, "<strong>$1</strong>");
+        // Italic *…* and _…_
+        html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+        html = html.replace(/_([^_]+)_/g, "<em>$1</em>");
+
+        // Images ![alt](url)
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+        // Links [text](url)
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+        // Headings
+        html = html.replace(/^#### (.+)$/gm, "<h4>$1</h4>");
+        html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
+        html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
+        html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
+
+        // Horizontal rules
+        html = html.replace(/^---$/gm, "<hr>");
+        html = html.replace(/^\*\*\*$/gm, "<hr>");
+
+        // Blockquotes
+        html = html.replace(/^&gt; (.+)$/gm, "<blockquote>$1</blockquote>");
+        html = html.replace(/<\/blockquote>\n<blockquote>/g, "<br>");
+
+        // Unordered lists
+        html = html.replace(/^[\-\*] (.+)$/gm, "<li>$1</li>");
+        html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul>$1</ul>");
+
+        // Ordered lists
+        html = html.replace(/^\d+\. (.+)$/gm, "<li>$1</li>");
+
+        // Tables (basic)
+        html = html.replace(/^\|(.+)\|$/gm, (row) => {
+            const cells = row.split("|").filter(c => c.trim());
+            if(/^[\s\-:]+$/.test(cells[0] || "")) return "";
+            const tag = "td";
+            return "<tr>" + cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join("") + "</tr>";
+        });
+        html = html.replace(/((?:<tr>.*<\/tr>\n?)+)/g, (block) => {
+            return `<table>${block}</table>`;
+        });
+        html = html.replace(/<table>\s*<tr>(<td>.*?<\/td>\s*)<\/tr>/, (_, cells) => {
+            return "<table><tr>" + cells.replace(/<td>/g, "<th>").replace(/<\/td>/g, "</th>") + "</tr>";
+        });
+
+        // Paragraphs
+        const lines = html.split("\n");
+        const outArr = [];
+        let buf = [];
+        const blockRE = /^<(h[1-4]|pre|ul|ol|li|table|hr|blockquote|tr|th|td|img|div)/;
+        for(const line of lines){
+            if(line.trim() === ""){
+                if(buf.length){ outArr.push(`<p>${buf.join("<br>")}</p>`); buf = []; }
+                continue;
+            }
+            if(blockRE.test(line.trim())){
+                if(buf.length){ outArr.push(`<p>${buf.join("<br>")}</p>`); buf = []; }
+                outArr.push(line);
+            } else {
+                buf.push(line);
+            }
+        }
+        if(buf.length) outArr.push(`<p>${buf.join("<br>")}</p>`);
+        html = outArr.join("\n");
+
+        // Restore placeholders
+        for(const [uid, replacement] of Object.entries(uidMap)){
+            html = html.replace(uid, replacement);
+        }
+
+        return html;
+    }
+
+    // ═══════════════════════ INIT ═══════════════════════
+    async function init(){
+        try{ await loadPlaybook(); }catch(e){ console.error("SX init error:", e); tree = []; }
+
+        if(tree && tree.length){
+            flatFiles = flattenTree(tree, null);
+            totalMd   = flatFiles.length;
+        }
+
+        const route = getRoute();
+        if(route.page === "home")         renderHome();
+        else if(route.page === "category") renderCategory(route.cat);
+        else if(route.page === "file")     await renderFile(route.cat, route.file);
+        else                            render404();
+
+        if(route.page !== "home") buildNav(getCategories());
+    }
+
+    function handleHashChange(){
+        const route = getRoute();
+        if(route.page === "home")         renderHome();
+        else if(route.page === "category") renderCategory(route.cat);
+        else if(route.page === "file")     renderFile(route.cat, route.file);
+        else                            render404();
+    }
+
+    window.addEventListener("hashchange", handleHashChange);
+    window.addEventListener("DOMContentLoaded", init);
+
+    // ═══════════════════════ PUBLIC API ═══════════════════════
+    return {
+        navigateHome:   () => { navigate("/"); },
+        navigateCategory: (path) => { navigate("/category/" + encodePath(path)); },
+        navigateFile:   (cat, file) => { navigate("/file/" + encodePath(cat) + "/" + encodeURIComponent(file)); },
+        toggleDropdown: toggleDropdown,
+        getStats:       () => ({ totalMd, flatFiles, categories: getCategories() }),
+        refresh:        async () => { await init(); },
+    };
+
+    })();
+    </script>
+
+</body>
+</html>

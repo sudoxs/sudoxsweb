@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 — sudoxs archive</title>
+    <style>
+        :root {
+            --bg: #070a08;
+            --bg-deep: #040605;
+            --surface: #0c100d;
+            --surface-raised: #111611;
+            --ink: #b8beb7;
+            --ink-dim: #687168;
+            --ink-faint: #3e473f;
+            --ink-bright: #e2e5df;
+            --danger: #a9252b;
+            --danger-bright: #d34248;
+            --danger-dark: #4d1518;
+            --signal: #8da27d;
+            --border: #202720;
+            --border-strong: #394039;
+            --font-mono: "IBM Plex Mono","Cascadia Code",Consolas,"Liberation Mono",monospace;
+            --font-display:"Franklin Gothic Condensed","Liberation Sans Narrow","Nimbus Sans Narrow",sans-serif;
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        html{font-size:15px;background:var(--bg-deep)}
+        body{
+            min-height:100vh;display:flex;align-items:center;justify-content:center;
+            background:radial-gradient(circle at 78% 12%,rgba(74,91,65,.11),transparent 27rem),
+                       radial-gradient(circle at 13% 76%,rgba(126,23,29,8%),transparent 30rem),
+                       linear-gradient(135deg,var(--bg-deep),var(--bg) 46%,#090d0a);
+            color:var(--ink);font-family:var(--font-mono);line-height:1.7;
+        }
+        .container{
+            text-align:center;padding:2rem;
+            border:1px solid var(--border-strong);
+            background:linear-gradient(135deg,rgba(255,255,255,.025),transparent 33%),rgba(9,13,10,.76);
+            clip-path:polygon(0 0,calc(100% - 24px) 0,100% 24px,100% 100%,24px 100%,0 calc(100% - 24px));
+            box-shadow:22px 22px rgba(0,0,0,.14);
+            max-width:600px;width:90%;
+        }
+        .err-code{
+            font-family:var(--font-display);font-size:clamp(6rem,15vw,11rem);
+            font-weight:900;color:var(--danger-bright);line-height:1;
+            letter-spacing:-.04em;
+        }
+        h1{color:var(--ink-bright);font-family:var(--font-display);font-size:1.5rem;margin:1rem 0}
+        p{color:var(--ink-dim);font-size:.8rem;margin-bottom:2rem;line-height:1.8}
+        a{
+            display:inline-flex;align-items:center;gap:.5rem;
+            padding:.7rem 1.3rem;border:1px solid var(--danger-dark);
+            background:rgba(88,16,20,.18);color:var(--ink-bright);
+            font-size:.6rem;letter-spacing:.12em;text-decoration:none;
+            transition:background 180ms ease,border-color 180ms ease;
+        }
+        a:hover{border-color:var(--danger-bright);background:rgba(125,24,29,.28)}
+        .footer-mark{color:var(--ink-faint);font-size:.5rem;letter-spacing:.15em;margin-top:1.5rem}
+        ::selection{background:var(--danger-dark);color:var(--ink-bright)}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="err-code">404</div>
+        <h1>TARGET NOT FOUND</h1>
+        <p>The requested resource does not exist in this archive.<br>It may have been moved, deleted, or never existed.</p>
+        <a href="/">← RETURN TO ROOT</a>
+        <div class="footer-mark">[SUDOXS] — OFFENSIVE SECURITY ARCHIVE</div>
+    </div>
+    <script>
+        // Auto-redirect if this is a GitHub Pages 404 on a hash route
+        (function(){
+            const path = window.location.pathname;
+            const hash = window.location.hash;
+            // If there's a hash, the main SPA can handle it — redirect to root with hash preserved
+            if(hash && hash.startsWith("#/")){
+                window.location.replace("/"+hash);
+            }
+            // If path looks like a category or file, redirect to root with appropriate hash
+            const parts = path.replace(/^\/|\/$/g,"").split("/");
+            if(parts.length>=2 && parts[0]==="sudoxs_playbook"){
+                // Try to redirect to main site file viewer
+                const cat = parts[1];
+                const file = parts.slice(2).join("/");
+                if(file) window.location.replace("/#/file/"+cat+"/"+encodeURIComponent(file));
+                else window.location.replace("/#/category/"+cat);
+            }
+        })();
+    </script>
+</body>
+</html>
