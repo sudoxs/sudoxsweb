@@ -327,6 +327,7 @@
         }
         .card{
             position:relative;grid-column:span 6;min-height:245px;overflow:hidden;
+            display:flex;flex-direction:column;
             padding:1.25rem 1.25rem 1.1rem;
             border:1px solid var(--border);
             background:linear-gradient(135deg,rgba(255,255,255,.018),transparent 45%),rgba(9,13,10,.74);
@@ -351,12 +352,12 @@
         .card:hover{border-color:var(--border-strong);background-color:var(--surface-raised);transform:translateY(-4px)}
         .card:hover::before{transform:scaleY(1)}
         .card:hover::after{transform:translateX(390%) rotate(14deg)}
-        .card-id{margin-bottom:2.4rem;color:var(--ink-faint);font-size:.52rem;letter-spacing:.15em}
+        .card-id{margin-bottom:2.4rem;color:var(--ink-faint);font-size:.52rem;letter-spacing:.15em;flex-shrink:0}
         .card-id::before{
             content:"";display:inline-block;width:18px;height:1px;
             margin-right:.6rem;background:var(--danger);vertical-align:middle;
         }
-        .card-tag{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.65rem}
+        .card-tag{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.65rem;flex-shrink:0}
         .card-tag span{
             padding:.18rem .45rem;border:1px solid var(--danger-dark);
             color:var(--danger-bright);font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;
@@ -367,15 +368,18 @@
             font-size:clamp(1.25rem,2.4vw,1.75rem);font-weight:800;
             letter-spacing:.01em;line-height:1.12;
             overflow-wrap:anywhere;word-break:break-word;
+            flex-shrink:0;
         }
         .card p{
-            max-width:92%;margin-bottom:2.2rem;
+            max-width:92%;margin-bottom:1.5rem;
             color:var(--ink-dim);font-size:.72rem;line-height:1.75;
             overflow-wrap:anywhere;word-break:break-word;
         }
         .card-meta{
-            position:absolute;right:1.2rem;bottom:1rem;left:1.2rem;
+            position:relative;left:auto;right:auto;bottom:auto;
+            margin-top:auto;padding-top:.5rem;flex-shrink:0;
             display:flex;align-items:center;justify-content:space-between;gap:1rem;
+            flex-wrap:wrap;
             color:var(--ink-faint);font-size:.49rem;letter-spacing:.09em;
         }
         .card-open{
@@ -595,7 +599,11 @@
             .containment-panel{width:min(100%,440px);min-height:390px;margin-left:auto}
             .recipe-grid{display:block}
             .card{margin-bottom:1rem;min-height:230px}
+            .card-id{margin-bottom:1.4rem}
+            .card p{margin-bottom:1rem}
             .archive-heading{align-items:flex-start;flex-direction:column;gap:.7rem}
+            .archive-cta{text-align:left}
+            .archive-cta .secondary-action{width:100%;justify-content:center;gap:.6rem}
             .footer-grid{grid-template-columns:1fr}
             .footer-links{justify-content:flex-start;flex-wrap:wrap}
             .explorer-grid{grid-template-columns:1fr}
