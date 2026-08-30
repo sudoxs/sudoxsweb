@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="sudoxs archive — full explorer & search">
+<title>ARCHIVE EXPLORER — sudoxs</title>
+<style>
+    /* ═══════════════════════ DESIGN TOKENS (matches main site) ═══════════════════════ */
+    :root {
+        --bg:          #070a08;
+        --bg-deep:     #040605;
+        --surface:     #0c100d;
+        --surface-raised: #111611;
+        --surface-active: #151b16;
+        --ink:         #b8beb7;
+        --ink-dim:     #687168;
+        --ink-faint:   #3e473f;
+        --ink-bright:  #e2e5df;
+        --danger:      #a9252b;
+        --danger-bright: #d34248;
+        --danger-dark: #4d1518;
+        --signal:      #8da27d;
+        --signal-bright: #b3c4a6;
+        --amber:       #a88747;
+        --border:      #202720;
+        --border-strong: #394039;
+        --font-mono:   "IBM Plex Mono","Cascadia Code",Consolas,"Liberation Mono",monospace;
+        --font-display:"Franklin Gothic Condensed","Liberation Sans Narrow","Nimbus Sans Narrow",sans-serif;
+        --page-gap:    clamp(1rem, 3vw, 2.5rem);
+        --content-max: 1100px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:15px;scroll-behavior:smooth;background:var(--bg-deep);overflow-x:hidden;width:100%}
+    body{
+        min-height:100vh;max-width:100%;overflow-x:hidden;
+        background:radial-gradient(circle at 78% 12%,rgba(74,91,65,.11),transparent 27rem),
+                   radial-gradient(circle at 13% 76%,rgba(126,23,29,8%),transparent 30rem),
+                   linear-gradient(135deg,var(--bg-deep),var(--bg) 46%,#090d0a);
+        color:var(--ink);font-family:var(--font-mono);line-height:1.7;
+        -webkit-font-smoothing:antialiased;
+    }
+    a{color:inherit}
+    ::selection{background:var(--danger-dark);color:var(--ink-bright)}
+
+    /* ═══════════════════════ AMBIENT FX ═══════════════════════ */
+    .ambient-grid,.noise,.scanlines,.scan-beam{position:fixed;inset:0;pointer-events:none}
+    .ambient-grid{
+        z-index:0;opacity:.24;
+        background-image:linear-gradient(rgba(132,150,122,.035) 1px,transparent 1px),
+                         linear-gradient(90deg,rgba(132,150,122,.035) 1px,transparent 1px);
+        background-size:48px 48px;
+    }
+    .noise{
+        z-index:1;opacity:.022;
+        background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        background-size:180px 180px;
+    }
+    .scanlines{
+        z-index:2;opacity:.04;
+        background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.18) 2px,rgba(0,0,0,.18) 4px);
+    }
+    .scan-beam{
+        z-index:3;opacity:.03;
+        background:linear-gradient(180deg,transparent 0%,rgba(210,40,48,.12) 48%,transparent 100%);
+        animation:scan-page 7s ease-in-out infinite;
+    }
+    @keyframes scan-page{from{transform:translateY(-20vh)}to{transform:translateY(120vh)}}
+
+    /* ═══════════════════════ PYRAMID BACKGROUND (full-page, faint) ═══════════════════════ */
+    .pyramid-bg{
+        position:fixed;inset:0;z-index:0;
+        display:flex;align-items:center;justify-content:center;
+        pointer-events:none;overflow:hidden;opacity:.055;
+        --pf: 62vmin;
+    }
+    .pyramid-loader{position:relative;width:var(--pf);height:var(--pf);transform-style:preserve-3d;transform:rotateX(-20deg)}
+    .pyramid-loader .wrapper{position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:sx-pyr-spin 4s linear infinite}
+    @keyframes sx-pyr-spin{100%{transform:rotateY(360deg)}}
+    .pyramid-loader .side{
+        width:calc(var(--pf) * .2333);height:calc(var(--pf) * .2333);
+        position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;
+        transform-origin:center top;clip-path:polygon(50% 0%,0% 100%,100% 100%);
+    }
+    .pyramid-loader .side1{transform:rotateZ(-30deg) rotateY(90deg);background:conic-gradient(#2BDEAC,#F028FD,#D8CCE6,#2F2585)}
+    .pyramid-loader .side2{transform:rotateZ(30deg) rotateY(90deg);background:conic-gradient(#2F2585,#D8CCE6,#F028FD,#2BDEAC)}
+    .pyramid-loader .side3{transform:rotateX(30deg);background:conic-gradient(#2F2585,#D8CCE6,#F028FD,#2BDEAC)}
+    .pyramid-loader .side4{transform:rotateX(-30deg);background:conic-gradient(#2BDEAC,#F028FD,#D8CCE6,#2F2585)}
+    .pyramid-loader .shadow{
+        width:calc(var(--pf) * .2);height:calc(var(--pf) * .2);
+        position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;
+        transform:rotateX(90deg) translateZ(calc(var(--pf) * -.1333));
+        filter:blur(12px);background:#8B5AD5;
+    }
+    @media(prefers-reduced-motion:reduce){
+        .pyramid-loader .wrapper{animation:none}
+    }
+
+    /* ═══════════════════════ CONTAINER ═══════════════════════ */
+    .container{position:relative;z-index:5;width:min(100% - var(--page-gap)*2, var(--content-max));margin:0 auto;padding:1.4rem 0 4rem}
+
+    /* ═══════════════════════ HEADER ═══════════════════════ */
+    .site-header{
+        display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem 1.5rem;
+        padding:.7rem 0 1.1rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);
+    }
+    .brand-lockup{display:flex;align-items:center;gap:.8rem}
+    .logo{color:var(--ink-bright);font-family:var(--font-display);font-size:1.18rem;font-weight:900;letter-spacing:.13em;line-height:1;text-decoration:none}
+    .logo-bracket{color:var(--danger-bright)}
+    .brand-code{padding-left:.8rem;border-left:1px solid var(--border-strong);color:var(--ink-dim);font-size:.58rem;letter-spacing:.17em}
+    .header-back{
+        display:inline-flex;align-items:center;gap:.4rem;color:var(--ink-dim);
+        font-size:.6rem;letter-spacing:.12em;text-decoration:none;transition:color 150ms ease;
+    }
+    .header-back:hover{color:var(--danger-bright)}
+
+    /* ═══════════════════════ PAGE HEAD ═══════════════════════ */
+    .page-head{margin-bottom:1.6rem}
+    .section-kicker{display:block;margin-bottom:.45rem;color:var(--danger-bright);font-size:.56rem;letter-spacing:.2em}
+    .page-head h1{
+        color:var(--ink-bright);font-family:var(--font-display);
+        font-size:clamp(1.9rem,5vw,3rem);font-weight:900;letter-spacing:-.02em;line-height:1;text-transform:uppercase;
+    }
+    .page-head p{color:var(--ink-dim);font-size:.72rem;margin-top:.6rem;max-width:640px;line-height:1.8}
+
+    /* ═══════════════════════ SEARCH PANEL ═══════════════════════ */
+    .search-panel{
+        display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.6rem;
+    }
+    .search-box{
+        position:relative;border:1px solid var(--border-strong);
+        background:linear-gradient(135deg,rgba(255,255,255,.02),transparent 45%),rgba(9,13,10,.76);
+        padding:.15rem;
+    }
+    .search-box label{
+        display:flex;align-items:center;gap:.4rem;padding:.55rem .7rem .1rem;
+        color:var(--ink-faint);font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;
+    }
+    .search-box .dot{width:5px;height:5px;border-radius:50%;background:var(--signal);flex-shrink:0}
+    .search-box.content .dot{background:var(--danger-bright)}
+    .search-box input{
+        width:100%;padding:.55rem .7rem .7rem;border:0;background:transparent;
+        color:var(--ink-bright);font-family:var(--font-mono);font-size:.82rem;letter-spacing:.02em;outline:none;
+    }
+    .search-box input::placeholder{color:var(--ink-faint)}
+    .search-status{
+        min-height:1.1rem;padding:0 .7rem .55rem;color:var(--ink-faint);font-size:.5rem;letter-spacing:.08em;
+    }
+    .search-status.active{color:var(--signal)}
+    .clear-btn{
+        position:absolute;top:.5rem;right:.5rem;width:1.4rem;height:1.4rem;
+        display:none;align-items:center;justify-content:center;
+        border:1px solid var(--border-strong);background:transparent;color:var(--ink-dim);
+        cursor:pointer;font-size:.7rem;line-height:1;
+    }
+    .clear-btn:hover{color:var(--danger-bright);border-color:var(--danger-bright)}
+    .search-box.has-value .clear-btn{display:flex}
+
+    /* ═══════════════════════ RESULT META ═══════════════════════ */
+    .result-meta{
+        display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+        margin-bottom:1rem;padding-bottom:.7rem;border-bottom:1px solid var(--border);
+        color:var(--ink-faint);font-size:.53rem;letter-spacing:.1em;
+    }
+
+    /* ═══════════════════════ TREE ═══════════════════════ */
+    .tree-root{
+        border:1px solid var(--border-strong);
+        background:linear-gradient(135deg,rgba(255,255,255,.015),transparent 45%),rgba(9,13,10,.7);
+        padding:.6rem 0;max-height:none;
+    }
+    ul.xtree{list-style:none;margin:0;padding:0}
+    ul.xtree ul.xtree{padding-left:1.35rem;border-left:1px dashed var(--border)}
+    .xnode{display:flex;align-items:center;gap:.5rem;padding:.42rem .9rem;cursor:pointer;user-select:none;
+        transition:background 130ms ease;position:relative}
+    .xnode:hover{background:rgba(255,255,255,.02)}
+    .xnode.file:hover{background:rgba(163,37,43,.08)}
+    .xtoggle{
+        width:.9rem;flex-shrink:0;color:var(--ink-faint);font-size:.6rem;
+        transition:transform 160ms ease;text-align:center;
+    }
+    li.open > .xnode > .xtoggle{transform:rotate(90deg);color:var(--signal)}
+    li.leaf > .xnode > .xtoggle{visibility:hidden}
+    .xicon{flex-shrink:0;font-size:.85rem;width:1.1rem;text-align:center}
+    .xname{
+        flex:1;min-width:0;color:var(--ink);font-size:.78rem;letter-spacing:.01em;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;
+    }
+    a.xname{color:var(--ink-bright)}
+    a.xname:hover{color:var(--danger-bright)}
+    .xnode.folder .xname{color:var(--ink-bright);font-weight:500}
+    .xmeta{flex-shrink:0;color:var(--ink-faint);font-size:.48rem;letter-spacing:.08em}
+    .xnode mark{background:rgba(211,66,72,.35);color:var(--ink-bright);padding:0 .1em;border-radius:2px}
+    li.xhidden{display:none}
+    .xchildren{display:none}
+    li.open > .xchildren{display:block}
+
+    .empty-state{
+        text-align:center;padding:3rem 1rem;color:var(--ink-faint);font-size:.68rem;letter-spacing:.08em;line-height:1.9;
+    }
+    .empty-state code{color:var(--signal-bright)}
+
+    /* ═══════════════════════ FOOTER ═══════════════════════ */
+    .site-footer{margin-top:4rem;padding-top:1.5rem}
+    .footer-divider{height:1px;margin-bottom:1.5rem;background:linear-gradient(90deg,var(--danger),var(--border) 35%,transparent)}
+    .footer-mark{color:var(--ink-faint);font-size:.5rem;letter-spacing:.15em;text-align:center}
+
+    @media(max-width:700px){
+        .search-panel{grid-template-columns:1fr}
+    }
+</style>
+</head>
+<body>
+
+<div class="pyramid-bg" aria-hidden="true">
+    <div class="pyramid-loader">
+        <div class="wrapper">
+            <span class="side side1"></span>
+            <span class="side side2"></span>
+            <span class="side side3"></span>
+            <span class="side side4"></span>
+            <span class="shadow"></span>
+        </div>
+    </div>
+</div>
+<div class="ambient-grid" aria-hidden="true"></div>
+<div class="noise" aria-hidden="true"></div>
+<div class="scanlines" aria-hidden="true"></div>
+<div class="scan-beam" aria-hidden="true"></div>
+
+<div class="container">
+    <header class="site-header">
+        <div class="brand-lockup">
+            <a href="index.html" class="logo" aria-label="sudoxs home">
+                <span class="logo-bracket">[</span>SUDOXS<span class="logo-bracket">]</span>
+            </a>
+            <span class="brand-code">OFFSEC / ARCHIVE</span>
+        </div>
+        <a href="index.html" class="header-back">← BACK TO ARCHIVE</a>
+    </header>
+
+    <div class="page-head">
+        <span class="section-kicker">FULL INDEX</span>
+        <h1>Archive Explorer</h1>
+        <p>Browse every folder and file in the archive as a tree, or search live — by file/folder name, or by the actual text inside each document.</p>
+    </div>
+
+    <div class="search-panel">
+        <div class="search-box name" id="nameBox">
+            <label><span class="dot"></span>SEARCH BY NAME</label>
+            <input type="text" id="nameSearch" placeholder="e.g. privilege-escalation, kerberos.md…" autocomplete="off" spellcheck="false">
+            <button class="clear-btn" id="nameClear" aria-label="clear">✕</button>
+            <div class="search-status" id="nameStatus"></div>
+        </div>
+        <div class="search-box content" id="contentBox">
+            <label><span class="dot"></span>SEARCH IN FILE CONTENTS</label>
+            <input type="text" id="contentSearch" placeholder="e.g. mimikatz, GPO abuse, LFI…" autocomplete="off" spellcheck="false">
+            <button class="clear-btn" id="contentClear" aria-label="clear">✕</button>
+            <div class="search-status" id="contentStatus"></div>
+        </div>
+    </div>
+
+    <div class="result-meta" id="resultMeta"></div>
+
+    <div class="tree-root" id="treeRoot">
+        <div class="empty-state">LOADING ARCHIVE…</div>
+    </div>
+
+    <footer class="site-footer">
+        <div class="footer-divider"></div>
+        <div class="footer-mark">[SUDOXS] — OFFENSIVE SECURITY ARCHIVE // FULL INDEX MODULE</div>
+    </footer>
+</div>
+
+<script>
+(function(){
+    "use strict";
+
+    let tree = [];
+    let allFiles = [];          // every {name,type,path,download_url} file node, flattened
+    let contentCache = {};      // path -> lowercase text
+    let indexingStarted = false;
+    let indexingDone = false;
+
+    const treeRoot     = document.getElementById("treeRoot");
+    const nameInput     = document.getElementById("nameSearch");
+    const contentInput  = document.getElementById("contentSearch");
+    const nameBox       = document.getElementById("nameBox");
+    const contentBox    = document.getElementById("contentBox");
+    const nameStatus    = document.getElementById("nameStatus");
+    const contentStatus = document.getElementById("contentStatus");
+    const resultMeta    = document.getElementById("resultMeta");
+
+    function escapeHTML(str){
+        const d = document.createElement("div");
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
+    function highlight(text, query){
+        if(!query) return escapeHTML(text);
+        const esc = escapeHTML(text);
+        const q = escapeHTML(query);
+        try{
+            const re = new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","ig");
+            return esc.replace(re, "<mark>$1</mark>");
+        }catch(e){ return esc; }
+    }
+
+    function flattenFiles(nodes){
+        let out = [];
+        for(const n of nodes){
+            if(n.type === "file") out.push(n);
+            if(n.type === "dir" && n.children) out = out.concat(flattenFiles(n.children));
+        }
+        return out;
+    }
+
+    async function loadTree(){
+        try{
+            const res = await fetch("tree.json");
+            if(!res.ok) throw new Error("tree.json HTTP "+res.status);
+            tree = await res.json();
+        }catch(e){
+            console.error("Explorer: could not load tree.json", e);
+            tree = [];
+        }
+        allFiles = flattenFiles(tree);
+    }
+
+    // ═══════════════════════ CONTENT INDEXING (lazy, cached, once) ═══════════════════════
+    function ensureContentIndex(){
+        if(indexingStarted) return;
+        indexingStarted = true;
+        const mdFiles = allFiles.filter(f => /\.md$/i.test(f.name));
+        let done = 0;
+        const total = mdFiles.length;
+
+        if(total === 0){
+            indexingDone = true;
+            contentStatus.textContent = "No .md files to index.";
+            return;
+        }
+
+        contentStatus.textContent = `Indexing 0/${total} files…`;
+
+        const CONCURRENCY = 6;
+        let cursor = 0;
+
+        function worker(){
+            return new Promise(resolve => {
+                function next(){
+                    if(cursor >= mdFiles.length){ resolve(); return; }
+                    const f = mdFiles[cursor++];
+                    const url = f.download_url || f.path;
+                    fetch(url).then(r => r.ok ? r.text() : "").catch(() => "").then(txt => {
+                        contentCache[f.path] = (txt || "").toLowerCase();
+                        done++;
+                        if(done % 3 === 0 || done === total){
+                            contentStatus.textContent = indexingDone ? "" : `Indexing ${done}/${total} files…`;
+                        }
+                        next();
+                    });
+                }
+                next();
+            });
+        }
+
+        const workers = [];
+        for(let i=0;i<CONCURRENCY;i++) workers.push(worker());
+        Promise.all(workers).then(() => {
+            indexingDone = true;
+            contentStatus.textContent = `✓ ${total} files indexed`;
+            runSearch(); // re-run search now that content is available
+        });
+    }
+
+    // ═══════════════════════ FILTERING ═══════════════════════
+    // Returns a filtered clone of the tree, or null if a node matches nothing.
+    function filterNode(node, nameQ, contentQ){
+        if(node.type === "file"){
+            const nameOK = !nameQ || node.name.toLowerCase().includes(nameQ);
+            let contentOK = true;
+            if(contentQ){
+                const isMd = /\.md$/i.test(node.name);
+                const cached = contentCache[node.path];
+                contentOK = isMd && typeof cached === "string" && cached.includes(contentQ);
+            }
+            if(nameOK && contentOK) return Object.assign({}, node);
+            return null;
+        }
+        // dir
+        const filteredChildren = [];
+        for(const child of (node.children || [])){
+            const fc = filterNode(child, nameQ, contentQ);
+            if(fc) filteredChildren.push(fc);
+        }
+        const selfNameMatches = nameQ && node.name.toLowerCase().includes(nameQ) && !contentQ;
+        if(filteredChildren.length === 0 && !selfNameMatches) return null;
+        return Object.assign({}, node, { children: filteredChildren.length ? filteredChildren : (node.children || []) });
+    }
+
+    function filterTree(nameQ, contentQ){
+        if(!nameQ && !contentQ) return tree;
+        const out = [];
+        for(const root of tree){
+            const f = filterNode(root, nameQ, contentQ);
+            if(f) out.push(f);
+        }
+        return out;
+    }
+
+    // ═══════════════════════ RENDER ═══════════════════════
+    function countStats(nodes){
+        let dirs = 0, files = 0;
+        for(const n of nodes){
+            if(n.type === "dir"){ dirs++; if(n.children) { const s = countStats(n.children); dirs += s.dirs; files += s.files; } }
+            else files++;
+        }
+        return {dirs, files};
+    }
+
+    function buildNodeLi(node, catPath, forceOpen, nameQ, contentQ){
+        const li = document.createElement("li");
+
+        if(node.type === "dir"){
+            const currentPath = catPath ? catPath + "/" + node.name : node.name;
+            const children = node.children || [];
+            li.className = forceOpen ? "open" : "";
+
+            const row = document.createElement("div");
+            row.className = "xnode folder";
+            row.innerHTML = `<span class="xtoggle">▸</span><span class="xicon">📁</span><span class="xname">${highlight(node.name, nameQ)}</span><span class="xmeta">${children.length} item${children.length!==1?"s":""}</span>`;
+            row.addEventListener("click", () => {
+                li.classList.toggle("open");
+                });
+            li.appendChild(row);
+
+            const ul = document.createElement("ul");
+            ul.className = "xtree xchildren";
+            children.forEach(c => ul.appendChild(buildNodeLi(c, currentPath, forceOpen, nameQ, contentQ)));
+            li.appendChild(ul);
+        } else {
+            li.className = "leaf";
+            const isMd = /\.md$/i.test(node.name);
+            const displayName = node.name.replace(/\.md$/i, "");
+            const row = document.createElement("div");
+            row.className = "xnode file";
+            const icon = isMd ? "📄" : "📎";
+            const meta = escapeHTML(catPath || "root");
+            if(isMd){
+                row.innerHTML = `<span class="xtoggle"></span><span class="xicon">${icon}</span><a class="xname" href="index.html#/file/${encodeURIComponent(catPath).replace(/%2F/g,"/")}/${encodeURIComponent(node.name)}">${highlight(displayName, nameQ)}</a><span class="xmeta">${meta}</span>`;
+            } else {
+                const href = node.download_url || node.path;
+                row.innerHTML = `<span class="xtoggle"></span><span class="xicon">${icon}</span><a class="xname" href="${escapeHTML(href)}" target="_blank" rel="noopener">${highlight(node.name, nameQ)}</a><span class="xmeta">${meta}</span>`;
+            }
+            li.appendChild(row);
+        }
+        return li;
+    }
+
+    function render(){
+        const nameQ = nameInput.value.trim().toLowerCase();
+        const contentQ = contentInput.value.trim().toLowerCase();
+        const isSearching = !!(nameQ || contentQ);
+        const data = filterTree(nameQ, contentQ);
+
+        treeRoot.innerHTML = "";
+
+        if(!data.length){
+            const msg = tree.length === 0
+                ? `This archive is empty.<br>Run <code>python3 generate_tree.py</code> after adding folders with .md files, then push <code>tree.json</code>.`
+                : `No matches found${isSearching ? " for your search" : ""}.`;
+            treeRoot.innerHTML = `<div class="empty-state">${msg}</div>`;
+        } else {
+            const ul = document.createElement("ul");
+            ul.className = "xtree";
+            data.forEach(n => ul.appendChild(buildNodeLi(n, "", isSearching, nameQ, contentQ)));
+            treeRoot.appendChild(ul);
+        }
+
+        const stats = countStats(tree);
+        const visStats = countStats(data);
+        resultMeta.textContent = isSearching
+            ? `SHOWING ${visStats.files} FILE${visStats.files!==1?"S":""} · ${visStats.dirs} FOLDER${visStats.dirs!==1?"S":""} (of ${stats.files} total)`
+            : `${stats.files} FILE${stats.files!==1?"S":""} · ${stats.dirs} FOLDER${stats.dirs!==1?"S":""} TOTAL`;
+    }
+
+    // ═══════════════════════ SEARCH WIRING ═══════════════════════
+    let debounceTimer = null;
+    function runSearch(){
+        render();
+    }
+    function scheduleSearch(){
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(runSearch, 90); // near-instant, keystroke-driven
+    }
+
+    nameInput.addEventListener("input", () => {
+        nameBox.classList.toggle("has-value", !!nameInput.value);
+        scheduleSearch();
+    });
+    contentInput.addEventListener("input", () => {
+        contentBox.classList.toggle("has-value", !!contentInput.value);
+        if(contentInput.value.trim() && !indexingStarted) ensureContentIndex();
+        scheduleSearch();
+    });
+    document.getElementById("nameClear").addEventListener("click", () => {
+        nameInput.value = ""; nameBox.classList.remove("has-value"); nameInput.focus(); runSearch();
+    });
+    document.getElementById("contentClear").addEventListener("click", () => {
+        contentInput.value = ""; contentBox.classList.remove("has-value"); contentInput.focus(); runSearch();
+    });
+
+    // ═══════════════════════ INIT ═══════════════════════
+    (async function init(){
+        await loadTree();
+        render();
+        nameInput.focus();
+    })();
+
+})();
+</script>
+</body>
+</html>

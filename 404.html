@@ -33,6 +33,7 @@
             color:var(--ink);font-family:var(--font-mono);line-height:1.7;
         }
         .container{
+            position:relative;z-index:5;
             text-align:center;padding:2rem;
             border:1px solid var(--border-strong);
             background:linear-gradient(135deg,rgba(255,255,255,.025),transparent 33%),rgba(9,13,10,.76);
@@ -57,9 +58,47 @@
         a:hover{border-color:var(--danger-bright);background:rgba(125,24,29,.28)}
         .footer-mark{color:var(--ink-faint);font-size:.5rem;letter-spacing:.15em;margin-top:1.5rem}
         ::selection{background:var(--danger-dark);color:var(--ink-bright)}
+
+        /* ═══════════════════════ PYRAMID BACKGROUND (full-page, faint) ═══════════════════════ */
+        .pyramid-bg{
+            position:fixed;inset:0;z-index:0;
+            display:flex;align-items:center;justify-content:center;
+            pointer-events:none;overflow:hidden;opacity:.055;
+            --pf: 62vmin;
+        }
+        .pyramid-loader{position:relative;width:var(--pf);height:var(--pf);transform-style:preserve-3d;transform:rotateX(-20deg)}
+        .pyramid-loader .wrapper{position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:sx-pyr-spin 4s linear infinite}
+        @keyframes sx-pyr-spin{100%{transform:rotateY(360deg)}}
+        .pyramid-loader .side{
+            width:calc(var(--pf) * .2333);height:calc(var(--pf) * .2333);
+            position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;
+            transform-origin:center top;clip-path:polygon(50% 0%,0% 100%,100% 100%);
+        }
+        .pyramid-loader .side1{transform:rotateZ(-30deg) rotateY(90deg);background:conic-gradient(#2BDEAC,#F028FD,#D8CCE6,#2F2585)}
+        .pyramid-loader .side2{transform:rotateZ(30deg) rotateY(90deg);background:conic-gradient(#2F2585,#D8CCE6,#F028FD,#2BDEAC)}
+        .pyramid-loader .side3{transform:rotateX(30deg);background:conic-gradient(#2F2585,#D8CCE6,#F028FD,#2BDEAC)}
+        .pyramid-loader .side4{transform:rotateX(-30deg);background:conic-gradient(#2BDEAC,#F028FD,#D8CCE6,#2F2585)}
+        .pyramid-loader .shadow{
+            width:calc(var(--pf) * .2);height:calc(var(--pf) * .2);
+            position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;
+            transform:rotateX(90deg) translateZ(calc(var(--pf) * -.1333));
+            filter:blur(12px);background:#8B5AD5;
+        }
+        @media(prefers-reduced-motion:reduce){ .pyramid-loader .wrapper{animation:none} }
     </style>
 </head>
 <body>
+    <div class="pyramid-bg" aria-hidden="true">
+        <div class="pyramid-loader">
+            <div class="wrapper">
+                <span class="side side1"></span>
+                <span class="side side2"></span>
+                <span class="side side3"></span>
+                <span class="side side4"></span>
+                <span class="shadow"></span>
+            </div>
+        </div>
+    </div>
     <div class="container">
         <div class="err-code">404</div>
         <h1>TARGET NOT FOUND</h1>
