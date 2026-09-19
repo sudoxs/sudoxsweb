@@ -5,28 +5,21 @@
     "path": "Tools",
     "children": [
       {
-        "name": "EN",
+        "name": "ZRAM",
         "type": "dir",
-        "path": "Tools/EN",
+        "path": "Tools/ZRAM",
         "children": [
           {
-            "name": "ZRAM.md",
+            "name": "ZRAM(EN).md",
             "type": "file",
-            "path": "Tools/EN/ZRAM.md",
-            "download_url": "Tools/EN/ZRAM.md"
-          }
-        ]
-      },
-      {
-        "name": "JP",
-        "type": "dir",
-        "path": "Tools/JP",
-        "children": [
+            "path": "Tools/ZRAM/ZRAM(EN).md",
+            "download_url": "Tools/ZRAM/ZRAM(EN).md"
+          },
           {
-            "name": "ZRAM.md",
+            "name": "ZRAM(JP).md",
             "type": "file",
-            "path": "Tools/JP/ZRAM.md",
-            "download_url": "Tools/JP/ZRAM.md"
+            "path": "Tools/ZRAM/ZRAM(JP).md",
+            "download_url": "Tools/ZRAM/ZRAM(JP).md"
           }
         ]
       }

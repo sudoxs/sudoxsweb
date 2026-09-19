@@ -1369,82 +1369,138 @@
     /* ── Simple Markdown → HTML parser (no external deps) ── */
     function simpleMarkdown(md){
         let html = md;
-        const uidMap = {};
-        let uidCounter = 0;
 
-        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
-            const uid = `%%CODEBLOCK_${uidCounter++}%%`;
-            uidMap[uid] = `<pre><code class="language-${lang}">${escapeHTML(code.trim())}</code></pre>`;
-            return uid;
+        // ── Phase 1: stash code blocks and inline code with NUL-delimited tokens
+        //    Using \u0000 ensures no interference from any markdown regex.
+        const stash = [];
+        function put(htmlFragment){
+            const token = "\u0000STASH" + stash.length + "\u0000";
+            stash.push(htmlFragment);
+            return token;
+        }
+
+        // Fenced code blocks (```lang ... ```)
+        html = html.replace(/```([a-zA-Z0-9_+-]*)\n([\s\S]*?)```/g, function(_, lang, code){
+            const cls = lang ? ` class="language-${lang}"` : "";
+            return put("<pre><code" + cls + ">" + escapeHTML(code.replace(/\n$/, "")) + "</code></pre>");
         });
 
-        html = html.replace(/`([^`]+)`/g, (_, code) => {
-            const uid = `%%INLINECODE_${uidCounter++}%%`;
-            uidMap[uid] = `<code>${escapeHTML(code)}</code>`;
-            return uid;
+        // Inline code (`...`)
+        html = html.replace(/`([^`\n]+)`/g, function(_, code){
+            return put("<code>" + escapeHTML(code) + "</code>");
         });
 
-        html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        // ── Phase 2: HTML-escape the rest of the document
+        html = html.replace(/&/g, "&amp;")
+                   .replace(/</g, "&lt;")
+                   .replace(/>/g, "&gt;");
 
-        html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-        html = html.replace(/__([^_]+)__/g, "<strong>$1</strong>");
-        html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-        html = html.replace(/_([^_]+)_/g, "<em>$1</em>");
+        // ── Phase 3: block-level markdown ──
 
-        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+        // Fenced code blocks already stashed; nothing else to do here.
 
+        // Blockquotes — handle line-by-line so multi-line quotes merge
+        html = html.replace(/^(?:&gt;\s?.*(?:\n|$))+/gm, function(block){
+            const inner = block.replace(/^&gt;\s?/gm, "").replace(/\n+$/,"");
+            return "<blockquote>" + inner + "</blockquote>\n";
+        });
+
+        // Headings
         html = html.replace(/^#### (.+)$/gm, "<h4>$1</h4>");
         html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
         html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
         html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
 
-        html = html.replace(/^---$/gm, "<hr>");
-        html = html.replace(/^\*\*\*$/gm, "<hr>");
+        // Horizontal rules
+        html = html.replace(/^ {0,3}([-*_])(?:\s*\1){2,}\s*$/gm, "<hr>");
 
-        html = html.replace(/^&gt; (.+)$/gm, "<blockquote>$1</blockquote>");
-        html = html.replace(/<\/blockquote>\n<blockquote>/g, "<br>");
-
-        html = html.replace(/^[\-\*] (.+)$/gm, "<li>$1</li>");
-        html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul>$1</ul>");
-
-        html = html.replace(/^\d+\. (.+)$/gm, "<li>$1</li>");
-
-        html = html.replace(/^\|(.+)\|$/gm, (row) => {
-            const cells = row.split("|").filter(c => c.trim());
-            if(/^[\s\-:]+$/.test(cells[0] || "")) return "";
-            const tag = "td";
-            return "<tr>" + cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join("") + "</tr>";
+        // Tables (GitHub-flavoured)
+        html = html.replace(/^\|(.+)\|\s*$/gm, function(row){
+            const cells = row.split("|").slice(1, -1).map(c => c.trim());
+            if(cells.every(c => /^:?-+:?$/.test(c))) return "\u0001TBLSEP\u0001";
+            return "<tr>" + cells.map(c => "<td>" + c + "</td>").join("") + "</tr>";
         });
-        html = html.replace(/((?:<tr>.*<\/tr>\n?)+)/g, (block) => {
-            return `<table>${block}</table>`;
-        });
-        html = html.replace(/<table>\s*<tr>(<td>.*?<\/td>\s*)<\/tr>/, (_, cells) => {
-            return "<table><tr>" + cells.replace(/<td>/g, "<th>").replace(/<\/td>/g, "</th>") + "</tr>";
+        html = html.replace(/((?:<tr>.*<\/tr>\n?\u0001TBLSEP\u0001\n?)|(?:<tr>.*<\/tr>\n?))/g, function(block){
+            // Extract header row if separator was present
+            const hasSep = block.indexOf("\u0001TBLSEP\u0001") !== -1;
+            const rows = block.replace(/\u0001TBLSEP\u0001\n?/g, "").split("\n").filter(Boolean);
+            if(!rows.length) return "";
+            let out = "<table>";
+            if(hasSep){
+                const headerRow = rows.shift().replace(/<td>/g, "<th>").replace(/<\/td>/g, "</th>");
+                out += headerRow;
+            }
+            out += rows.join("") + "</table>";
+            return out;
         });
 
+        // Lists — convert line-by-line, then wrap runs
         const lines = html.split("\n");
-        const outArr = [];
+        const processed = [];
+        for(let i = 0; i < lines.length; i++){
+            const line = lines[i];
+            const ulMatch = line.match(/^(\s*)[-*+]\s+(.+)$/);
+            const olMatch = line.match(/^(\s*)\d+\.\s+(.+)$/);
+            if(ulMatch){
+                processed.push("<li>" + ulMatch[2] + "</li>");
+            } else if(olMatch){
+                processed.push("<li>" + olMatch[2] + "</li>");
+            } else {
+                processed.push(line);
+            }
+        }
+        html = processed.join("\n");
+
+        // Wrap consecutive <li> in <ul>
+        html = html.replace(/(?:^[ \t]*<li>.*<\/li>[ \t]*\n?)+/gm, function(block){
+            const items = block.match(/<li>.*?<\/li>/g) || [];
+            return "<ul>" + items.join("") + "</ul>\n";
+        });
+
+        // ── Phase 4: inline formatting (only on non-block content) ──
+
+        // Bold & italic (order matters)
+        html = html.replace(/\*\*\*([^*\n]+)\*\*\*/g, "<strong><em>$1</em></strong>");
+        html = html.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+        html = html.replace(/__([^_\n]+)__/g, "<strong>$1</strong>");
+        html = html.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+        html = html.replace(/(^|[^_])_([^_\n]+)_/g, "$1<em>$2</em>");
+
+        // Links & images (must not be inside code — already stashed)
+        html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img src="$2" alt="$1">');
+        html = html.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+        // ── Phase 5: wrap remaining plain text in <p> ──
+        const finalLines = html.split("\n");
+        const out = [];
         let buf = [];
-        const blockRE = /^<(h[1-4]|pre|ul|ol|li|table|hr|blockquote|tr|th|td|img|div)/;
-        for(const line of lines){
+        const blockRE = /^\s*<(?:h[1-4]|pre|ul|ol|li|table|thead|tbody|tr|th|td|hr|blockquote|div|p|img)\b/;
+        function flush(){
+            if(buf.length){
+                const text = buf.join("\n").trim();
+                if(text) out.push("<p>" + text + "</p>");
+                buf = [];
+            }
+        }
+        for(const line of finalLines){
             if(line.trim() === ""){
-                if(buf.length){ outArr.push(`<p>${buf.join("<br>")}</p>`); buf = []; }
+                flush();
                 continue;
             }
-            if(blockRE.test(line.trim())){
-                if(buf.length){ outArr.push(`<p>${buf.join("<br>")}</p>`); buf = []; }
-                outArr.push(line);
+            if(blockRE.test(line)){
+                flush();
+                out.push(line);
             } else {
                 buf.push(line);
             }
         }
-        if(buf.length) outArr.push(`<p>${buf.join("<br>")}</p>`);
-        html = outArr.join("\n");
+        flush();
+        html = out.join("\n");
 
-        for(const [uid, replacement] of Object.entries(uidMap)){
-            html = html.replace(uid, replacement);
-        }
+        // ── Phase 6: restore stashed code blocks / inline code ──
+        html = html.replace(/\u0000STASH(\d+)\u0000/g, function(_, n){
+            return stash[parseInt(n, 10)];
+        });
 
         return html;
     }
