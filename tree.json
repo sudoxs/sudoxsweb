@@ -5,6 +5,25 @@
     "path": "Tools",
     "children": [
       {
+        "name": "Reconnaissance & Directory Enumeration",
+        "type": "dir",
+        "path": "Tools/Reconnaissance & Directory Enumeration",
+        "children": [
+          {
+            "name": "Reconnaissance & Directory Enumeration (EN).md",
+            "type": "file",
+            "path": "Tools/Reconnaissance & Directory Enumeration/Reconnaissance & Directory Enumeration (EN).md",
+            "download_url": "Tools/Reconnaissance & Directory Enumeration/Reconnaissance & Directory Enumeration (EN).md"
+          },
+          {
+            "name": "Reconnaissance & Directory Enumeration (JP).md",
+            "type": "file",
+            "path": "Tools/Reconnaissance & Directory Enumeration/Reconnaissance & Directory Enumeration (JP).md",
+            "download_url": "Tools/Reconnaissance & Directory Enumeration/Reconnaissance & Directory Enumeration (JP).md"
+          }
+        ]
+      },
+      {
         "name": "ZRAM",
         "type": "dir",
         "path": "Tools/ZRAM",
