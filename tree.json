@@ -1,25 +1,25 @@
 [
   {
-    "name": "Security, Culture & Society",
+    "name": "Security - Culture - Society",
     "type": "dir",
-    "path": "Security, Culture & Society",
+    "path": "Security - Culture - Society",
     "children": [
       {
-        "name": "Video Game Cracking: From DRM to the Fall of EMPRESS",
+        "name": "Video Game Cracking - From DRM to the Fall of EMPRESS",
         "type": "dir",
-        "path": "Security, Culture & Society/Video Game Cracking: From DRM to the Fall of EMPRESS",
+        "path": "Security - Culture - Society/Video Game Cracking - From DRM to the Fall of EMPRESS",
         "children": [
           {
-            "name": "Video Game Cracking: From DRM to the Fall of EMPRESS.md",
+            "name": "Video Game Cracking - From DRM to the Fall of EMPRESS.md",
             "type": "file",
-            "path": "Security, Culture & Society/Video Game Cracking: From DRM to the Fall of EMPRESS/Video Game Cracking: From DRM to the Fall of EMPRESS.md",
-            "download_url": "Security, Culture & Society/Video Game Cracking: From DRM to the Fall of EMPRESS/Video Game Cracking: From DRM to the Fall of EMPRESS.md"
+            "path": "Security - Culture - Society/Video Game Cracking - From DRM to the Fall of EMPRESS/Video Game Cracking - From DRM to the Fall of EMPRESS.md",
+            "download_url": "Security - Culture - Society/Video Game Cracking - From DRM to the Fall of EMPRESS/Video Game Cracking - From DRM to the Fall of EMPRESS.md"
           },
           {
-            "name": "ビデオゲームクラッキング：DRMからEMPRESSの没落まで.md",
+            "name": "ビデオゲームクラッキング - DRMからEMPRESSの没落まで.md",
             "type": "file",
-            "path": "Security, Culture & Society/Video Game Cracking: From DRM to the Fall of EMPRESS/ビデオゲームクラッキング：DRMからEMPRESSの没落まで.md",
-            "download_url": "Security, Culture & Society/Video Game Cracking: From DRM to the Fall of EMPRESS/ビデオゲームクラッキング：DRMからEMPRESSの没落まで.md"
+            "path": "Security - Culture - Society/Video Game Cracking - From DRM to the Fall of EMPRESS/ビデオゲームクラッキング - DRMからEMPRESSの没落まで.md",
+            "download_url": "Security - Culture - Society/Video Game Cracking - From DRM to the Fall of EMPRESS/ビデオゲームクラッキング - DRMからEMPRESSの没落まで.md"
           }
         ]
       }
@@ -31,21 +31,21 @@
     "path": "Tools",
     "children": [
       {
-        "name": "Reconnaissance & Directory Enumeration",
+        "name": "Reconnaissance and Directory Enumeration",
         "type": "dir",
-        "path": "Tools/Reconnaissance & Directory Enumeration",
+        "path": "Tools/Reconnaissance and Directory Enumeration",
         "children": [
           {
             "name": "Web Reconnaissance Tool.md",
             "type": "file",
-            "path": "Tools/Reconnaissance & Directory Enumeration/Web Reconnaissance Tool.md",
-            "download_url": "Tools/Reconnaissance & Directory Enumeration/Web Reconnaissance Tool.md"
+            "path": "Tools/Reconnaissance and Directory Enumeration/Web Reconnaissance Tool.md",
+            "download_url": "Tools/Reconnaissance and Directory Enumeration/Web Reconnaissance Tool.md"
           },
           {
             "name": "Web偵察ツール チートシート.md",
             "type": "file",
-            "path": "Tools/Reconnaissance & Directory Enumeration/Web偵察ツール チートシート.md",
-            "download_url": "Tools/Reconnaissance & Directory Enumeration/Web偵察ツール チートシート.md"
+            "path": "Tools/Reconnaissance and Directory Enumeration/Web偵察ツール チートシート.md",
+            "download_url": "Tools/Reconnaissance and Directory Enumeration/Web偵察ツール チートシート.md"
           }
         ]
       },
@@ -55,16 +55,16 @@
         "path": "Tools/ZRAM",
         "children": [
           {
-            "name": "ZRAM: Compressed RAM Swap.md",
+            "name": "ZRAM - Compressed RAM Swap.md",
             "type": "file",
-            "path": "Tools/ZRAM/ZRAM: Compressed RAM Swap.md",
-            "download_url": "Tools/ZRAM/ZRAM: Compressed RAM Swap.md"
+            "path": "Tools/ZRAM/ZRAM - Compressed RAM Swap.md",
+            "download_url": "Tools/ZRAM/ZRAM - Compressed RAM Swap.md"
           },
           {
-            "name": "ZRAM: 圧縮RAMスワップ.md",
+            "name": "ZRAM - 圧縮RAMスワップ.md",
             "type": "file",
-            "path": "Tools/ZRAM/ZRAM: 圧縮RAMスワップ.md",
-            "download_url": "Tools/ZRAM/ZRAM: 圧縮RAMスワップ.md"
+            "path": "Tools/ZRAM/ZRAM - 圧縮RAMスワップ.md",
+            "download_url": "Tools/ZRAM/ZRAM - 圧縮RAMスワップ.md"
           }
         ]
       }
