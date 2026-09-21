@@ -7,8 +7,18 @@
     <meta name="author" content="sudoxs">
     <title>sudoxs // offensive security cookbook</title>
 
+    <!-- Apply saved theme BEFORE CSS loads to prevent flash -->
+    <script>
+        (function(){
+            try{
+                var saved = localStorage.getItem("sx-theme");
+                if(saved === "light") document.documentElement.classList.add("theme-light");
+            }catch(e){}
+        })();
+    </script>
+
     <style>
-        /* ═══════════════════════ DESIGN TOKENS ═══════════════════════ */
+        /* ═══════════════════════ DESIGN TOKENS — DARK (default) ═══════════════════════ */
         :root {
             --bg:          #070a08;
             --bg-deep:     #040605;
@@ -27,12 +37,18 @@
             --amber:       #a88747;
             --border:      #232a23;
             --border-strong: #3a423b;
+            --ambient-1:   rgba(74,91,65,.11);
+            --ambient-2:   rgba(126,23,29,.08);
+            --ambient-3:   #090d0a;
+            --scan-line:   rgba(0,0,0,.18);
+            --scan-beam:   rgba(210,40,48,.12);
+            --selection-bg: #4d1518;
+            --selection-fg: #e8ebe5;
             --font-mono:   "IBM Plex Mono","Cascadia Code",Consolas,"Liberation Mono",monospace;
             --font-display:"Franklin Gothic Condensed","Liberation Sans Narrow","Nimbus Sans Narrow",sans-serif;
             --page-gap:    clamp(1rem, 3vw, 2.5rem);
             --content-max: 1400px;
 
-            /* ── فونت‌های استاندارد و ریسپانسیو ── */
             --fs-3xs: clamp(0.62rem, 0.58rem + 0.2vw, 0.72rem);
             --fs-2xs: clamp(0.68rem, 0.64rem + 0.25vw, 0.78rem);
             --fs-xs:  clamp(0.74rem, 0.70rem + 0.3vw, 0.85rem);
@@ -43,16 +59,50 @@
             --fs-2xl: clamp(1.6rem, 1.3rem + 2vw, 2.4rem);
         }
 
+        /* ═══════════════════════ LIGHT THEME OVERRIDES ═══════════════════════ */
+        html.theme-light {
+            --bg:          #f3f1ec;
+            --bg-deep:     #e8e5dd;
+            --surface:     #ffffff;
+            --surface-raised: #f7f5f0;
+            --surface-active: #ece9e2;
+            --ink:         #2a2f2a;
+            --ink-dim:     #5a635a;
+            --ink-faint:   #8b938b;
+            --ink-bright:  #0d100d;
+            --danger:      #b8292f;
+            --danger-bright: #c9363c;
+            --danger-dark: #f0d5d6;
+            --signal:      #4f7040;
+            --signal-bright: #38542c;
+            --amber:       #8a6d2c;
+            --border:      #d6d2c8;
+            --border-strong: #b8b3a6;
+            --ambient-1:   rgba(74,91,65,.06);
+            --ambient-2:   rgba(126,23,29,.04);
+            --ambient-3:   #ebe8e0;
+            --scan-line:   rgba(0,0,0,.05);
+            --scan-beam:   rgba(210,40,48,.05);
+            --selection-bg: #c9363c;
+            --selection-fg: #ffffff;
+        }
+
+        html.theme-light .noise{opacity:.012}
+        html.theme-light .scanlines{opacity:.02}
+        html.theme-light .scan-beam{opacity:.012}
+        html.theme-light .ambient-grid{opacity:.18}
+
         /* ═══════════════════════ RESET ═══════════════════════ */
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{font-size:16px;scroll-behavior:smooth;background:var(--bg-deep);overflow-x:hidden;width:100%}
         body{
             min-height:100vh;max-width:100%;overflow-x:hidden;
-            background:radial-gradient(circle at 78% 12%,rgba(74,91,65,.11),transparent 27rem),
-                       radial-gradient(circle at 13% 76%,rgba(126,23,29,8%),transparent 30rem),
-                       linear-gradient(135deg,var(--bg-deep),var(--bg) 46%,#090d0a);
+            background:radial-gradient(circle at 78% 12%,var(--ambient-1),transparent 27rem),
+                       radial-gradient(circle at 13% 76%,var(--ambient-2),transparent 30rem),
+                       linear-gradient(135deg,var(--bg-deep),var(--bg) 46%,var(--ambient-3));
             color:var(--ink);font-family:var(--font-mono);line-height:1.7;
             -webkit-font-smoothing:antialiased;
+            transition:background-color .3s ease,color .3s ease;
         }
         a{color:inherit}
         a:focus-visible{outline:1px solid var(--danger-bright);outline-offset:5px}
@@ -73,11 +123,11 @@
         }
         .scanlines{
             z-index:2;opacity:.04;
-            background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.18) 2px,rgba(0,0,0,.18) 4px);
+            background:repeating-linear-gradient(0deg,transparent,transparent 2px,var(--scan-line) 2px,var(--scan-line) 4px);
         }
         .scan-beam{
             z-index:3;opacity:.03;
-            background:linear-gradient(180deg,transparent 0%,rgba(210,40,48,.12) 48%,transparent 100%);
+            background:linear-gradient(180deg,transparent 0%,var(--scan-beam) 48%,transparent 100%);
             animation:scan-page 7s ease-in-out infinite;
         }
 
@@ -144,6 +194,12 @@
         .nav-dropdown-trigger:hover,.nav-dropdown-trigger.active{
             color:var(--ink-bright);background:rgba(255,255,255,.018);
         }
+        html.theme-light .main-nav a:hover,
+        html.theme-light .main-nav a.active,
+        html.theme-light .nav-dropdown-trigger:hover,
+        html.theme-light .nav-dropdown-trigger.active{
+            background:rgba(0,0,0,.03);
+        }
         .main-nav a:hover::before,.main-nav a.active::before,
         .nav-dropdown-trigger:hover::before,.nav-dropdown-trigger.active::before{
             transform:scaleX(1);
@@ -157,7 +213,7 @@
             min-width:180px;padding:.3rem 0;
             border:1px solid var(--border-strong);
             background:var(--surface-raised);
-            box-shadow:0 8px 24px rgba(0,0,0,.5);
+            box-shadow:0 8px 24px rgba(0,0,0,.35);
         }
         .nav-dropdown.open .nav-dropdown-menu{display:block}
         .nav-dropdown-menu a{
@@ -167,6 +223,59 @@
             transition:background 150ms ease,color 150ms ease;
         }
         .nav-dropdown-menu a:hover{background:var(--surface-active);color:var(--ink-bright)}
+
+        /* ═══════════════════════ THEME SWITCH (Uiverse by MRez321) ═══════════════════════ */
+        .theme-switch {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          direction: rtl;
+        }
+        #theme-checkbox { display: none; }
+        #theme-checkbox + label {
+          font-size: 1.35rem;
+          height: 1em;
+          width: 2.5em;
+          border-radius: 0.25em;
+          cursor: pointer;
+          display: flex;
+          justify-content: space-between;
+          background-color: #cecece;
+          position: relative;
+          transition: background-color .3s ease;
+        }
+        #theme-checkbox:checked + label {
+          background-color: #3a3a3a;
+        }
+        #theme-checkbox + label:active {
+          transform: scale(0.85);
+          transition: transform 0.2s;
+        }
+        #theme-checkbox + label div {
+          width: 0.8em;
+          height: 0.8em;
+          border-radius: inherit;
+          position: absolute;
+          top: 0.1em;
+          left: 0.1em;
+          z-index: 10;
+          transition: 0.5s cubic-bezier(1, 0.33, 0.11, 1.34);
+          background-color: #f2f2f2;
+        }
+        #theme-checkbox:checked + label div {
+          left: 1.6em;
+          background-color: #212121;
+        }
+        #theme-checkbox + label span { display: flex; }
+        #theme-checkbox + label svg {
+          display: inline-block;
+          height: 1em;
+          width: 1em;
+          padding: 0.15em;
+          box-sizing: border-box;
+        }
+        #theme-checkbox + label span:first-of-type { color: #3a3a3a; }
+        #theme-checkbox + label span:last-of-type { color: #cecece; }
 
         /* ═══════════════════════ HERO (PIP-BOY full width) ═══════════════════════ */
         .home-hero{
@@ -183,6 +292,7 @@
             font-size:clamp(6rem,16vw,14rem);font-weight:900;
             letter-spacing:-.08em;line-height:1;pointer-events:none;z-index:0;
         }
+        html.theme-light .home-hero::before{color:rgba(0,0,0,.035)}
         .hero-copy{
             position:relative;z-index:2;
             display:flex;flex-direction:column;align-items:center;
@@ -207,6 +317,9 @@
             display:grid;grid-template-columns:repeat(4,1fr);
             margin-top:1rem;border:1px solid var(--border);
             background:linear-gradient(rgba(255,255,255,.012),transparent 60%);
+        }
+        html.theme-light .stats-row{
+            background:linear-gradient(rgba(0,0,0,.015),transparent 60%);
         }
         .stat-item{
             display:flex;flex-direction:column;gap:.35rem;
@@ -268,6 +381,9 @@
             transition:border-color 220ms ease,background 220ms ease,transform 220ms ease;
             cursor:pointer;overflow:hidden;
         }
+        html.theme-light .explorer-item{
+            background:linear-gradient(135deg,rgba(0,0,0,.012),transparent 45%),var(--surface);
+        }
         .explorer-item::before{
             content:"";position:absolute;inset:0 auto 0 0;width:2px;
             background:var(--danger-bright);transform:scaleY(0);
@@ -325,17 +441,20 @@
             border-radius:3px;font-size:.9em;color:var(--signal-bright);
             border:1px solid var(--border);
         }
+        html.theme-light .md-content code{color:var(--danger-bright)}
         .md-content pre{
             background:var(--surface);border:1px solid var(--border-strong);
             padding:1rem 1.2rem;overflow-x:auto;margin-bottom:1.2rem;
             font-size:var(--fs-sm);line-height:1.65;
             border-radius:3px;
         }
+        html.theme-light .md-content pre{background:#f5f3ee}
         .md-content pre code{background:none;border:0;padding:0;font-size:inherit;color:var(--ink)}
         .md-content blockquote{
             border-left:2px solid var(--danger);padding:.4rem 1rem;
             margin:1rem 0;color:var(--ink-dim);background:rgba(255,255,255,.01);
         }
+        html.theme-light .md-content blockquote{background:rgba(0,0,0,.02)}
         .md-content blockquote p:last-child{margin-bottom:0}
         .md-content ul,.md-content ol{padding-left:1.5rem;margin-bottom:1rem}
         .md-content ul ul,.md-content ul ol,.md-content ol ul,.md-content ol ol{margin-top:.25rem;margin-bottom:.25rem}
@@ -361,8 +480,10 @@
             font-weight:700;letter-spacing:.03em;
         }
         .md-content tr:nth-child(even) td{background:rgba(255,255,255,.012)}
+        html.theme-light .md-content tr:nth-child(even) td{background:rgba(0,0,0,.02)}
         .md-content hr{border:0;border-top:1px solid var(--border);margin:2rem 0}
         .md-content img{max-width:100%;border:1px solid var(--border);border-radius:3px;margin:.5rem 0}
+        .md-content input[type="checkbox"]{accent-color:var(--danger-bright);margin-right:.4rem}
 
         /* ═══════════════════════ 404 PAGE ═══════════════════════ */
         .page-404{
@@ -382,6 +503,7 @@
             font-size:var(--fs-xs);letter-spacing:.12em;text-decoration:none;
             cursor:pointer;transition:background 180ms ease,border-color 180ms ease;
         }
+        html.theme-light .page-404 .err-action{background:rgba(184,41,47,.08);color:var(--ink-bright)}
         .page-404 .err-action:hover{border-color:var(--danger-bright);background:rgba(125,24,29,.28)}
 
         /* ═══════════════════════ FOOTER ═══════════════════════ */
@@ -417,6 +539,7 @@
             overflow:hidden;
             transition:border-color 220ms ease,transform 220ms ease,box-shadow 220ms ease;
         }
+        html.theme-light .footer-icon-fx{background:rgba(0,0,0,.03)}
         .footer-icon-fx::before{
             content:"";position:absolute;width:200%;height:200%;
             background:radial-gradient(var(--clr,var(--signal)), transparent 68%);
@@ -425,8 +548,9 @@
             transition:opacity 260ms ease;
         }
         .footer-icon-fx::after{
-            content:"";position:absolute;inset:2px;background:rgba(9,13,10,.92);
+            content:"";position:absolute;inset:2px;background:var(--surface-raised);
         }
+        html.theme-light .footer-icon-fx::after{background:var(--surface)}
         .footer-icon-fx svg{
             position:relative;z-index:2;width:14px;height:14px;
             color:var(--ink-dim);
@@ -450,7 +574,9 @@
             100%{transform:translate(-50%,-50%)}
         }
 
-        /* ═══════════════════════ PIP-BOY WIDGET (FULL-WIDTH + NEON RED GLOW) ═══════════════════════ */
+        /* ═══════════════════════════════════════════════════════════════════
+           PIP-BOY WIDGET — DARK (default)
+           ═══════════════════════════════════════════════════════════════════ */
         .pipboy-wrapper {
           --pip-green: #d64a52;
           --pip-glow: rgba(214, 74, 82, 0.55);
@@ -470,7 +596,6 @@
         .pipboy-wrapper ::selection { background-color: var(--pip-green); color: var(--bg-dark); text-shadow: none; }
         .pipboy-wrapper input[type="radio"] { display: none; }
 
-        /* ── شاسی: بدون حاشیه خاکستری، فقط ظرف شفاف ── */
         .pipboy-chassis {
           position: relative; width: 100%;
           background: transparent;
@@ -480,9 +605,8 @@
           box-shadow: none;
           box-sizing: border-box;
         }
-        .pipboy-wrapper .screw { display: none; }   /* پیچ‌های تزئینی حذف شدن چون شاسی حذف شده */
+        .pipboy-wrapper .screw { display: none; }
 
-        /* ── CRT: بدون حاشیه مشکی، فقط نور نئونی قرمز از کنارها ── */
         .pipboy-wrapper .crt-screen {
           background-color: var(--bg-dark);
           border-radius: clamp(.8rem, 1.6vw, 1.5rem);
@@ -496,6 +620,7 @@
           aspect-ratio: 16/9;
           min-height: 380px;
           cursor: crosshair;
+          transition:background-color .3s ease,box-shadow .3s ease;
         }
         @media (min-width: 1100px){
           .pipboy-wrapper .crt-screen { aspect-ratio: 21/9; min-height: 420px; }
@@ -512,7 +637,7 @@
             font-size: clamp(0.85rem, 0.7rem + 0.6vw, 1.15rem);
         }
         .pipboy-wrapper .bold { font-weight: 900; }
-        .pipboy-wrapper .line { height: 2px; background-color: var(--pip-green); box-shadow: 0 0 8px var(--pip-glow); opacity: 0.8; }
+        .pipboy-wrapper .line { height: 2px; background-color: var(--pip-green); box-shadow: 0 0 8px var(--pip-glow); opacity: 0.8; transition:background-color .3s ease,box-shadow .3s ease; }
         .pipboy-wrapper .flexible { flex-grow: 1; margin: 0 clamp(6px, 1vw, 14px); }
         .pipboy-wrapper .top-bar, .pipboy-wrapper .bottom-bar {
             display: flex; align-items: center;
@@ -573,7 +698,6 @@
         .pipboy-wrapper .inventory-list li:hover,
         .pipboy-wrapper .active-terminal-line { background-color: var(--pip-green); color: var(--bg-dark); font-weight: bold; text-shadow: none; box-shadow: 0 0 10px var(--pip-glow); }
 
-        /* ── INV tab: embedded archive explorer ── */
         .pipboy-wrapper .inv-explorer { display: flex; flex-direction: column; width: 100%; height: 100%; gap: .6rem; min-height: 0; }
         .pipboy-wrapper .inv-search-panel { display: flex; gap: .5rem; flex-wrap: wrap; flex-shrink: 0; }
         .pipboy-wrapper .inv-search-box { position: relative; flex: 1 1 160px; min-width: 120px; border: 1px solid var(--pip-green); background: rgba(255, 30, 40, 0.06); box-shadow: inset 0 0 8px rgba(255, 30, 40, 0.15); }
@@ -615,7 +739,7 @@
         .pipboy-wrapper .inv-tree mark { background: var(--pip-green); color: var(--bg-dark); }
         .pipboy-wrapper .content-data { justify-content: center; align-items: center; flex-direction: column; gap: 15px; }
         .pipboy-wrapper .radio-visualizer { display: flex; gap: 4px; align-items: flex-end; height: 18px; margin-left: 12px; }
-        .pipboy-wrapper .bar { width: 4px; background-color: var(--pip-green); animation: sxpip-eqBounce 1s infinite alternate; }
+        .pipboy-wrapper .bar { width: 4px; background-color: var(--pip-green); animation: sxpip-eqBounce 1s infinite alternate; transition:background-color .3s ease; }
         .pipboy-wrapper .bar-1 { animation-delay: 0.1s; }
         .pipboy-wrapper .bar-2 { animation-delay: 0.3s; }
         .pipboy-wrapper .bar-3 { animation-delay: 0s; }
@@ -624,6 +748,111 @@
         @keyframes sxpip-crtScanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(800%)} }
         @keyframes sxpip-turnOnCRT { 0%{transform:scale(1,.005);opacity:0;filter:brightness(10)} 30%{transform:scale(1,.005);opacity:1;filter:brightness(5)} 60%{transform:scale(1,1);filter:brightness(2)} 100%{transform:scale(1,1);opacity:1;filter:brightness(1)} }
         @keyframes sxpip-eqBounce { 0%{height:4px} 100%{height:18px} }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           PIP-BOY WIDGET — LIGHT THEME OVERRIDES
+           ═══════════════════════════════════════════════════════════════════ */
+        html.theme-light .pipboy-wrapper {
+          --pip-green: #2f4d2a;              /* متن اصلی: سبز تیره */
+          --pip-glow: rgba(47, 77, 42, 0.22);
+          --bg-dark: #f4f2ec;                /* پس‌زمینه CRT: کرم روشن */
+        }
+        /* glow اطراف CRT: خیلی ملایم و آبی-خاکستری */
+        html.theme-light .pipboy-wrapper .crt-screen {
+          background-color: var(--bg-dark);
+          box-shadow:
+             0 0 6px 1px rgba(80, 90, 80, 0.15),
+             0 0 16px 3px rgba(80, 90, 80, 0.10),
+             0 0 32px 8px rgba(80, 90, 80, 0.06),
+             0 0 64px 16px rgba(80, 90, 80, 0.03);
+        }
+        html.theme-light .pipboy-wrapper .screen-glass {
+          background: radial-gradient(circle at 50% 50%, transparent 0%, rgba(0, 0, 0, 0.05) 85%);
+        }
+        html.theme-light .pipboy-wrapper .screen-glass::after {
+          background: linear-gradient(to bottom, transparent, rgba(47, 77, 42, 0.06), transparent);
+        }
+        html.theme-light .pipboy-wrapper .scanlines {
+          background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.05) 50%);
+          background-size: 100% 4px;
+        }
+        /* متن اصلی Pip-Boy: بدون glow اضافی در لایت‌مود */
+        html.theme-light .pipboy-wrapper .boot-sequence {
+          color: var(--pip-green);
+          text-shadow: none;
+        }
+        html.theme-light .pipboy-wrapper .line {
+          background-color: var(--pip-green);
+          box-shadow: none;
+          opacity: 0.55;
+        }
+        html.theme-light .pipboy-wrapper .archive-note .title-pip {
+          text-shadow: none;
+        }
+        html.theme-light .pipboy-wrapper .nav-item:hover {
+          background-color: rgba(47, 77, 42, 0.10);
+        }
+        /* تب فعال */
+        html.theme-light .pipboy-wrapper #tab-stat:checked ~ .pipboy-chassis label[for="tab-stat"],
+        html.theme-light .pipboy-wrapper #tab-inv:checked ~ .pipboy-chassis label[for="tab-inv"],
+        html.theme-light .pipboy-wrapper #tab-data:checked ~ .pipboy-chassis label[for="tab-data"] {
+          background-color: var(--pip-green);
+          color: #f4f2ec;
+          text-shadow: none;
+          box-shadow: none;
+        }
+        /* جستجو */
+        html.theme-light .pipboy-wrapper .inv-search-box {
+          border-color: var(--pip-green);
+          background: rgba(47, 77, 42, 0.05);
+          box-shadow: none;
+        }
+        html.theme-light .pipboy-wrapper .inv-search-box input {
+          color: var(--pip-green);
+          text-shadow: none;
+        }
+        html.theme-light .pipboy-wrapper .inv-search-box input::placeholder {
+          color: rgba(47, 77, 42, 0.45);
+        }
+        html.theme-light .pipboy-wrapper .inv-clear-btn {
+          color: var(--pip-green);
+          border-left-color: rgba(47, 77, 42, 0.25);
+        }
+        /* خطوط جداکننده */
+        html.theme-light .pipboy-wrapper .inv-tree-scroll {
+          border-top-color: rgba(47, 77, 42, 0.25);
+        }
+        html.theme-light .pipboy-wrapper .inv-tree-scroll::-webkit-scrollbar-track {
+          background: rgba(47, 77, 42, 0.06);
+        }
+        html.theme-light .pipboy-wrapper .inv-tree-scroll::-webkit-scrollbar-thumb {
+          background: var(--pip-green);
+        }
+        /* آیتم لیست DATA */
+        html.theme-light .pipboy-wrapper .inventory-list li {
+          border-bottom-color: rgba(47, 77, 42, 0.25);
+        }
+        /* hover در لیست DATA و درخت */
+        html.theme-light .pipboy-wrapper .inventory-list li:hover,
+        html.theme-light .pipboy-wrapper .active-terminal-line,
+        html.theme-light .pipboy-wrapper .inv-node:hover {
+          background-color: var(--pip-green);
+          color: #f4f2ec;
+          text-shadow: none;
+          box-shadow: none;
+        }
+        html.theme-light .pipboy-wrapper .inv-node:hover a { color: inherit; }
+        /* mark جستجو */
+        html.theme-light .pipboy-wrapper .inv-tree mark {
+          background: rgba(47, 77, 42, 0.22);
+          color: var(--pip-green);
+        }
+        /* آیکن‌های پوشه/فایل: در لایت‌مود کمی تیره‌تر */
+        html.theme-light .pipboy-wrapper .inv-icon {
+          filter: grayscale(1) brightness(0.55);
+        }
+        /* فیلتر متن‌های ضعیف */
+        html.theme-light .pipboy-wrapper .inv-meta { opacity: .55; }
 
         /* ═══════════════════════ ANIMATIONS ═══════════════════════ */
         @keyframes scan-page{from{transform:translateY(-20vh)}to{transform:translateY(120vh)}}
@@ -670,7 +899,7 @@
         }
 
         /* ═══════════════════════ MISC ═══════════════════════ */
-        ::selection{background:var(--danger-dark);color:var(--ink-bright)}
+        ::selection{background:var(--selection-bg);color:var(--selection-fg)}
         .hidden{display:none!important}
         .loading-placeholder{
             text-align:center;padding:3rem;color:var(--ink-faint);
@@ -706,6 +935,25 @@
                     <span class="status-light"></span>
                     <span>SYS.ONLINE</span>
                 </div>
+
+                <!-- THEME SWITCH (Uiverse.io by MRez321) -->
+                <div class="theme-switch">
+                  <input type="checkbox" id="theme-checkbox" />
+                  <label for="theme-checkbox">
+                    <div></div>
+                    <span>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path fill-rule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clip-rule="evenodd"></path>
+                      </svg>
+                    </span>
+                    <span>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"></path>
+                      </svg>
+                    </span>
+                  </label>
+                </div>
+
                 <nav class="main-nav" id="mainNav" aria-label="Primary navigation">
                     <!-- dynamically filled by JS -->
                 </nav>
@@ -752,10 +1000,25 @@
 
     /* ─────────────────────────────────────────────
        SX — Offensive Security Cookbook Engine
-       Static-site version: reads tree.json + local .md files
-       No hardcoded paths — fully dynamic from tree.json
        ───────────────────────────────────────────── */
     const SX = (function(){
+
+    // ═══════════════════════ THEME ═══════════════════════
+    function initTheme(){
+        const cb = document.getElementById("theme-checkbox");
+        if(!cb) return;
+        cb.checked = document.documentElement.classList.contains("theme-light");
+
+        cb.addEventListener("change", () => {
+            if(cb.checked){
+                document.documentElement.classList.add("theme-light");
+                try{ localStorage.setItem("sx-theme","light"); }catch(e){}
+            } else {
+                document.documentElement.classList.remove("theme-light");
+                try{ localStorage.setItem("sx-theme","dark"); }catch(e){}
+            }
+        });
+    }
 
     // ═══════════════════════ STATE ═══════════════════════
     let tree        = null;
@@ -1383,20 +1646,6 @@
 
     /* ─────────────────────────────────────────────────────────
        simpleMarkdown — GFM/Obsidian-compatible renderer
-       Handles:
-         - fenced code blocks (```lang) with proper stashing
-         - inline code (`...`)
-         - headings (# … ######), ATX style
-         - horizontal rules (---, ***, ___)
-         - blockquotes (> ...) including nested and multi-line
-         - ordered + unordered lists with nesting via indentation
-         - GFM tables with header separator row (| --- | --- |)
-         - bold, italic, bold-italic, strikethrough
-         - links [text](url) and images ![alt](url)
-         - autolinks <https://...>
-         - task lists (- [ ] / - [x])
-         - paragraphs with soft wrapping
-       All code is stashed with NUL tokens so no markdown regex touches it.
        ───────────────────────────────────────────────────────── */
     function simpleMarkdown(md){
         let html = md;
@@ -1409,46 +1658,37 @@
             return token;
         }
 
-        // Normalize line endings
         html = html.replace(/\r\n?/g, "\n");
 
-        // Fenced code blocks: ```lang\n ... \n```
-        // Also handle ~~~ fences and indented ``` inside lists
         html = html.replace(/^([ \t]*)(`{3,}|~{3,})[ \t]*([a-zA-Z0-9_+\-.#]*)[ \t]*\n([\s\S]*?)\n[ \t]*\2[ \t]*$/gm, function(_, indent, fence, lang, code){
             const cls = lang ? ` class="language-${lang}"` : "";
             return put("<pre><code" + cls + ">" + escapeHTML(code) + "</code></pre>");
         });
 
-        // Inline code (`...`)
         html = html.replace(/`([^`\n]+)`/g, function(_, code){
             return put("<code>" + escapeHTML(code) + "</code>");
         });
 
-        // ── Phase 2: escape HTML in the rest ──
+        // ── Phase 2: escape HTML ──
         html = html.replace(/&/g, "&amp;")
                    .replace(/</g, "&lt;")
                    .replace(/>/g, "&gt;");
 
-        // ── Phase 3: block-level constructs ──
-
-        // GFM tables: collect consecutive lines starting with |
+        // ── Phase 3: block-level ──
         html = html.replace(/(?:^[ \t]*\|.*\|[ \t]*\n?)+/gm, function(tableBlock){
             const rawLines = tableBlock.replace(/\n$/, "").split("\n");
             if(rawLines.length < 2) return tableBlock;
 
-            // Parse each row
             const parsed = rawLines.map(line => {
-                // strip leading/trailing pipe
                 let s = line.trim();
                 if(s.startsWith("|")) s = s.slice(1);
                 if(s.endsWith("|")) s = s.slice(0, -1);
                 return s.split("|").map(c => c.trim());
             });
 
-            // Detect separator row (2nd row of table): cells match :?-+:?
             const sep = parsed[1] || [];
             const isSep = sep.length > 0 && sep.every(c => /^:?-{1,}:?$/.test(c));
-            if(!isSep) return tableBlock; // not a valid GFM table
+            if(!isSep) return tableBlock;
 
             const headerCells = parsed[0];
             const bodyRows = parsed.slice(2);
@@ -1467,10 +1707,8 @@
             return t;
         });
 
-        // Horizontal rules (must be before list handling)
         html = html.replace(/^[ \t]{0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/gm, "<hr>");
 
-        // Headings
         html = html.replace(/^[ \t]{0,3}######[ \t]+(.+?)[ \t]*#*[ \t]*$/gm, "<h6>$1</h6>");
         html = html.replace(/^[ \t]{0,3}#####[ \t]+(.+?)[ \t]*#*[ \t]*$/gm, "<h5>$1</h5>");
         html = html.replace(/^[ \t]{0,3}####[ \t]+(.+?)[ \t]*#*[ \t]*$/gm, "<h4>$1</h4>");
@@ -1478,18 +1716,15 @@
         html = html.replace(/^[ \t]{0,3}##[ \t]+(.+?)[ \t]*#*[ \t]*$/gm, "<h2>$1</h2>");
         html = html.replace(/^[ \t]{0,3}#[ \t]+(.+?)[ \t]*#*[ \t]*$/gm, "<h1>$1</h1>");
 
-        // Blockquotes: merge consecutive > lines
         html = html.replace(/^(?:&gt;[ \t]?.*(?:\n|$))+/gm, function(block){
             let inner = block.replace(/&gt;[ \t]?/gm, "").replace(/\n+$/, "");
-            // Recursively render blockquote content (so nested md works)
             inner = simpleMarkdown(inner);
             return "<blockquote>" + inner + "</blockquote>\n";
         });
 
-        // Lists — process line by line, tracking indentation depth
+        // Lists
         const lines = html.split("\n");
         const out = [];
-        // listStack entries: { type: 'ul'|'ol'|'task', indent: number }
         const listStack = [];
 
         function closeAllLists(){
@@ -1511,21 +1746,18 @@
         for(let i = 0; i < lines.length; i++){
             const line = lines[i];
 
-            // Blank line: close all open lists
             if(line.trim() === ""){
                 closeAllLists();
                 out.push("");
                 continue;
             }
 
-            // Already a block element? flush lists and push as-is
             if(/^[ \t]*<(?:h[1-6]|pre|ul|ol|li|table|thead|tbody|tr|th|td|hr|blockquote|div|p|img)/.test(line)){
                 closeAllLists();
                 out.push(line);
                 continue;
             }
 
-            // List item?  "- foo", "* foo", "+ foo", "1. foo"
             const ulMatch = line.match(/^([ \t]*)([-*+])[ \t]+(.+)$/);
             const olMatch = line.match(/^([ \t]*)(\d+)\.[ \t]+(.+)$/);
 
@@ -1534,7 +1766,6 @@
                 const indent = rawIndent.replace(/\t/g, "    ").length;
                 const content = (ulMatch ? ulMatch[3] : olMatch[3]);
 
-                // Detect task list: [ ] or [x] at start of content
                 let taskPrefix = "";
                 let isTask = false;
                 const taskMatch = content.match(/^\[([ xX])\][ \t]+(.+)$/);
@@ -1542,13 +1773,11 @@
                     isTask = true;
                     const checked = taskMatch[1].toLowerCase() === "x";
                     taskPrefix = `<input type="checkbox" disabled${checked ? " checked" : ""}> `;
-                    // We'll keep the text after the checkbox
                 }
                 const itemContent = taskMatch ? taskMatch[2] : content;
 
                 const desiredType = olMatch ? "ol" : "ul";
 
-                // Manage the list stack
                 if(listStack.length === 0){
                     out.push("<" + desiredType + ">");
                     listStack.push({type: desiredType, indent: indent});
@@ -1565,7 +1794,6 @@
                             listStack.push({type: desiredType, indent: indent});
                         }
                     } else {
-                        // Same indent level — if list type changed, close & reopen
                         if(top.type !== desiredType && !(top.type === "ul" && desiredType === "ul")){
                             out.push("</" + top.type + ">");
                             listStack.pop();
@@ -1580,42 +1808,33 @@
                 continue;
             }
 
-            // Regular text — close lists
             closeAllLists();
             out.push(line);
         }
         closeAllLists();
         html = out.join("\n");
 
-        // ── Phase 4: inline formatting ──
-        // Bold+italic
+        // ── Phase 4: inline ──
         html = html.replace(/\*\*\*([^*\n]+)\*\*\*/g, "<strong><em>$1</em></strong>");
         html = html.replace(/___([^_\n]+)___/g, "<strong><em>$1</em></strong>");
-        // Bold
         html = html.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
         html = html.replace(/__([^_\n]+)__/g, "<strong>$1</strong>");
-        // Strikethrough
         html = html.replace(/~~([^~\n]+)~~/g, "<del>$1</del>");
-        // Italic (single asterisk) — avoid touching **
         html = html.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
-        // Italic (single underscore) — avoid touching __ and avoid intra-word
         html = html.replace(/(^|[^\w_])_([^_\n]+)_(?!\w)/g, "$1<em>$2</em>");
 
-        // Images BEFORE links
         html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, function(_, alt, src, title){
             const t = title ? ` title="${title}"` : "";
             return `<img src="${src}" alt="${alt}"${t}>`;
         });
-        // Links
         html = html.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, function(_, text, href, title){
             const t = title ? ` title="${title}"` : "";
             const ext = /^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : "";
             return `<a href="${href}"${t}${ext}>${text}</a>`;
         });
-        // Autolinks <https://...>
         html = html.replace(/&lt;(https?:\/\/[^&\s]+)&gt;/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
 
-        // ── Phase 5: wrap remaining plain text in <p> ──
+        // ── Phase 5: wrap paragraphs ──
         const finalLines = html.split("\n");
         const out2 = [];
         let buf = [];
@@ -1654,6 +1873,7 @@
 
     // ═══════════════════════ INIT ═══════════════════════
     async function init(){
+        initTheme();
         try{ await loadPlaybook(); }catch(e){ console.error("SX init error:", e); tree = []; }
 
         if(tree && tree.length){

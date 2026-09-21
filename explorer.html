@@ -5,8 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="sudoxs archive — full explorer & search">
 <title>ARCHIVE EXPLORER — sudoxs</title>
+
+<script>
+    (function(){
+        try{
+            var saved = localStorage.getItem("sx-theme");
+            if(saved === "light") document.documentElement.classList.add("theme-light");
+        }catch(e){}
+    })();
+</script>
+
 <style>
-    /* ═══════════════════════ DESIGN TOKENS (matches main site) ═══════════════════════ */
+    /* ═══════════════════════ DESIGN TOKENS (DARK) ═══════════════════════ */
     :root {
         --bg:          #070a08;
         --bg-deep:     #040605;
@@ -25,23 +35,65 @@
         --amber:       #a88747;
         --border:      #202720;
         --border-strong: #394039;
+        --ambient-1:   rgba(74,91,65,.11);
+        --ambient-2:   rgba(126,23,29,.08);
+        --ambient-3:   #090d0a;
+        --scan-line:   rgba(0,0,0,.18);
+        --scan-beam:   rgba(210,40,48,.12);
+        --selection-bg:#4d1518;
+        --selection-fg:#e2e5df;
         --font-mono:   "IBM Plex Mono","Cascadia Code",Consolas,"Liberation Mono",monospace;
         --font-display:"Franklin Gothic Condensed","Liberation Sans Narrow","Nimbus Sans Narrow",sans-serif;
         --page-gap:    clamp(1rem, 3vw, 2.5rem);
         --content-max: 1100px;
     }
+
+    /* ═══════════════════════ LIGHT THEME OVERRIDES ═══════════════════════ */
+    html.theme-light {
+        --bg:          #f3f1ec;
+        --bg-deep:     #e8e5dd;
+        --surface:     #ffffff;
+        --surface-raised: #f7f5f0;
+        --surface-active: #ece9e2;
+        --ink:         #2a2f2a;
+        --ink-dim:     #5a635a;
+        --ink-faint:   #8b938b;
+        --ink-bright:  #0d100d;
+        --danger:      #b8292f;
+        --danger-bright: #c9363c;
+        --danger-dark: #f0d5d6;
+        --signal:      #4f7040;
+        --signal-bright: #38542c;
+        --amber:       #8a6d2c;
+        --border:      #d6d2c8;
+        --border-strong: #b8b3a6;
+        --ambient-1:   rgba(74,91,65,.06);
+        --ambient-2:   rgba(126,23,29,.04);
+        --ambient-3:   #ebe8e0;
+        --scan-line:   rgba(0,0,0,.05);
+        --scan-beam:   rgba(210,40,48,.05);
+        --selection-bg:#c9363c;
+        --selection-fg:#ffffff;
+    }
+
+    html.theme-light .noise{opacity:.012}
+    html.theme-light .scanlines{opacity:.02}
+    html.theme-light .scan-beam{opacity:.012}
+    html.theme-light .ambient-grid{opacity:.18}
+
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html{font-size:15px;scroll-behavior:smooth;background:var(--bg-deep);overflow-x:hidden;width:100%}
     body{
         min-height:100vh;max-width:100%;overflow-x:hidden;
-        background:radial-gradient(circle at 78% 12%,rgba(74,91,65,.11),transparent 27rem),
-                   radial-gradient(circle at 13% 76%,rgba(126,23,29,8%),transparent 30rem),
-                   linear-gradient(135deg,var(--bg-deep),var(--bg) 46%,#090d0a);
+        background:radial-gradient(circle at 78% 12%,var(--ambient-1),transparent 27rem),
+                   radial-gradient(circle at 13% 76%,var(--ambient-2),transparent 30rem),
+                   linear-gradient(135deg,var(--bg-deep),var(--bg) 46%,var(--ambient-3));
         color:var(--ink);font-family:var(--font-mono);line-height:1.7;
         -webkit-font-smoothing:antialiased;
+        transition:background-color .3s ease,color .3s ease;
     }
     a{color:inherit}
-    ::selection{background:var(--danger-dark);color:var(--ink-bright)}
+    ::selection{background:var(--selection-bg);color:var(--selection-fg)}
 
     /* ═══════════════════════ AMBIENT FX ═══════════════════════ */
     .ambient-grid,.noise,.scanlines,.scan-beam{position:fixed;inset:0;pointer-events:none}
@@ -58,22 +110,23 @@
     }
     .scanlines{
         z-index:2;opacity:.04;
-        background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.18) 2px,rgba(0,0,0,.18) 4px);
+        background:repeating-linear-gradient(0deg,transparent,transparent 2px,var(--scan-line) 2px,var(--scan-line) 4px);
     }
     .scan-beam{
         z-index:3;opacity:.03;
-        background:linear-gradient(180deg,transparent 0%,rgba(210,40,48,.12) 48%,transparent 100%);
+        background:linear-gradient(180deg,transparent 0%,var(--scan-beam) 48%,transparent 100%);
         animation:scan-page 7s ease-in-out infinite;
     }
     @keyframes scan-page{from{transform:translateY(-20vh)}to{transform:translateY(120vh)}}
 
-    /* ═══════════════════════ PYRAMID BACKGROUND (full-page, faint) ═══════════════════════ */
+    /* ═══════════════════════ PYRAMID BACKGROUND ═══════════════════════ */
     .pyramid-bg{
         position:fixed;inset:0;z-index:0;
         display:flex;align-items:center;justify-content:center;
         pointer-events:none;overflow:hidden;opacity:.055;
         --pf: 62vmin;
     }
+    html.theme-light .pyramid-bg{opacity:.06;filter:hue-rotate(-15deg) saturate(.7)}
     .pyramid-loader{position:relative;width:var(--pf);height:var(--pf);transform-style:preserve-3d;transform:rotateX(-20deg)}
     .pyramid-loader .wrapper{position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:sx-pyr-spin 4s linear infinite}
     @keyframes sx-pyr-spin{100%{transform:rotateY(360deg)}}
@@ -108,11 +161,46 @@
     .logo{color:var(--ink-bright);font-family:var(--font-display);font-size:1.18rem;font-weight:900;letter-spacing:.13em;line-height:1;text-decoration:none}
     .logo-bracket{color:var(--danger-bright)}
     .brand-code{padding-left:.8rem;border-left:1px solid var(--border-strong);color:var(--ink-dim);font-size:.58rem;letter-spacing:.17em}
+    .header-right{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
     .header-back{
         display:inline-flex;align-items:center;gap:.4rem;color:var(--ink-dim);
         font-size:.6rem;letter-spacing:.12em;text-decoration:none;transition:color 150ms ease;
     }
     .header-back:hover{color:var(--danger-bright)}
+
+    /* ═══════════════════════ THEME SWITCH (Uiverse.io by MRez321) ═══════════════════════ */
+    .theme-switch {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      direction: rtl;
+    }
+    #theme-checkbox { display: none; }
+    #theme-checkbox + label {
+      font-size: 1.35rem;
+      height: 1em;
+      width: 2.5em;
+      border-radius: 0.25em;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      background-color: #cecece;
+      position: relative;
+      transition: background-color .3s ease;
+    }
+    #theme-checkbox:checked + label { background-color: #3a3a3a; }
+    #theme-checkbox + label:active { transform: scale(0.85); transition: transform 0.2s; }
+    #theme-checkbox + label div {
+      width: 0.8em; height: 0.8em; border-radius: inherit;
+      position: absolute; top: 0.1em; left: 0.1em; z-index: 10;
+      transition: 0.5s cubic-bezier(1, 0.33, 0.11, 1.34);
+      background-color: #f2f2f2;
+    }
+    #theme-checkbox:checked + label div { left: 1.6em; background-color: #212121; }
+    #theme-checkbox + label span { display: flex; }
+    #theme-checkbox + label svg { display: inline-block; height: 1em; width: 1em; padding: 0.15em; box-sizing: border-box; }
+    #theme-checkbox + label span:first-of-type { color: #3a3a3a; }
+    #theme-checkbox + label span:last-of-type { color: #cecece; }
 
     /* ═══════════════════════ PAGE HEAD ═══════════════════════ */
     .page-head{margin-bottom:1.6rem}
@@ -131,6 +219,9 @@
         position:relative;border:1px solid var(--border-strong);
         background:linear-gradient(135deg,rgba(255,255,255,.02),transparent 45%),rgba(9,13,10,.76);
         padding:.15rem;
+    }
+    html.theme-light .search-box{
+        background:linear-gradient(135deg,rgba(0,0,0,.012),transparent 45%),var(--surface);
     }
     .search-box label{
         display:flex;align-items:center;gap:.4rem;padding:.55rem .7rem .1rem;
@@ -169,12 +260,17 @@
         background:linear-gradient(135deg,rgba(255,255,255,.015),transparent 45%),rgba(9,13,10,.7);
         padding:.6rem 0;max-height:none;
     }
+    html.theme-light .tree-root{
+        background:linear-gradient(135deg,rgba(0,0,0,.01),transparent 45%),var(--surface);
+    }
     ul.xtree{list-style:none;margin:0;padding:0}
     ul.xtree ul.xtree{padding-left:1.35rem;border-left:1px dashed var(--border)}
     .xnode{display:flex;align-items:center;gap:.5rem;padding:.42rem .9rem;cursor:pointer;user-select:none;
         transition:background 130ms ease;position:relative}
     .xnode:hover{background:rgba(255,255,255,.02)}
+    html.theme-light .xnode:hover{background:rgba(0,0,0,.03)}
     .xnode.file:hover{background:rgba(163,37,43,.08)}
+    html.theme-light .xnode.file:hover{background:rgba(184,41,47,.06)}
     .xtoggle{
         width:.9rem;flex-shrink:0;color:var(--ink-faint);font-size:.6rem;
         transition:transform 160ms ease;text-align:center;
@@ -191,6 +287,7 @@
     .xnode.folder .xname{color:var(--ink-bright);font-weight:500}
     .xmeta{flex-shrink:0;color:var(--ink-faint);font-size:.48rem;letter-spacing:.08em}
     .xnode mark{background:rgba(211,66,72,.35);color:var(--ink-bright);padding:0 .1em;border-radius:2px}
+    html.theme-light .xnode mark{background:rgba(201,54,60,.25);color:var(--ink-bright)}
     li.xhidden{display:none}
     .xchildren{display:none}
     li.open > .xchildren{display:block}
@@ -199,6 +296,7 @@
         text-align:center;padding:3rem 1rem;color:var(--ink-faint);font-size:.68rem;letter-spacing:.08em;line-height:1.9;
     }
     .empty-state code{color:var(--signal-bright)}
+    html.theme-light .empty-state code{color:var(--danger-bright)}
 
     /* ═══════════════════════ FOOTER ═══════════════════════ */
     .site-footer{margin-top:4rem;padding-top:1.5rem}
@@ -236,7 +334,25 @@
             </a>
             <span class="brand-code">OFFSEC / ARCHIVE</span>
         </div>
-        <a href="index.html" class="header-back">← BACK TO ARCHIVE</a>
+        <div class="header-right">
+            <div class="theme-switch">
+              <input type="checkbox" id="theme-checkbox" />
+              <label for="theme-checkbox">
+                <div></div>
+                <span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                    <path fill-rule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clip-rule="evenodd"></path>
+                  </svg>
+                </span>
+                <span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"></path>
+                  </svg>
+                </span>
+              </label>
+            </div>
+            <a href="index.html" class="header-back">← BACK TO ARCHIVE</a>
+        </div>
     </header>
 
     <div class="page-head">
@@ -276,9 +392,25 @@
 (function(){
     "use strict";
 
+    /* ═══════════════════════ THEME ═══════════════════════ */
+    function initTheme(){
+        const cb = document.getElementById("theme-checkbox");
+        if(!cb) return;
+        cb.checked = document.documentElement.classList.contains("theme-light");
+        cb.addEventListener("change", () => {
+            if(cb.checked){
+                document.documentElement.classList.add("theme-light");
+                try{ localStorage.setItem("sx-theme","light"); }catch(e){}
+            } else {
+                document.documentElement.classList.remove("theme-light");
+                try{ localStorage.setItem("sx-theme","dark"); }catch(e){}
+            }
+        });
+    }
+
     let tree = [];
-    let allFiles = [];          // every {name,type,path,download_url} file node, flattened
-    let contentCache = {};      // path -> lowercase text
+    let allFiles = [];
+    let contentCache = {};
     let indexingStarted = false;
     let indexingDone = false;
 
@@ -328,7 +460,6 @@
         allFiles = flattenFiles(tree);
     }
 
-    // ═══════════════════════ CONTENT INDEXING (lazy, cached, once) ═══════════════════════
     function ensureContentIndex(){
         if(indexingStarted) return;
         indexingStarted = true;
@@ -371,12 +502,10 @@
         Promise.all(workers).then(() => {
             indexingDone = true;
             contentStatus.textContent = `✓ ${total} files indexed`;
-            runSearch(); // re-run search now that content is available
+            runSearch();
         });
     }
 
-    // ═══════════════════════ FILTERING ═══════════════════════
-    // Returns a filtered clone of the tree, or null if a node matches nothing.
     function filterNode(node, nameQ, contentQ){
         if(node.type === "file"){
             const nameOK = !nameQ || node.name.toLowerCase().includes(nameQ);
@@ -389,7 +518,6 @@
             if(nameOK && contentOK) return Object.assign({}, node);
             return null;
         }
-        // dir
         const filteredChildren = [];
         for(const child of (node.children || [])){
             const fc = filterNode(child, nameQ, contentQ);
@@ -410,7 +538,6 @@
         return out;
     }
 
-    // ═══════════════════════ RENDER ═══════════════════════
     function countStats(nodes){
         let dirs = 0, files = 0;
         for(const n of nodes){
@@ -431,9 +558,7 @@
             const row = document.createElement("div");
             row.className = "xnode folder";
             row.innerHTML = `<span class="xtoggle">▸</span><span class="xicon">📁</span><span class="xname">${highlight(node.name, nameQ)}</span><span class="xmeta">${children.length} item${children.length!==1?"s":""}</span>`;
-            row.addEventListener("click", () => {
-                li.classList.toggle("open");
-                });
+            row.addEventListener("click", () => { li.classList.toggle("open"); });
             li.appendChild(row);
 
             const ul = document.createElement("ul");
@@ -486,14 +611,11 @@
             : `${stats.files} FILE${stats.files!==1?"S":""} · ${stats.dirs} FOLDER${stats.dirs!==1?"S":""} TOTAL`;
     }
 
-    // ═══════════════════════ SEARCH WIRING ═══════════════════════
     let debounceTimer = null;
-    function runSearch(){
-        render();
-    }
+    function runSearch(){ render(); }
     function scheduleSearch(){
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(runSearch, 90); // near-instant, keystroke-driven
+        debounceTimer = setTimeout(runSearch, 90);
     }
 
     nameInput.addEventListener("input", () => {
@@ -512,8 +634,8 @@
         contentInput.value = ""; contentBox.classList.remove("has-value"); contentInput.focus(); runSearch();
     });
 
-    // ═══════════════════════ INIT ═══════════════════════
     (async function init(){
+        initTheme();
         await loadTree();
         render();
         nameInput.focus();
