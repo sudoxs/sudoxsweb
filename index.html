@@ -310,13 +310,15 @@
             max-width:900px;margin:0 auto;padding:2rem 0;
             color:var(--ink);line-height:1.85;font-size:var(--fs-md);
         }
-        .md-content h1,.md-content h2,.md-content h3,.md-content h4{
+        .md-content h1,.md-content h2,.md-content h3,.md-content h4,.md-content h5,.md-content h6{
             color:var(--ink-bright);font-family:var(--font-display);
-            letter-spacing:.01em;margin:2rem 0 .8rem;
+            letter-spacing:.01em;margin:2rem 0 .8rem;line-height:1.25;
         }
         .md-content h1{font-size:var(--fs-2xl);border-bottom:1px solid var(--border-strong);padding-bottom:.5rem}
         .md-content h2{font-size:var(--fs-xl)}
         .md-content h3{font-size:var(--fs-lg)}
+        .md-content h4{font-size:var(--fs-md)}
+        .md-content h5,.md-content h6{font-size:var(--fs-sm);text-transform:uppercase;letter-spacing:.06em}
         .md-content p{margin-bottom:1rem}
         .md-content code{
             background:var(--surface-active);padding:.18rem .45rem;
@@ -327,27 +329,40 @@
             background:var(--surface);border:1px solid var(--border-strong);
             padding:1rem 1.2rem;overflow-x:auto;margin-bottom:1.2rem;
             font-size:var(--fs-sm);line-height:1.65;
+            border-radius:3px;
         }
-        .md-content pre code{background:none;border:0;padding:0;font-size:inherit}
+        .md-content pre code{background:none;border:0;padding:0;font-size:inherit;color:var(--ink)}
         .md-content blockquote{
             border-left:2px solid var(--danger);padding:.4rem 1rem;
             margin:1rem 0;color:var(--ink-dim);background:rgba(255,255,255,.01);
         }
+        .md-content blockquote p:last-child{margin-bottom:0}
         .md-content ul,.md-content ol{padding-left:1.5rem;margin-bottom:1rem}
+        .md-content ul ul,.md-content ul ol,.md-content ol ul,.md-content ol ol{margin-top:.25rem;margin-bottom:.25rem}
         .md-content li{margin-bottom:.35rem}
+        .md-content li > p{margin-bottom:.25rem}
         .md-content a{color:var(--danger-bright);text-decoration:underline}
+        .md-content a:hover{color:var(--ink-bright)}
+        .md-content strong{color:var(--ink-bright);font-weight:700}
+        .md-content em{color:var(--ink-bright)}
         .md-content table{
-            display:block;width:100%;max-width:100%;
+            display:table;width:100%;max-width:100%;
             overflow-x:auto;-webkit-overflow-scrolling:touch;
-            border-collapse:collapse;margin-bottom:1.2rem;
+            border-collapse:collapse;margin:1.2rem 0;
+            font-size:var(--fs-sm);
         }
+        .md-content thead{background:var(--surface)}
         .md-content th,.md-content td{
-            border:1px solid var(--border);padding:.55rem .85rem;
-            text-align:left;font-size:var(--fs-sm);
+            border:1px solid var(--border-strong);padding:.55rem .85rem;
+            text-align:left;vertical-align:top;
         }
-        .md-content th{background:var(--surface);color:var(--ink-bright)}
+        .md-content th{
+            background:var(--surface);color:var(--ink-bright);
+            font-weight:700;letter-spacing:.03em;
+        }
+        .md-content tr:nth-child(even) td{background:rgba(255,255,255,.012)}
         .md-content hr{border:0;border-top:1px solid var(--border);margin:2rem 0}
-        .md-content img{max-width:100%;border:1px solid var(--border)}
+        .md-content img{max-width:100%;border:1px solid var(--border);border-radius:3px;margin:.5rem 0}
 
         /* ═══════════════════════ 404 PAGE ═══════════════════════ */
         .page-404{
@@ -1366,23 +1381,42 @@
         return "";
     }
 
-    /* ── Simple Markdown → HTML parser (no external deps) ── */
+    /* ─────────────────────────────────────────────────────────
+       simpleMarkdown — GFM/Obsidian-compatible renderer
+       Handles:
+         - fenced code blocks (```lang) with proper stashing
+         - inline code (`...`)
+         - headings (# … ######), ATX style
+         - horizontal rules (---, ***, ___)
+         - blockquotes (> ...) including nested and multi-line
+         - ordered + unordered lists with nesting via indentation
+         - GFM tables with header separator row (| --- | --- |)
+         - bold, italic, bold-italic, strikethrough
+         - links [text](url) and images ![alt](url)
+         - autolinks <https://...>
+         - task lists (- [ ] / - [x])
+         - paragraphs with soft wrapping
+       All code is stashed with NUL tokens so no markdown regex touches it.
+       ───────────────────────────────────────────────────────── */
     function simpleMarkdown(md){
         let html = md;
 
-        // ── Phase 1: stash code blocks and inline code with NUL-delimited tokens
-        //    Using \u0000 ensures no interference from any markdown regex.
+        // ── Phase 1: stash fenced code blocks & inline code ──
         const stash = [];
-        function put(htmlFragment){
-            const token = "\u0000STASH" + stash.length + "\u0000";
-            stash.push(htmlFragment);
+        function put(fragment){
+            const token = "\u0000SXSTASH" + stash.length + "X\u0000";
+            stash.push(fragment);
             return token;
         }
 
-        // Fenced code blocks (```lang ... ```)
-        html = html.replace(/```([a-zA-Z0-9_+-]*)\n([\s\S]*?)```/g, function(_, lang, code){
+        // Normalize line endings
+        html = html.replace(/\r\n?/g, "\n");
+
+        // Fenced code blocks: ```lang\n ... \n```
+        // Also handle ~~~ fences and indented ``` inside lists
+        html = html.replace(/^([ \t]*)(`{3,}|~{3,})[ \t]*([a-zA-Z0-9_+\-.#]*)[ \t]*\n([\s\S]*?)\n[ \t]*\2[ \t]*$/gm, function(_, indent, fence, lang, code){
             const cls = lang ? ` class="language-${lang}"` : "";
-            return put("<pre><code" + cls + ">" + escapeHTML(code.replace(/\n$/, "")) + "</code></pre>");
+            return put("<pre><code" + cls + ">" + escapeHTML(code) + "</code></pre>");
         });
 
         // Inline code (`...`)
@@ -1390,98 +1424,211 @@
             return put("<code>" + escapeHTML(code) + "</code>");
         });
 
-        // ── Phase 2: HTML-escape the rest of the document
+        // ── Phase 2: escape HTML in the rest ──
         html = html.replace(/&/g, "&amp;")
                    .replace(/</g, "&lt;")
                    .replace(/>/g, "&gt;");
 
-        // ── Phase 3: block-level markdown ──
+        // ── Phase 3: block-level constructs ──
 
-        // Fenced code blocks already stashed; nothing else to do here.
+        // GFM tables: collect consecutive lines starting with |
+        html = html.replace(/(?:^[ \t]*\|.*\|[ \t]*\n?)+/gm, function(tableBlock){
+            const rawLines = tableBlock.replace(/\n$/, "").split("\n");
+            if(rawLines.length < 2) return tableBlock;
 
-        // Blockquotes — handle line-by-line so multi-line quotes merge
-        html = html.replace(/^(?:&gt;\s?.*(?:\n|$))+/gm, function(block){
-            const inner = block.replace(/^&gt;\s?/gm, "").replace(/\n+$/,"");
+            // Parse each row
+            const parsed = rawLines.map(line => {
+                // strip leading/trailing pipe
+                let s = line.trim();
+                if(s.startsWith("|")) s = s.slice(1);
+                if(s.endsWith("|")) s = s.slice(0, -1);
+                return s.split("|").map(c => c.trim());
+            });
+
+            // Detect separator row (2nd row of table): cells match :?-+:?
+            const sep = parsed[1] || [];
+            const isSep = sep.length > 0 && sep.every(c => /^:?-{1,}:?$/.test(c));
+            if(!isSep) return tableBlock; // not a valid GFM table
+
+            const headerCells = parsed[0];
+            const bodyRows = parsed.slice(2);
+
+            let t = "<table><thead><tr>";
+            t += headerCells.map(c => "<th>" + c + "</th>").join("");
+            t += "</tr></thead>";
+            if(bodyRows.length){
+                t += "<tbody>";
+                for(const row of bodyRows){
+                    t += "<tr>" + row.map(c => "<td>" + c + "</td>").join("") + "</tr>";
+                }
+                t += "</tbody>";
+            }
+            t += "</table>\n";
+            return t;
+        });
+
+        // Horizontal rules (must be before list handling)
+        html = html.replace(/^[ \t]{0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/gm, "<hr>");
+
+        // Headings
+        html = html.replace(/^[ \t]{0,3}######[ \t]+(.+?)[ \t]*#*[ \t]*$/gm, "<h6>$1</h6>");
+        html = html.replace(/^[ \t]{0,3}#####[ \t]+(.+?)[ \t]*#*[ \t]*$/gm, "<h5>$1</h5>");
+        html = html.replace(/^[ \t]{0,3}####[ \t]+(.+?)[ \t]*#*[ \t]*$/gm, "<h4>$1</h4>");
+        html = html.replace(/^[ \t]{0,3}###[ \t]+(.+?)[ \t]*#*[ \t]*$/gm, "<h3>$1</h3>");
+        html = html.replace(/^[ \t]{0,3}##[ \t]+(.+?)[ \t]*#*[ \t]*$/gm, "<h2>$1</h2>");
+        html = html.replace(/^[ \t]{0,3}#[ \t]+(.+?)[ \t]*#*[ \t]*$/gm, "<h1>$1</h1>");
+
+        // Blockquotes: merge consecutive > lines
+        html = html.replace(/^(?:&gt;[ \t]?.*(?:\n|$))+/gm, function(block){
+            let inner = block.replace(/&gt;[ \t]?/gm, "").replace(/\n+$/, "");
+            // Recursively render blockquote content (so nested md works)
+            inner = simpleMarkdown(inner);
             return "<blockquote>" + inner + "</blockquote>\n";
         });
 
-        // Headings
-        html = html.replace(/^#### (.+)$/gm, "<h4>$1</h4>");
-        html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
-        html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
-        html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
-
-        // Horizontal rules
-        html = html.replace(/^ {0,3}([-*_])(?:\s*\1){2,}\s*$/gm, "<hr>");
-
-        // Tables (GitHub-flavoured)
-        html = html.replace(/^\|(.+)\|\s*$/gm, function(row){
-            const cells = row.split("|").slice(1, -1).map(c => c.trim());
-            if(cells.every(c => /^:?-+:?$/.test(c))) return "\u0001TBLSEP\u0001";
-            return "<tr>" + cells.map(c => "<td>" + c + "</td>").join("") + "</tr>";
-        });
-        html = html.replace(/((?:<tr>.*<\/tr>\n?\u0001TBLSEP\u0001\n?)|(?:<tr>.*<\/tr>\n?))/g, function(block){
-            // Extract header row if separator was present
-            const hasSep = block.indexOf("\u0001TBLSEP\u0001") !== -1;
-            const rows = block.replace(/\u0001TBLSEP\u0001\n?/g, "").split("\n").filter(Boolean);
-            if(!rows.length) return "";
-            let out = "<table>";
-            if(hasSep){
-                const headerRow = rows.shift().replace(/<td>/g, "<th>").replace(/<\/td>/g, "</th>");
-                out += headerRow;
-            }
-            out += rows.join("") + "</table>";
-            return out;
-        });
-
-        // Lists — convert line-by-line, then wrap runs
+        // Lists — process line by line, tracking indentation depth
         const lines = html.split("\n");
-        const processed = [];
-        for(let i = 0; i < lines.length; i++){
-            const line = lines[i];
-            const ulMatch = line.match(/^(\s*)[-*+]\s+(.+)$/);
-            const olMatch = line.match(/^(\s*)\d+\.\s+(.+)$/);
-            if(ulMatch){
-                processed.push("<li>" + ulMatch[2] + "</li>");
-            } else if(olMatch){
-                processed.push("<li>" + olMatch[2] + "</li>");
-            } else {
-                processed.push(line);
+        const out = [];
+        // listStack entries: { type: 'ul'|'ol'|'task', indent: number }
+        const listStack = [];
+
+        function closeAllLists(){
+            while(listStack.length){
+                const top = listStack.pop();
+                out.push("</" + top.type + ">");
             }
         }
-        html = processed.join("\n");
+        function closeToIndent(indent){
+            while(listStack.length && listStack[listStack.length-1].indent > indent){
+                const top = listStack.pop();
+                out.push("</" + top.type + ">");
+            }
+        }
+        function currentList(){
+            return listStack[listStack.length - 1];
+        }
 
-        // Wrap consecutive <li> in <ul>
-        html = html.replace(/(?:^[ \t]*<li>.*<\/li>[ \t]*\n?)+/gm, function(block){
-            const items = block.match(/<li>.*?<\/li>/g) || [];
-            return "<ul>" + items.join("") + "</ul>\n";
-        });
+        for(let i = 0; i < lines.length; i++){
+            const line = lines[i];
 
-        // ── Phase 4: inline formatting (only on non-block content) ──
+            // Blank line: close all open lists
+            if(line.trim() === ""){
+                closeAllLists();
+                out.push("");
+                continue;
+            }
 
-        // Bold & italic (order matters)
+            // Already a block element? flush lists and push as-is
+            if(/^[ \t]*<(?:h[1-6]|pre|ul|ol|li|table|thead|tbody|tr|th|td|hr|blockquote|div|p|img)/.test(line)){
+                closeAllLists();
+                out.push(line);
+                continue;
+            }
+
+            // List item?  "- foo", "* foo", "+ foo", "1. foo"
+            const ulMatch = line.match(/^([ \t]*)([-*+])[ \t]+(.+)$/);
+            const olMatch = line.match(/^([ \t]*)(\d+)\.[ \t]+(.+)$/);
+
+            if(ulMatch || olMatch){
+                const rawIndent = (ulMatch || olMatch)[1];
+                const indent = rawIndent.replace(/\t/g, "    ").length;
+                const content = (ulMatch ? ulMatch[3] : olMatch[3]);
+
+                // Detect task list: [ ] or [x] at start of content
+                let taskPrefix = "";
+                let isTask = false;
+                const taskMatch = content.match(/^\[([ xX])\][ \t]+(.+)$/);
+                if(taskMatch){
+                    isTask = true;
+                    const checked = taskMatch[1].toLowerCase() === "x";
+                    taskPrefix = `<input type="checkbox" disabled${checked ? " checked" : ""}> `;
+                    // We'll keep the text after the checkbox
+                }
+                const itemContent = taskMatch ? taskMatch[2] : content;
+
+                const desiredType = olMatch ? "ol" : "ul";
+
+                // Manage the list stack
+                if(listStack.length === 0){
+                    out.push("<" + desiredType + ">");
+                    listStack.push({type: desiredType, indent: indent});
+                } else {
+                    const top = currentList();
+                    if(indent > top.indent){
+                        out.push("<" + desiredType + ">");
+                        listStack.push({type: desiredType, indent: indent});
+                    } else if(indent < top.indent){
+                        closeToIndent(indent);
+                        const now = currentList();
+                        if(!now){
+                            out.push("<" + desiredType + ">");
+                            listStack.push({type: desiredType, indent: indent});
+                        }
+                    } else {
+                        // Same indent level — if list type changed, close & reopen
+                        if(top.type !== desiredType && !(top.type === "ul" && desiredType === "ul")){
+                            out.push("</" + top.type + ">");
+                            listStack.pop();
+                            out.push("<" + desiredType + ">");
+                            listStack.push({type: desiredType, indent: indent});
+                        }
+                    }
+                }
+
+                const liClass = isTask ? ' class="task-list-item"' : "";
+                out.push("<li" + liClass + ">" + (isTask ? taskPrefix : "") + itemContent + "</li>");
+                continue;
+            }
+
+            // Regular text — close lists
+            closeAllLists();
+            out.push(line);
+        }
+        closeAllLists();
+        html = out.join("\n");
+
+        // ── Phase 4: inline formatting ──
+        // Bold+italic
         html = html.replace(/\*\*\*([^*\n]+)\*\*\*/g, "<strong><em>$1</em></strong>");
+        html = html.replace(/___([^_\n]+)___/g, "<strong><em>$1</em></strong>");
+        // Bold
         html = html.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
         html = html.replace(/__([^_\n]+)__/g, "<strong>$1</strong>");
-        html = html.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
-        html = html.replace(/(^|[^_])_([^_\n]+)_/g, "$1<em>$2</em>");
+        // Strikethrough
+        html = html.replace(/~~([^~\n]+)~~/g, "<del>$1</del>");
+        // Italic (single asterisk) — avoid touching **
+        html = html.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
+        // Italic (single underscore) — avoid touching __ and avoid intra-word
+        html = html.replace(/(^|[^\w_])_([^_\n]+)_(?!\w)/g, "$1<em>$2</em>");
 
-        // Links & images (must not be inside code — already stashed)
-        html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img src="$2" alt="$1">');
-        html = html.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+        // Images BEFORE links
+        html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, function(_, alt, src, title){
+            const t = title ? ` title="${title}"` : "";
+            return `<img src="${src}" alt="${alt}"${t}>`;
+        });
+        // Links
+        html = html.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, function(_, text, href, title){
+            const t = title ? ` title="${title}"` : "";
+            const ext = /^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : "";
+            return `<a href="${href}"${t}${ext}>${text}</a>`;
+        });
+        // Autolinks <https://...>
+        html = html.replace(/&lt;(https?:\/\/[^&\s]+)&gt;/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
 
         // ── Phase 5: wrap remaining plain text in <p> ──
         const finalLines = html.split("\n");
-        const out = [];
+        const out2 = [];
         let buf = [];
-        const blockRE = /^\s*<(?:h[1-4]|pre|ul|ol|li|table|thead|tbody|tr|th|td|hr|blockquote|div|p|img)\b/;
+        const blockRE = /^[ \t]*<(?:h[1-6]|pre|ul|ol|li|table|thead|tbody|tr|th|td|hr|blockquote|div|p|img)/;
+
         function flush(){
             if(buf.length){
                 const text = buf.join("\n").trim();
-                if(text) out.push("<p>" + text + "</p>");
+                if(text) out2.push("<p>" + text + "</p>");
                 buf = [];
             }
         }
+
         for(const line of finalLines){
             if(line.trim() === ""){
                 flush();
@@ -1489,16 +1636,16 @@
             }
             if(blockRE.test(line)){
                 flush();
-                out.push(line);
+                out2.push(line);
             } else {
                 buf.push(line);
             }
         }
         flush();
-        html = out.join("\n");
+        html = out2.join("\n");
 
-        // ── Phase 6: restore stashed code blocks / inline code ──
-        html = html.replace(/\u0000STASH(\d+)\u0000/g, function(_, n){
+        // ── Phase 6: restore stashed code ──
+        html = html.replace(/\u0000SXSTASH(\d+)X\u0000/g, function(_, n){
             return stash[parseInt(n, 10)];
         });
 
