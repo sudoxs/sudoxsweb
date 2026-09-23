@@ -1,25 +1,38 @@
 [
   {
-    "name": "Security - Culture - Society",
+    "name": "Kali Linux",
     "type": "dir",
-    "path": "Security - Culture - Society",
+    "path": "Kali Linux",
+    "children": [
+      {
+        "name": "KALI Cheat Sheet.md",
+        "type": "file",
+        "path": "Kali Linux/KALI Cheat Sheet.md",
+        "download_url": "Kali Linux/KALI Cheat Sheet.md"
+      }
+    ]
+  },
+  {
+    "name": "Security and Society",
+    "type": "dir",
+    "path": "Security and Society",
     "children": [
       {
         "name": "Video Game Cracking - From DRM to the Fall of EMPRESS",
         "type": "dir",
-        "path": "Security - Culture - Society/Video Game Cracking - From DRM to the Fall of EMPRESS",
+        "path": "Security and Society/Video Game Cracking - From DRM to the Fall of EMPRESS",
         "children": [
           {
             "name": "Video Game Cracking - From DRM to the Fall of EMPRESS.md",
             "type": "file",
-            "path": "Security - Culture - Society/Video Game Cracking - From DRM to the Fall of EMPRESS/Video Game Cracking - From DRM to the Fall of EMPRESS.md",
-            "download_url": "Security - Culture - Society/Video Game Cracking - From DRM to the Fall of EMPRESS/Video Game Cracking - From DRM to the Fall of EMPRESS.md"
+            "path": "Security and Society/Video Game Cracking - From DRM to the Fall of EMPRESS/Video Game Cracking - From DRM to the Fall of EMPRESS.md",
+            "download_url": "Security and Society/Video Game Cracking - From DRM to the Fall of EMPRESS/Video Game Cracking - From DRM to the Fall of EMPRESS.md"
           },
           {
             "name": "ビデオゲームクラッキング - DRMからEMPRESSの没落まで.md",
             "type": "file",
-            "path": "Security - Culture - Society/Video Game Cracking - From DRM to the Fall of EMPRESS/ビデオゲームクラッキング - DRMからEMPRESSの没落まで.md",
-            "download_url": "Security - Culture - Society/Video Game Cracking - From DRM to the Fall of EMPRESS/ビデオゲームクラッキング - DRMからEMPRESSの没落まで.md"
+            "path": "Security and Society/Video Game Cracking - From DRM to the Fall of EMPRESS/ビデオゲームクラッキング - DRMからEMPRESSの没落まで.md",
+            "download_url": "Security and Society/Video Game Cracking - From DRM to the Fall of EMPRESS/ビデオゲームクラッキング - DRMからEMPRESSの没落まで.md"
           }
         ]
       }
@@ -36,10 +49,10 @@
         "path": "Tools/Reconnaissance and Directory Enumeration",
         "children": [
           {
-            "name": "Web Reconnaissance Tool.md",
+            "name": "Web Reconnaissance Tools.md",
             "type": "file",
-            "path": "Tools/Reconnaissance and Directory Enumeration/Web Reconnaissance Tool.md",
-            "download_url": "Tools/Reconnaissance and Directory Enumeration/Web Reconnaissance Tool.md"
+            "path": "Tools/Reconnaissance and Directory Enumeration/Web Reconnaissance Tools.md",
+            "download_url": "Tools/Reconnaissance and Directory Enumeration/Web Reconnaissance Tools.md"
           },
           {
             "name": "Web偵察ツール チートシート.md",
