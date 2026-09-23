@@ -9,6 +9,12 @@
         "type": "file",
         "path": "Kali Linux/KALI Cheat Sheet.md",
         "download_url": "Kali Linux/KALI Cheat Sheet.md"
+      },
+      {
+        "name": "カリ・リナックス チートシート.md",
+        "type": "file",
+        "path": "Kali Linux/カリ・リナックス チートシート.md",
+        "download_url": "Kali Linux/カリ・リナックス チートシート.md"
       }
     ]
   },
@@ -80,6 +86,25 @@
             "download_url": "Tools/ZRAM/ZRAM - 圧縮RAMスワップ.md"
           }
         ]
+      }
+    ]
+  },
+  {
+    "name": "WIFI-Hacking",
+    "type": "dir",
+    "path": "WIFI-Hacking",
+    "children": [
+      {
+        "name": "WIFI-Hacking.md",
+        "type": "file",
+        "path": "WIFI-Hacking/WIFI-Hacking.md",
+        "download_url": "WIFI-Hacking/WIFI-Hacking.md"
+      },
+      {
+        "name": "Wi-Fiハッキング.md",
+        "type": "file",
+        "path": "WIFI-Hacking/Wi-Fiハッキング.md",
+        "download_url": "WIFI-Hacking/Wi-Fiハッキング.md"
       }
     ]
   }
