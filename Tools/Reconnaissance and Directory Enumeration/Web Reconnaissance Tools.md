@@ -1,366 +1,366 @@
-# Web偵察ツール チートシート: theHarvester vs Gobuster vs ffuf vs feroxbuster vs katana
+# Web Reconnaissance Tool Cheat Sheet: theHarvester vs Gobuster vs ffuf vs feroxbuster vs katana
 
-5つのツール、5つの役割。どれが「最高」かではなく、エンゲージメントのどのフェーズにどのツールを当てるかが重要です。
+Five tools, five different jobs. Picking the right one isn't about which is "best" — it's about matching the tool to the phase of your engagement. Here's the breakdown.
 
 ---
 
-## クイック判断マトリクス
+## Quick Decision Matrix
 
-| タスク | 第一選択 | 理由 |
+| Task | First Choice | Why |
 |---|---|---|
-| 公開情報からのOSINT（メール、サブドメイン、ホスト） | **theHarvester** | パッシブ収集、ターゲットへ直接通信しない |
-| 高速でシンプルなディレクトリ探索 | **Gobuster** | 構文が単純、信頼性高い、Kaliに標準搭載 |
-| パラメータファジング、vhost発見、複数位置ファジング | **ffuf** | `FUZZ` キーワードがURL・ヘッダ・ボディどこにでも置ける |
-| 深い再帰的ディレクトリマッピング | **feroxbuster** | 自動再帰、リンク抽出、ワイルドカード除去 |
-| モダンWebアプリ（SPA/React/Angular）のクロール＋エンドポイント発見 | **katana** | ヘッドレスブラウジング、JS解析、XHR抽出 |
+| OSINT (emails, subdomains, hosts) from public sources | **theHarvester** | Passive collection, no direct traffic to target |
+| Fast, no-nonsense directory scanning | **Gobuster** | Simple syntax, reliable, pre-installed on Kali |
+| Parameter fuzzing, vhost discovery, multi-position fuzzing | **ffuf** | The `FUZZ` keyword works anywhere — URL, headers, body |
+| Deep recursive directory mapping | **feroxbuster** | Auto-recursion, link extraction, wildcard filtering |
+| Crawling modern web apps (SPA/React/Angular) + endpoint discovery | **katana** | Headless browsing, JS parsing, XHR extraction  |
 
 ---
 
-## theHarvester — パッシブOSINT収集
+## theHarvester — Passive OSINT Collection
 
-**何をするか:** 公開ソース（検索エンジン、証明書透明性ログ、PGP鍵サーバー、Shodanなど）からメールアドレス、サブドメイン、ホスト名、従業員名を収集します。ターゲットに直接触れない、純粋にパッシブなツールです。
+**What it does:** Gathers email addresses, subdomains, hostnames, and employee names from public sources (search engines, certificate transparency logs, PGP key servers, Shodan, etc.). It never touches the target directly — purely passive.
 
-**いつ使うか:** 外部偵察の最初のステップ。ターゲットのWebサーバーを見る前に、すでに公開されている情報を収集します。
+**When to use it:** The very first step of external recon. Before you even look at the target's web server, harvest what's already publicly exposed.
 
-**基本構文:**
+**Basic syntax:**
 ```bash
 theHarvester -d <domain> -l <limit> -b <source>
 ```
 
-**フラグ:**
+**Flags:**
 
-| フラグ | 意味 |
+| Flag | Meaning |
 |---|---|
-| `-d` | 対象ドメインまたは企業名 |
-| `-l` | ソースごとの結果上限（デフォルト500） |
-| `-b` | データソース: `google`, `bing`, `duckduckgo`, `dnsdumpster`, `crtsh`, `virustotal`, `shodan`, `all` |
-| `-f` | 出力をファイルに保存（HTML/XML） |
-| `-c` | DNSブルートフォースを実行 |
-| `-n` | DNSサーバールックアップを有効化 |
+| `-d` | Target domain or company name |
+| `-l` | Limit results per source (default 500) |
+| `-b` | Data source: `google`, `bing`, `duckduckgo`, `dnsdumpster`, `crtsh`, `virustotal`, `shodan`, `all` |
+| `-f` | Save output to file (HTML/XML) |
+| `-c` | Perform DNS brute force |
+| `-n` | Enable DNS server lookup |
 
-**例:**
+**Examples:**
 
 ```bash
-# DuckDuckGoからの基本的なメール＋サブドメイン収集
+# Basic email + subdomain harvest from DuckDuckGo
 theHarvester -d kali.org -l 500 -b duckduckgo
 
-# 全ソースを横断した包括的スキャン
+# Comprehensive scan across all sources
 theHarvester -d example.com -l 500 -b all -f results
 
-# 証明書透明性を使ったサブドメイン重視
+# Subdomain-focused using certificate transparency
 theHarvester -d example.com -l 300 -b crtsh
 
-# メール収集のみ、ファイル保存
+# Email harvesting only, save to file
 theHarvester -d example.com -l 100 -b google,bing -f emails
 ```
 
-**実運用の注意:** GoogleはしばしばCAPTCHAやボット検出でtheHarvesterをブロックします。`-b google` が失敗したら `duckduckgo`、`crtsh`、`dnsdumpster` に切り替えてください。
+**Real-world note:** Google often blocks theHarvester with CAPTCHAs or bot detection. If `-b google` fails, switch to `duckduckgo`, `crtsh`, or `dnsdumpster`.
 
 ---
 
-## Gobuster — 高速・シンプル・マルチモード
+## Gobuster — Fast, Simple, Multi-Mode
 
-**何をするか:** URI（ディレクトリ/ファイル）、DNSサブドメイン、仮想ホスト、S3/GCSバケット、TFTPファイルをブルートフォースします。モードベースで、各モードが1つのことをうまくやります。
+**What it does:** Brute-forces URIs (directories/files), DNS subdomains, virtual hosts, S3/GCS buckets, and TFTP files. Mode-based — each mode does one thing well.
 
-**いつ使うか:** 設定を考えずに素早く信頼できる結果が欲しいとき。DNSサブドメイン列挙や、再帰が不要なシンプルなディレクトリスキャンに最適です。
+**When to use it:** When you want quick, reliable results without thinking about configuration. Excellent for DNS subdomain enumeration and simple directory scans where recursion isn't needed.
 
-**構文:**
+**Syntax:**
 ```bash
 gobuster <mode> <flags>
 ```
 
-**モード:** `dir`, `dns`, `vhost`, `s3`, `gcs`, `fuzz`, `tftp`
+**Modes:** `dir`, `dns`, `vhost`, `s3`, `gcs`, `fuzz`, `tftp`
 
-**主要フラグ:**
+**Key flags:**
 
-| フラグ | 意味 |
+| Flag | Meaning |
 |---|---|
-| `-u` | 対象URL |
-| `-w` | ワードリストのパス |
-| `-t` | スレッド数（デフォルト10） |
-| `-x` | 拡張子（例: `.php,.html`） |
-| `-o` | 出力ファイル |
-| `-q` | 静音モード |
-| `-s` | 表示するステータスコード |
+| `-u` | Target URL |
+| `-w` | Wordlist path |
+| `-t` | Threads (default 10) |
+| `-x` | File extensions (e.g. `.php,.html`) |
+| `-o` | Output file |
+| `-q` | Quiet mode |
+| `-s` | Status codes to show |
 
-**例:**
+**Examples:**
 
 ```bash
-# 拡張子付きディレクトリブルートフォース
+# Directory brute-force with extensions
 gobuster dir -u https://target.com -w /usr/share/wordlists/dirb/common.txt -x php,html,js,txt -t 50
 
-# DNSサブドメイン列挙
+# DNS subdomain enumeration
 gobuster dns -d target.com -w /usr/share/wordlists/subdomains.txt -t 50
 
-# 仮想ホスト発見
+# Virtual host discovery
 gobuster vhost -u https://target.com -w vhosts.txt --append-domain
 
-# S3バケット列挙
+# S3 bucket enumeration
 gobuster s3 -w bucket-names.txt
 
-# クエリパラメータのファジング
+# Fuzzing a query parameter
 gobuster fuzz -u https://example.com?FUZZ=test -w parameter-names.txt
 ```
 
-**重要な制限:** Gobusterは**再帰をネイティブサポートしていません**。`/admin/` を見つけても、そのディレクトリを手動で再スキャンする必要があります。
+**Important limitation:** Gobuster does **not** support recursion natively. If it finds `/admin/`, you must manually re-scan that directory.
 
 ---
 
-## ffuf — 柔軟なファザー
+## ffuf — The Flexible Fuzzer
 
-**何をするか:** 汎用HTTPファザー。リテラルキーワード `FUZZ` をリクエストのどこにでも置けます — URLパス、クエリパラメータ、POSTボディ、ヘッダ、さらには `Host` ヘッダまで。これにより純粋なディレクトリスキャナよりはるかに versatile です。
+**What it does:** A general-purpose HTTP fuzzer. The literal keyword `FUZZ` can be placed anywhere in the request — URL path, query parameter, POST body, headers, even the `Host` header. This makes it far more versatile than pure directory scanners.
 
-**いつ使うか:** パラメータファジング、仮想ホスト発見、APIエンドポイント発見、生リクエストインポートによる認証済みエンドポイントのテスト、そして外科的な精度が必要なあらゆるシナリオ。
+**When to use it:** Parameter fuzzing, virtual host discovery, API endpoint discovery, testing authenticated endpoints (via raw request import), and any scenario where you need surgical precision.
 
-**構文:**
+**Syntax:**
 ```bash
 ffuf -w <wordlist> -u <URL with FUZZ> [options]
 ```
 
-**主要フラグ:**
+**Key flags:**
 
-| フラグ | 意味 |
+| Flag | Meaning |
 |---|---|
-| `-w` | ワードリストのパス |
-| `-u` | 対象URL（`FUZZ` を含む） |
-| `-H` | カスタムヘッダ（`FUZZ` を含められる） |
-| `-X` | HTTPメソッド |
-| `-d` | POSTデータ |
-| `-mc` | マッチするステータスコード（デフォルト: 200,204,301,302,307,401,403） |
-| `-fc` | フィルタするステータスコード |
-| `-fs` | レスポンスサイズでフィルタ |
-| `-fw` | ワード数でフィルタ |
-| `-fl` | 行数でフィルタ |
-| `-t` | スレッド数（デフォルト40） |
-| `-ac` | 自動キャリブレーション（ワイルドカード応答を自動フィルタ） |
-| `-recursion` | 再帰スキャンを有効化 |
-| `-o` | 出力ファイル |
+| `-w` | Wordlist path |
+| `-u` | Target URL (contains `FUZZ`) |
+| `-H` | Custom header (can contain `FUZZ`) |
+| `-X` | HTTP method |
+| `-d` | POST data |
+| `-mc` | Match status codes (default: 200,204,301,302,307,401,403) |
+| `-fc` | Filter status codes |
+| `-fs` | Filter by response size |
+| `-fw` | Filter by word count |
+| `-fl` | Filter by line count |
+| `-t` | Threads (default 40) |
+| `-ac` | Auto-calibrate (auto-filter wildcard responses) |
+| `-recursion` | Enable recursive scanning |
+| `-o` | Output file |
 
-**例:**
+**Examples:**
 
 ```bash
-# 基本的なディレクトリ発見
+# Basic directory discovery
 ffuf -u https://target.com/FUZZ -w wordlist.txt
 
-# 404を除外し、200/301/302のみ表示
+# Filter out 404s and show only 200/301/302
 ffuf -u https://target.com/FUZZ -w wordlist.txt -mc 200,301,302 -fc 404
 
-# 仮想ホストファジング（Hostヘッダ）
+# Virtual host fuzzing (Host header)
 ffuf -u https://target.com -H "Host: FUZZ.target.com" -w vhosts.txt -fs 612
 
-# パラメータファジング
+# Parameter fuzzing
 ffuf -u "https://target.com/api?FUZZ=test" -w params.txt -mc 200
 
-# POSTデータファジング（ログインブルートフォース）
+# POST data fuzzing (login brute-force)
 ffuf -u https://target.com/login -X POST -d "user=admin&pass=FUZZ" -w passwords.txt
 
-# 再帰的ディレクトリスキャン
+# Recursive directory scan
 ffuf -u https://target.com/FUZZ -w wordlist.txt -recursion -recursion-depth 3
 
-# 複数位置ファジング（2つのワードリストを同時に）
+# Multi-position fuzzing (two wordlists simultaneously)
 ffuf -u https://FUZZ.target.com/FUZZ2 \
      -w subdomains.txt:FUZZ -w dirs.txt:FUZZ2
 
-# 生リクエストファイル経由の認証済みファジング
+# Authenticated fuzzing via raw request file
 ffuf --request req.txt -w wordlist.txt -ac
 ```
 
-**`-ac` フラグが重要:** 自動キャリブレーションはターゲットの「見つからない」応答を分析し、類似した応答を自動でフィルタします。手動で `-fs` の値を探す手間が省けます。
+**The `-ac` flag matters:** Auto-calibration analyzes the target's "not found" response and automatically filters out similar responses. This saves you from manually figuring out the right `-fs` value.
 
 ---
 
-## feroxbuster — 再帰的ディレクトリの獣
+## feroxbuster — Recursive Directory Beast
 
-**何をするか:** Rustで書かれた再帰的コンテンツ発見ツール。最大の特徴は**自動再帰** — ディレクトリを見つけると即座にそのスキャンをキューに入れ、手動介入なしに完全なサイトマップを構築します。
+**What it does:** A recursive content discovery tool written in Rust. Its defining feature is **automatic recursion** — when it finds a directory, it immediately queues it for its own scan, building a complete site map without manual intervention.
 
-**いつ使うか:** 徹底的で深いディレクトリマッピングが必要なとき。バグバウンティの偵察、大規模アセット列挙、手動再帰が面倒なあらゆるシナリオ。
+**When to use it:** When you need thorough, deep directory mapping. Bug bounty recon, large-scale asset enumeration, or any scenario where manual recursion would be tedious.
 
-**構文:**
+**Syntax:**
 ```bash
 feroxbuster -u <URL> -w <wordlist> [options]
 ```
 
-**主要フラグ:**
+**Key flags:**
 
-| フラグ | 意味 |
+| Flag | Meaning |
 |---|---|
-| `-u` | 対象URL |
-| `-w` | ワードリストのパス |
-| `-x` | 拡張子（例: `php,html,txt`） |
-| `-d` / `--depth` | 最大再帰深度 |
-| `-t` | スレッド数 |
-| `--extract-links` | レスポンスボディから追加リンクを解析 |
-| `--filter-status` | ステータスコードでフィルタ |
-| `--filter-similar-to` | 指定例に類似したページをフィルタ |
-| `--dont-scan` | 再帰から除外するパス |
-| `--silent` | プログレスバーを抑制 |
-| `-o` | 出力ファイル |
+| `-u` | Target URL |
+| `-w` | Wordlist path |
+| `-x` | Extensions (e.g. `php,html,txt`) |
+| `-d` / `--depth` | Max recursion depth |
+| `-t` | Threads |
+| `--extract-links` | Parse response bodies for additional links |
+| `--filter-status` | Filter by status code |
+| `--filter-similar-to` | Filter pages similar to a given example |
+| `--dont-scan` | Exclude paths from recursion |
+| `--silent` | Suppress progress bars |
+| `-o` | Output file |
 
-**例:**
+**Examples:**
 
 ```bash
-# 基本的な再帰スキャン（再帰はデフォルトでON）
+# Basic recursive scan (recursion is ON by default)
 feroxbuster -u https://target.com -w wordlist.txt
 
-# 拡張子と深度制限付き
+# With extensions and depth limit
 feroxbuster -u https://target.com -w wordlist.txt -x php,html,txt -d 3 -t 50
 
-# レスポンスからリンクを抽出してさらなるエンドポイントを発見
+# Extract links from responses to find more endpoints
 feroxbuster -u https://target.com -w wordlist.txt --extract-links
 
-# ノイズの多いパスを再帰から除外
+# Exclude noisy paths from recursion
 feroxbuster -u https://target.com -w wordlist.txt --dont-scan /static /assets /js
 
-# /register に類似したページをフィルタ（動的CSRFトークンに対応）
+# Filter out pages similar to /register (handles dynamic CSRF tokens)
 feroxbuster -u https://target.com -w wordlist.txt --filter-similar-to https://target.com/register
 ```
 
-**ワイルドカード処理:** feroxbusterはデフォルトでワイルドカード応答を自動フィルタします。ランダムなパスがすべて同じページで200を返す場合、それを検出して自動的に除外します。
+**Wildcard handling:** feroxbuster auto-filters wildcard responses by default. If every random path returns a 200 with the same page, it detects and filters that automatically.
 
 ---
 
-## katana — モダンWebクローラー
+## katana — Modern Web Crawler
 
-**何をするか:** ProjectDiscoveryによってGoで書かれた次世代クローリング＆スパイダーフレームワーク。静的なHTMLリンクだけを追う従来のクローラーとは異なり、katanaはJavaScriptを解析し、JSファイルからエンドポイントを抽出し、ヘッドレスブラウジングを実行してReact、Angular、Vueで構築されたシングルページアプリケーション（SPA）をクロールできます。静的解析では見逃す隠れたエンドポイント、APIルート、XHR呼び出し、フォームアクションを発見するように設計されています。
+**What it does:** A next-generation crawling and spidering framework written in Go by ProjectDiscovery. Unlike traditional crawlers that only follow static HTML links, katana can parse JavaScript, extract endpoints from JS files, and execute headless browsing to crawl Single-Page Applications (SPAs) built with React, Angular, or Vue . It's designed to uncover hidden endpoints, API routes, XHR calls, and form actions that static analysis would miss .
 
-**いつ使うか:** モダンWebアプリケーションの攻撃面をマッピングする必要があるとき。特に、従来のクローラーがほとんど何も見えないSPAで有用です。katanaは、ffufやferoxbusterでファジングを始める前に、エンドポイントインベントリを構築するために最初に実行するツールです。
+**When to use it:** When you need to map out a modern web application's attack surface. This is especially useful for SPAs where traditional crawlers see almost nothing. Katana is the first tool you run to build an endpoint inventory before you start fuzzing with ffuf or feroxbuster.
 
-**構文:**
+**Syntax:**
 ```bash
 katana -u <URL> [options]
 ```
 
-**主要フラグ:**
+**Key flags:**
 
-| フラグ | 意味 |
+| Flag | Meaning |
 |---|---|
-| `-u` | 対象URL |
-| `-list` | 対象URLのリストを含むファイル |
-| `-d` | 最大クロール深度（デフォルト3） |
-| `-jc` | JavaScriptファイルの解析と発見されたエンドポイントのクロールを有効化 |
-| `-jsl` | JavaScriptファイル内でjsluice解析を有効化（メモリ消費大） |
-| `-hl` | ヘッドレスハイブリッドクローリングを有効化（SPA/React/Angular用） |
-| `-xhr` | JSONL出力でXHRリクエストURLとメソッドを抽出 |
-| `-kf` | 既知のファイルをクロール（`all`, `robotstxt`, `sitemapxml`） |
-| `-cs` | クローラーが追跡するインスコープURL正規表現 |
-| `-fs` | 事前定義スコープフィールド（`dn`, `rdn`, `fqdn`）またはカスタム正規表現（デフォルト "rdn"） |
-| `-f` | 出力に表示するフィールド（`url`, `qurl`, `qpath`, `path`, `fqdn` など） |
-| `-o` | 出力ファイル |
-| `-c` | 同時フェッチャー数（デフォルト10） |
-| `-rl` | 1秒あたりの最大リクエスト数（デフォルト150） |
+| `-u` | Target URL |
+| `-list` | File containing list of target URLs |
+| `-d` | Maximum crawl depth (default 3)  |
+| `-jc` | Enable JavaScript file parsing and crawling of discovered endpoints  |
+| `-jsl` | Enable jsluice parsing in JavaScript files (memory intensive)  |
+| `-hl` | Enable headless hybrid crawling (for SPA/React/Angular)  |
+| `-xhr` | Extract XHR request URL and method in JSONL output  |
+| `-kf` | Crawl known files (`all`, `robotstxt`, `sitemapxml`)  |
+| `-cs` | In-scope URL regex to be followed by crawler  |
+| `-fs` | Pre-defined scope field (`dn`, `rdn`, `fqdn`) or custom regex (default "rdn")  |
+| `-f` | Field to display in output (`url`, `qurl`, `qpath`, `path`, `fqdn`, etc.)  |
+| `-o` | Output file  |
+| `-c` | Number of concurrent fetchers (default 10)  |
+| `-rl` | Maximum requests per second (default 150)  |
 
-**例:**
+**Examples:**
 
 ```bash
-# 基本的なクロール（標準モード、JSなし）
+# Basic crawl (standard mode, no JS)
 katana -u https://target.com
 
-# JavaScript解析付きクロール（JSファイルからエンドポイントを抽出）
+# Crawl with JavaScript parsing (extract endpoints from JS files)
 katana -u https://target.com -jc
 
-# ヘッドレスモード（SPA/React/Angularアプリに必須）
+# Headless mode (required for SPA/React/Angular apps)
 katana -u https://target.com -hl -jc
 
-# ヘッドレス＋XHR抽出＋JSONL出力
+# Headless with XHR extraction and JSONL output
 katana -u https://target.com -hl -sc -nos -xhr -j -o katana_headless.jsonl
 
-# クエリパラメータを含むURLのみ抽出
+# Extract only URLs that contain query parameters
 katana -u https://target.com -jc -f qurl
 
-# JS＋XHR/fetch呼び出しトレース付きクロール
+# Crawl with JS + XHR/fetch call tracing
 katana -u https://target.com -jc -xhr
 
-# 同一ドメインに限定（デフォルト動作）
+# Limit to same domain (default behavior)
 katana -u https://target.com -jc -cs target.com
 
-# 深度制御（最大深度5）
+# Depth control (max depth 5)
 katana -u https://target.com -jc -d 5
 
-# レート制限（1秒あたりのリクエスト数）
+# Rate limit (requests per second)
 katana -u https://target.com -jc -rl 50
 
-# 認証済みクロール — セッションCookieを提供
+# Authenticated crawl — provide session cookie
 katana -u https://target.com -hl -H "Cookie: session=<token>" -jc
 
-# ファイルから複数ターゲット
+# Multiple targets from file
 katana -list urls.txt -jc -o all_endpoints.txt
 ```
 
-**フィールド抽出 — キラー機能:** Katanaは `-f` フラグを使ってクロール出力から特定のフィールドを抽出できます。利用可能なフィールドには `url`, `path`, `fqdn`, `rdn`, `rurl`, `qurl`, `qpath`, `file`, `ufile`, `key`, `value`, `kv`, `dir`, `udir` があります。これによりノイズをフィルタし、クリーンなエンドポイントを他のツールに直接パイプできます。
+**Field extraction — the killer feature:** Katana can extract specific fields from crawl output using the `-f` flag. Available fields include `url`, `path`, `fqdn`, `rdn`, `rurl`, `qurl`, `qpath`, `file`, `ufile`, `key`, `value`, `kv`, `dir`, `udir` . This lets you filter out noise and pipe clean endpoints directly into other tools.
 
 ```bash
-# クエリパラメータ付きURLのみ抽出（パラメータファジングに有用）
+# Extract only URLs with query parameters (useful for parameter fuzzing)
 katana -u https://target.com -f qurl -silent
 
-# JSファイルURLのみ抽出
+# Extract only JS file URLs
 katana -u https://target.com -jc | grep "\.js$" > js_files.txt
 
-# APIパスをフィルタ
+# Filter for API paths
 katana -u https://target.com -jc | grep -E "(/api/|/v[0-9]+/|/graphql|/rest/)"
 
-# JSから発見されたエンドポイントを表示（静的アセットを除外）
+# Show discovered endpoints from JS (exclude static assets)
 katana -u https://target.com -jc | grep -v "\.(png|jpg|gif|svg|ico|woff|css)$"
 ```
 
-**パイプライン統合:** Katanaは他のProjectDiscoveryツールや標準Unixパイプラインに投入されるように設計されています。典型的な偵察ワークフローでは、katanaの出力をファジングツールに直接チェーンします。
+**Pipeline integration:** Katana is designed to feed into other ProjectDiscovery tools and standard Unix pipelines. A typical recon workflow chains katana's output directly into fuzzing tools :
 
 ```bash
-# クロールしてからファズ
+# Crawl then fuzz
 katana -u https://target.com -jc | sort -u > endpoints.txt
-# その後 endpoints.txt を ffuf や feroxbuster に投入
+# Then feed endpoints.txt into ffuf or feroxbuster
 ```
 
 ---
 
-## プロフェッショナルなワークフロー
+## The Professional Workflow
 
-実際のエンゲージメントでは1つのツールだけを使いません。標準的なマルチフェーズアプローチはこちら:
+Real engagements don't use just one tool. Here's the standard multi-phase approach:
 
-**フェーズ1 — パッシブ偵察 (theHarvester)**
+**Phase 1 — Passive Recon (theHarvester)**
 ```bash
 theHarvester -d target.com -l 500 -b all -f recon
 ```
-ターゲットに触れる前に、メール、サブドメイン、ホスト名を収集。
+Collect emails, subdomains, and hostnames before touching the target.
 
-**フェーズ2 — エンドポイント発見 (katana)**
+**Phase 2 — Endpoint Discovery (katana)**
 ```bash
 katana -u https://target.com -jc -hl -d 3 -o endpoints.txt
 ```
-アプリケーションをクロールし、JavaScriptを解析し、完全なエンドポイントインベントリを構築。SPAの場合、`-hl` は必須です。
+Crawl the application, parse JavaScript, and build a complete endpoint inventory. For SPAs, `-hl` is mandatory.
 
-**フェーズ3 — 広範な再帰マッピング (feroxbuster)**
+**Phase 3 — Broad Recursive Mapping (feroxbuster)**
 ```bash
 feroxbuster -u https://target.com -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt -x php,html,txt --depth 3
 ```
-1パスでディレクトリ構造の完全なマップを取得。
+Get a complete map of the directory structure in one pass.
 
-**フェーズ4 — 外科的ファジング (ffuf)**
+**Phase 4 — Surgical Fuzzing (ffuf)**
 ```bash
-# 発見されたパラメータをテスト
+# Test discovered parameters
 ffuf -u https://target.com/admin/panel.php?accessID=FUZZ -w ids.txt -mc 200 -fs 58
 
-# vhostをテスト
+# Test vhosts
 ffuf -u https://target.com -H "Host: FUZZ.target.com" -w vhosts.txt
 ```
-feroxbusterやkatanaが発見した特定のエンドポイント、パラメータ、ヘッダを掘り下げる。
+Drill into specific endpoints, parameters, or headers that feroxbuster or katana discovered.
 
-**Gobusterは信頼できる代替**としてフェーズ3に位置します — 再帰なしの速度が欲しいとき、あるいはWebターゲットすら見つける前のDNSサブドメイン列挙に。
+**Gobuster sits as a reliable alternative** for Phase 3 when you want speed without recursion, or for DNS subdomain enumeration before you even have a web target.
 
 ---
 
-## まとめ
+## Summary
 
-| ツール | 言語 | 最適用途 | 再帰 | FUZZ配置 | 主な特徴 |
+| Tool | Language | Best For | Recursion | FUZZ Placement | Key Distinction |
 |---|---|---|---|---|---|
-| **theHarvester** | Python | OSINT、パッシブ偵察 | N/A | N/A | ターゲットに直接通信しない |
-| **Gobuster** | Go | 高速dir/DNS/vhostスキャン | ❌ 手動 | URLパスのみ | シンプル、信頼性、高速 |
-| **ffuf** | Go | パラメータ/vhost/カスタムファジング | ✅ 手動フラグ | どこでも | 最も versatile なファザー |
-| **feroxbuster** | Rust | 深い再帰ディレクトリマッピング | ✅ 自動 | URLパス | 自動再帰の獣 |
-| **katana** | Go | SPAクロール、JSエンドポイント発見 | ✅ 設定可能な深度 | N/A（クローラー、ファザーではない） | ヘッドレス＋JS解析 |
+| **theHarvester** | Python | OSINT, passive recon | N/A | N/A | No direct traffic to target |
+| **Gobuster** | Go | Fast dir/DNS/vhost scans | ❌ Manual | URL path only | Simple, reliable, fast |
+| **ffuf** | Go | Parameter/vhost/custom fuzzing | ✅ Manual flag | Anywhere | Most versatile fuzzer |
+| **feroxbuster** | Rust | Deep recursive directory mapping | ✅ Automatic | URL path | Auto-recursion beast |
+| **katana** | Go | SPA crawling, JS endpoint discovery | ✅ Configurable depth | N/A (crawler, not fuzzer) | Headless + JS parsing  |
 
-**経験則:**
-- ターゲットに触れずにメールとサブドメインが欲しい？ → **theHarvester**
-- 素早いディレクトリスキャンやDNS列挙が欲しい？ → **Gobuster**
-- パラメータ、ヘッダ、POSTボディをファズしたい？ → **ffuf**
-- すべてのディレクトリを再帰的にマップしたい？ → **feroxbuster**
-- モダンSPAをクロールしてJSエンドポイントを抽出したい？ → **katana**
+**Rule of thumb:**
+- Need emails and subdomains without touching the target? → **theHarvester**
+- Need a quick directory scan or DNS enumeration? → **Gobuster**
+- Need to fuzz a parameter, header, or POST body? → **ffuf**
+- Need to map every directory recursively? → **feroxbuster**
+- Need to crawl a modern SPA and extract JS endpoints? → **katana**
