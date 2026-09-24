@@ -1,20 +1,20 @@
 [
   {
-    "name": "Kali Linux",
+    "name": "Kali-Linux",
     "type": "dir",
-    "path": "Kali Linux",
+    "path": "Kali-Linux",
     "children": [
       {
         "name": "KALI Cheat Sheet.md",
         "type": "file",
-        "path": "Kali Linux/KALI Cheat Sheet.md",
-        "download_url": "Kali Linux/KALI Cheat Sheet.md"
+        "path": "Kali-Linux/KALI Cheat Sheet.md",
+        "download_url": "Kali-Linux/KALI Cheat Sheet.md"
       },
       {
         "name": "カリ・リナックス チートシート.md",
         "type": "file",
-        "path": "Kali Linux/カリ・リナックス チートシート.md",
-        "download_url": "Kali Linux/カリ・リナックス チートシート.md"
+        "path": "Kali-Linux/カリ・リナックス チートシート.md",
+        "download_url": "Kali-Linux/カリ・リナックス チートシート.md"
       }
     ]
   },
@@ -95,10 +95,10 @@
     "path": "WIFI-Hacking",
     "children": [
       {
-        "name": "WIFI-Hacking.md",
+        "name": "Wi-Fi Hacking.md",
         "type": "file",
-        "path": "WIFI-Hacking/WIFI-Hacking.md",
-        "download_url": "WIFI-Hacking/WIFI-Hacking.md"
+        "path": "WIFI-Hacking/Wi-Fi Hacking.md",
+        "download_url": "WIFI-Hacking/Wi-Fi Hacking.md"
       },
       {
         "name": "Wi-Fiハッキング.md",

@@ -1,26 +1,5 @@
 # Wireless Penetration Testing — Complete Cheat Sheet
 
-## Table of Contents
-
-1. [Wireless Interface Setup & Monitor Mode](#1-wireless-interface-setup--monitor-mode)
-2. [Chipset & Driver Identification](#2-chipset--driver-identification)
-3. [Regulatory Domain & RF Control](#3-regulatory-domain--rf-control)
-4. [Reconnaissance & Scanning](#4-reconnaissance--scanning)
-5. [Packet Capture & Analysis](#5-packet-capture--analysis)
-6. [WPA/WPA2 Handshake Capture & Cracking](#6-wpawpa2-handshake-capture--cracking)
-7. [WEP Cracking](#7-wep-cracking)
-8. [WPS Attacks](#8-wps-attacks)
-9. [Rogue Access Points](#9-rogue-access-points)
-10. [Captive Portal Attacks](#10-captive-portal-attacks)
-11. [WPA Enterprise Attacks](#11-wpa-enterprise-attacks)
-12. [bettercap](#12-bettercap)
-13. [Kismet](#13-kismet)
-14. [Manual Network Connections](#14-manual-network-connections)
-15. [Wordlist Generation & Mangling](#15-wordlist-generation--mangling)
-16. [Hashcat](#16-hashcat)
-17. [Frame Types & 802.11 Protocol Reference](#17-frame-types--80211-protocol-reference)
-18. [Wireless Network Architectures](#18-wireless-network-architectures)
-
 ---
 
 ## 1. Wireless Interface Setup & Monitor Mode
