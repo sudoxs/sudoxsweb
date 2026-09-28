@@ -29,16 +29,42 @@
         "path": "MrRobot IRL/S01EP01",
         "children": [
           {
-            "name": "Elliot vs Ron's Coffee.md",
-            "type": "file",
-            "path": "MrRobot IRL/S01EP01/Elliot vs Ron's Coffee.md",
-            "download_url": "MrRobot IRL/S01EP01/Elliot vs Ron's Coffee.md"
+            "name": "E Corp DDoS attack",
+            "type": "dir",
+            "path": "MrRobot IRL/S01EP01/E Corp DDoS attack",
+            "children": [
+              {
+                "name": "E Corp DDoS attack.md",
+                "type": "file",
+                "path": "MrRobot IRL/S01EP01/E Corp DDoS attack/E Corp DDoS attack.md",
+                "download_url": "MrRobot IRL/S01EP01/E Corp DDoS attack/E Corp DDoS attack.md"
+              },
+              {
+                "name": "EコープDDoS攻撃.md",
+                "type": "file",
+                "path": "MrRobot IRL/S01EP01/E Corp DDoS attack/EコープDDoS攻撃.md",
+                "download_url": "MrRobot IRL/S01EP01/E Corp DDoS attack/EコープDDoS攻撃.md"
+              }
+            ]
           },
           {
-            "name": "エリオット vs ロンのコーヒー.md",
-            "type": "file",
-            "path": "MrRobot IRL/S01EP01/エリオット vs ロンのコーヒー.md",
-            "download_url": "MrRobot IRL/S01EP01/エリオット vs ロンのコーヒー.md"
+            "name": "Elliot vs Ron's Coffee",
+            "type": "dir",
+            "path": "MrRobot IRL/S01EP01/Elliot vs Ron's Coffee",
+            "children": [
+              {
+                "name": "Elliot vs Ron's Coffee.md",
+                "type": "file",
+                "path": "MrRobot IRL/S01EP01/Elliot vs Ron's Coffee/Elliot vs Ron's Coffee.md",
+                "download_url": "MrRobot IRL/S01EP01/Elliot vs Ron's Coffee/Elliot vs Ron's Coffee.md"
+              },
+              {
+                "name": "エリオット vs ロンのコーヒー.md",
+                "type": "file",
+                "path": "MrRobot IRL/S01EP01/Elliot vs Ron's Coffee/エリオット vs ロンのコーヒー.md",
+                "download_url": "MrRobot IRL/S01EP01/Elliot vs Ron's Coffee/エリオット vs ロンのコーヒー.md"
+              }
+            ]
           }
         ]
       }
