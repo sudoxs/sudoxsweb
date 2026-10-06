@@ -753,11 +753,10 @@
            PIP-BOY WIDGET — LIGHT THEME OVERRIDES
            ═══════════════════════════════════════════════════════════════════ */
         html.theme-light .pipboy-wrapper {
-          --pip-green: #2f4d2a;              /* متن اصلی: سبز تیره */
+          --pip-green: #2f4d2a;
           --pip-glow: rgba(47, 77, 42, 0.22);
-          --bg-dark: #f4f2ec;                /* پس‌زمینه CRT: کرم روشن */
+          --bg-dark: #f4f2ec;
         }
-        /* glow اطراف CRT: خیلی ملایم و آبی-خاکستری */
         html.theme-light .pipboy-wrapper .crt-screen {
           background-color: var(--bg-dark);
           box-shadow:
@@ -776,7 +775,6 @@
           background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.05) 50%);
           background-size: 100% 4px;
         }
-        /* متن اصلی Pip-Boy: بدون glow اضافی در لایت‌مود */
         html.theme-light .pipboy-wrapper .boot-sequence {
           color: var(--pip-green);
           text-shadow: none;
@@ -792,7 +790,6 @@
         html.theme-light .pipboy-wrapper .nav-item:hover {
           background-color: rgba(47, 77, 42, 0.10);
         }
-        /* تب فعال */
         html.theme-light .pipboy-wrapper #tab-stat:checked ~ .pipboy-chassis label[for="tab-stat"],
         html.theme-light .pipboy-wrapper #tab-inv:checked ~ .pipboy-chassis label[for="tab-inv"],
         html.theme-light .pipboy-wrapper #tab-data:checked ~ .pipboy-chassis label[for="tab-data"] {
@@ -801,7 +798,6 @@
           text-shadow: none;
           box-shadow: none;
         }
-        /* جستجو */
         html.theme-light .pipboy-wrapper .inv-search-box {
           border-color: var(--pip-green);
           background: rgba(47, 77, 42, 0.05);
@@ -818,7 +814,6 @@
           color: var(--pip-green);
           border-left-color: rgba(47, 77, 42, 0.25);
         }
-        /* خطوط جداکننده */
         html.theme-light .pipboy-wrapper .inv-tree-scroll {
           border-top-color: rgba(47, 77, 42, 0.25);
         }
@@ -828,11 +823,9 @@
         html.theme-light .pipboy-wrapper .inv-tree-scroll::-webkit-scrollbar-thumb {
           background: var(--pip-green);
         }
-        /* آیتم لیست DATA */
         html.theme-light .pipboy-wrapper .inventory-list li {
           border-bottom-color: rgba(47, 77, 42, 0.25);
         }
-        /* hover در لیست DATA و درخت */
         html.theme-light .pipboy-wrapper .inventory-list li:hover,
         html.theme-light .pipboy-wrapper .active-terminal-line,
         html.theme-light .pipboy-wrapper .inv-node:hover {
@@ -842,16 +835,13 @@
           box-shadow: none;
         }
         html.theme-light .pipboy-wrapper .inv-node:hover a { color: inherit; }
-        /* mark جستجو */
         html.theme-light .pipboy-wrapper .inv-tree mark {
           background: rgba(47, 77, 42, 0.22);
           color: var(--pip-green);
         }
-        /* آیکن‌های پوشه/فایل: در لایت‌مود کمی تیره‌تر */
         html.theme-light .pipboy-wrapper .inv-icon {
           filter: grayscale(1) brightness(0.55);
         }
-        /* فیلتر متن‌های ضعیف */
         html.theme-light .pipboy-wrapper .inv-meta { opacity: .55; }
 
         /* ═══════════════════════ ANIMATIONS ═══════════════════════ */
@@ -904,6 +894,68 @@
         .loading-placeholder{
             text-align:center;padding:3rem;color:var(--ink-faint);
             font-size:var(--fs-sm);letter-spacing:.1em;
+        }
+
+        /* ═══════════════════════ PDF MODAL VIEWER ═══════════════════════ */
+        .pdf-modal{
+            position:fixed;inset:0;z-index:9999;
+            display:none;align-items:center;justify-content:center;
+            padding:clamp(.5rem,2vw,2rem);
+        }
+        .pdf-modal.active{display:flex}
+        .pdf-modal-backdrop{
+            position:absolute;inset:0;
+            background:rgba(4,6,5,.92);
+            backdrop-filter:blur(6px);
+            -webkit-backdrop-filter:blur(6px);
+        }
+        html.theme-light .pdf-modal-backdrop{background:rgba(232,229,221,.9)}
+        .pdf-modal-content{
+            position:relative;
+            width:min(96vw,1280px);
+            height:min(92vh,920px);
+            display:flex;flex-direction:column;
+            background:var(--surface);
+            border:1px solid var(--border-strong);
+            box-shadow:0 20px 60px rgba(0,0,0,.65),0 0 0 1px rgba(207,74,80,.15);
+            animation:pdfModalIn .22s ease-out;
+        }
+        @keyframes pdfModalIn{
+            from{opacity:0;transform:scale(.97) translateY(8px)}
+            to{opacity:1;transform:scale(1) translateY(0)}
+        }
+        .pdf-modal-header{
+            display:flex;align-items:center;justify-content:space-between;gap:1rem;
+            padding:.75rem 1rem;
+            border-bottom:1px solid var(--border-strong);
+            background:var(--surface-raised);
+        }
+        .pdf-modal-title{
+            color:var(--ink-bright);font-family:var(--font-display);
+            font-weight:900;letter-spacing:.18em;
+            font-size:var(--fs-2xs);text-transform:uppercase;
+        }
+        .pdf-modal-close{
+            display:inline-flex;align-items:center;gap:.4rem;
+            padding:.4rem .8rem;
+            background:transparent;border:1px solid var(--border-strong);
+            color:var(--ink-dim);cursor:pointer;
+            font-family:var(--font-mono);
+            font-size:var(--fs-3xs);letter-spacing:.13em;
+            transition:color 150ms ease,border-color 150ms ease,background 150ms ease;
+        }
+        .pdf-modal-close:hover{
+            color:var(--danger-bright);
+            border-color:var(--danger-bright);
+            background:rgba(163,37,43,.08);
+        }
+        .pdf-modal-frame{
+            flex:1;width:100%;min-height:0;
+            border:0;background:var(--bg-deep);
+        }
+        @media(max-width:600px){
+            .pdf-modal{padding:0}
+            .pdf-modal-content{width:100%;height:100%}
         }
     </style>
 
@@ -1441,6 +1493,12 @@
                                       <span class="item-wgt">SUDOXS</span>
                                     </a>
                                   </li>
+                                  <li>
+                                    <a href="Dante.pdf" onclick="SXPdf.show('Dante.pdf','DANTE — HTB PRO LAB CERTIFICATE');return false;">
+                                      <span class="item-name">Dante Certificate — HTB Pro Lab</span>
+                                      <span class="item-wgt">PDF</span>
+                                    </a>
+                                  </li>
                                 </ul>
                               </div>
                             </main>
@@ -1650,7 +1708,6 @@
     function simpleMarkdown(md){
         let html = md;
 
-        // ── Phase 1: stash fenced code blocks & inline code ──
         const stash = [];
         function put(fragment){
             const token = "\u0000SXSTASH" + stash.length + "X\u0000";
@@ -1669,12 +1726,10 @@
             return put("<code>" + escapeHTML(code) + "</code>");
         });
 
-        // ── Phase 2: escape HTML ──
         html = html.replace(/&/g, "&amp;")
                    .replace(/</g, "&lt;")
                    .replace(/>/g, "&gt;");
 
-        // ── Phase 3: block-level ──
         html = html.replace(/(?:^[ \t]*\|.*\|[ \t]*\n?)+/gm, function(tableBlock){
             const rawLines = tableBlock.replace(/\n$/, "").split("\n");
             if(rawLines.length < 2) return tableBlock;
@@ -1722,7 +1777,6 @@
             return "<blockquote>" + inner + "</blockquote>\n";
         });
 
-        // Lists
         const lines = html.split("\n");
         const out = [];
         const listStack = [];
@@ -1814,7 +1868,6 @@
         closeAllLists();
         html = out.join("\n");
 
-        // ── Phase 4: inline ──
         html = html.replace(/\*\*\*([^*\n]+)\*\*\*/g, "<strong><em>$1</em></strong>");
         html = html.replace(/___([^_\n]+)___/g, "<strong><em>$1</em></strong>");
         html = html.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
@@ -1834,7 +1887,6 @@
         });
         html = html.replace(/&lt;(https?:\/\/[^&\s]+)&gt;/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
 
-        // ── Phase 5: wrap paragraphs ──
         const finalLines = html.split("\n");
         const out2 = [];
         let buf = [];
@@ -1863,7 +1915,6 @@
         flush();
         html = out2.join("\n");
 
-        // ── Phase 6: restore stashed code ──
         html = html.replace(/\u0000SXSTASH(\d+)X\u0000/g, function(_, n){
             return stash[parseInt(n, 10)];
         });
@@ -1911,6 +1962,51 @@
         refresh:        async () => { await init(); },
     };
 
+    })();
+    </script>
+
+    <!-- ═══════════════════════ PDF MODAL VIEWER ═══════════════════════ -->
+    <div class="pdf-modal" id="pdfModal" aria-hidden="true">
+        <div class="pdf-modal-backdrop" onclick="SXPdf.close()"></div>
+        <div class="pdf-modal-content" role="dialog" aria-modal="true" aria-labelledby="pdfModalTitle">
+            <div class="pdf-modal-header">
+                <span class="pdf-modal-title" id="pdfModalTitle">PDF VIEWER</span>
+                <button type="button" class="pdf-modal-close" onclick="SXPdf.close()">✕ CLOSE</button>
+            </div>
+            <iframe class="pdf-modal-frame" id="pdfModalFrame" src="" title="PDF Viewer"></iframe>
+        </div>
+    </div>
+
+    <script>
+    /* ═══════════════════════ PDF MODAL CONTROLLER ═══════════════════════ */
+    const SXPdf = (function(){
+        let isOpen = false;
+        function show(url, title){
+            const modal   = document.getElementById("pdfModal");
+            const frame   = document.getElementById("pdfModalFrame");
+            const titleEl = document.getElementById("pdfModalTitle");
+            if(!modal || !frame) return;
+            frame.src = url;
+            titleEl.textContent = title || "PDF VIEWER";
+            modal.classList.add("active");
+            modal.setAttribute("aria-hidden","false");
+            document.body.style.overflow = "hidden";
+            isOpen = true;
+        }
+        function close(){
+            const modal = document.getElementById("pdfModal");
+            const frame = document.getElementById("pdfModalFrame");
+            if(!modal || !frame) return;
+            modal.classList.remove("active");
+            modal.setAttribute("aria-hidden","true");
+            frame.src = "";
+            document.body.style.overflow = "";
+            isOpen = false;
+        }
+        document.addEventListener("keydown", (e) => {
+            if(e.key === "Escape" && isOpen) close();
+        });
+        return { show, close };
     })();
     </script>
 

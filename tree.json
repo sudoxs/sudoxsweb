@@ -102,6 +102,25 @@
     "path": "Tools",
     "children": [
       {
+        "name": "C2 Framework",
+        "type": "dir",
+        "path": "Tools/C2 Framework",
+        "children": [
+          {
+            "name": "C2 Framework.md",
+            "type": "file",
+            "path": "Tools/C2 Framework/C2 Framework.md",
+            "download_url": "Tools/C2 Framework/C2 Framework.md"
+          },
+          {
+            "name": "C2フレームワーク.md",
+            "type": "file",
+            "path": "Tools/C2 Framework/C2フレームワーク.md",
+            "download_url": "Tools/C2 Framework/C2フレームワーク.md"
+          }
+        ]
+      },
+      {
         "name": "Reconnaissance and Directory Enumeration",
         "type": "dir",
         "path": "Tools/Reconnaissance and Directory Enumeration",
