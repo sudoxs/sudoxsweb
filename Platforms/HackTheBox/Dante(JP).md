@@ -824,27 +824,6 @@ netstat -ano
 
 ---
 
-## ラボ中に収穫した認証情報
-
-| 認証情報 | ホスト | 発見方法 |
-|----------|--------|----------|
-| `james:Toyota` | 10.10.110.100 | WPScan + cewl |
-| `balthazar:TheJoker12345!` | 172.16.1.100 | `.bash_history` |
-| `margaret:Welcome1!2@3#` | 172.16.1.10 | LFI + `php://filter` 経由の `wp-config.php` |
-| `frank:TractorHeadtorchDeskmat` | 172.16.1.10 | Slack エクスポート（`grep -C 5 "password" 2020-05-18.json`） |
-| `ben:Welcometomyblog` | 172.16.1.12 | SQLi + john |
-| `admin:Password6543` | 172.16.1.17 | SMB トラフィック上の Wireshark |
-| `dharding:WestminsterOrange5` | 172.16.1.101 | Hydra FTP |
-| `dharding:WestminsterOrange17` | 172.16.1.101 | Hydra SMB |
-| `Admin_129834765:SamsungOctober102030` | 172.16.1.19 | Administrator デスクトップの `Jenkins.bat` |
-| `jbercov:myspace7` | 172.16.2.5 | ASREPRoast + john |
-| `plongbottom:PowerfixSaturdayClub777` | 172.16.2.6 | Hydra SSH |
-| `Sophie:TerrorInflictPurpleDirt996655` | 172.16.1.5 | julian のデスクトップの SQL ファイル |
-| `mrb3n:S3kur1ty2020!` | 172.16.1.20 | ユーザーの comment フィールド |
-| `ian:VPN123ZXC` | 172.16.1.19 | pspy64 |
-
----
-
 ## ツールリファレンス
 
 | ツール | 用途 |
