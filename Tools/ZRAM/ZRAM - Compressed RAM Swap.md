@@ -102,3 +102,6 @@ zram
 - **Containerlab / Docker labs:** Identical router images across dozens of containers compress to a fraction of their nominal size. 48 GB RAM running ~100 virtual routers has been done this way. The ratio only holds when the processes share pages — heterogeneous workloads will compress far less.
 - **Large builds:** Compilation bursts allocate and free memory rapidly; ZRAM absorbs the spikes without touching disk swap.
 - **Oversizing is a real risk.** A ZRAM sized far above your RAM (e.g. 128 GB on a 48 GB box) can push the system into a CPU-bound thrash if the data isn't actually compressible. Size it to your workload, not to a number that looks impressive.
+
+
+2026/09/19

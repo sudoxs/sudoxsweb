@@ -930,3 +930,6 @@ sudo iptables -I INPUT 1 -p tcp --dport 441 -j ACCEPT
 | 7 | 防御者がトラフィックをバックアップへリダイレクト | バックアップサーバーへのDNSフェイルオーバー | nsupdate, route |
 | 8 | 防御者がサーバーをワイプして再インストール | 完全ディスクワイプ、OS再インストール | dd, PXEブート |
 | 9 | 攻撃者がバックドアを残す | Elliotがファイルを残し、権限を変更 | chmod, useradd, crontab |
+
+
+2026/09/16

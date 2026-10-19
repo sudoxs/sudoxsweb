@@ -712,3 +712,6 @@ For a blog/portfolio post, frame this as:
 - Moral conviction (not financial motive)
 
 The "strange thing" he found was CP traffic. He traced it to Ron via MAC address and physical correlation. He called police before confronting him. The scene is a rare example of a hacker using their skills for moral (not financial) reasons.
+
+
+2026/09/11

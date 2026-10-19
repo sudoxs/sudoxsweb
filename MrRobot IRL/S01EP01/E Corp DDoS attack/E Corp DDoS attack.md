@@ -930,3 +930,7 @@ sudo iptables -I INPUT 1 -p tcp --dport 441 -j ACCEPT
 | 7 | Defender redirects traffic to backup | DNS failover to backup server | nsupdate, route |
 | 8 | Defender wipes and reinstalls servers | Full disk wipe, OS reinstall | dd, PXE boot |
 | 9 | Attacker leaves backdoor | Elliot leaves file, changes permissions | chmod, useradd, crontab |
+
+
+
+2026/09/16

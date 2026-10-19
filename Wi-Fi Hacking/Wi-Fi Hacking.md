@@ -2412,3 +2412,6 @@ sudo kismet -c wlan0
 hashcat -m 22000 hash.hc22000 wordlist.txt
 hashcat -m 5500 'user::::response:challenge' wordlist.txt
 ```
+
+
+2026/06/15

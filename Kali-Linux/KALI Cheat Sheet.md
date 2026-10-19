@@ -1864,3 +1864,6 @@ Does version contain "kali"?
 | Deliverable | Format? Detail? |
 
 **Scope validation:** Confirm ownership, cloud provider permission, IP block ownership. Use OSINT tools.
+
+
+2026/04/22

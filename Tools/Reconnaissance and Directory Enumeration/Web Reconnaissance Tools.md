@@ -364,3 +364,7 @@ Drill into specific endpoints, parameters, or headers that feroxbuster or katana
 - Need to fuzz a parameter, header, or POST body? → **ffuf**
 - Need to map every directory recursively? → **feroxbuster**
 - Need to crawl a modern SPA and extract JS endpoints? → **katana**
+
+
+
+2026/09/05
