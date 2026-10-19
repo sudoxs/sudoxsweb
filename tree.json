@@ -81,16 +81,23 @@
         "path": "Platforms/HackTheBox",
         "children": [
           {
-            "name": "Dante(EN).md",
-            "type": "file",
-            "path": "Platforms/HackTheBox/Dante(EN).md",
-            "download_url": "Platforms/HackTheBox/Dante(EN).md"
-          },
-          {
-            "name": "Dante(JP).md",
-            "type": "file",
-            "path": "Platforms/HackTheBox/Dante(JP).md",
-            "download_url": "Platforms/HackTheBox/Dante(JP).md"
+            "name": "Dante",
+            "type": "dir",
+            "path": "Platforms/HackTheBox/Dante",
+            "children": [
+              {
+                "name": "Dante(EN).md",
+                "type": "file",
+                "path": "Platforms/HackTheBox/Dante/Dante(EN).md",
+                "download_url": "Platforms/HackTheBox/Dante/Dante(EN).md"
+              },
+              {
+                "name": "Dante(JP).md",
+                "type": "file",
+                "path": "Platforms/HackTheBox/Dante/Dante(JP).md",
+                "download_url": "Platforms/HackTheBox/Dante/Dante(JP).md"
+              }
+            ]
           }
         ]
       },
@@ -105,22 +112,29 @@
             "path": "Platforms/STANDOFF 365/BOOTCAMP",
             "children": [
               {
-                "name": "Bootcamp(EN).md",
-                "type": "file",
-                "path": "Platforms/STANDOFF 365/BOOTCAMP/Bootcamp(EN).md",
-                "download_url": "Platforms/STANDOFF 365/BOOTCAMP/Bootcamp(EN).md"
-              },
-              {
-                "name": "Bootcamp(JP).md",
-                "type": "file",
-                "path": "Platforms/STANDOFF 365/BOOTCAMP/Bootcamp(JP).md",
-                "download_url": "Platforms/STANDOFF 365/BOOTCAMP/Bootcamp(JP).md"
-              },
-              {
-                "name": "Bootcamp(RU).md",
-                "type": "file",
-                "path": "Platforms/STANDOFF 365/BOOTCAMP/Bootcamp(RU).md",
-                "download_url": "Platforms/STANDOFF 365/BOOTCAMP/Bootcamp(RU).md"
+                "name": "WEB",
+                "type": "dir",
+                "path": "Platforms/STANDOFF 365/BOOTCAMP/WEB",
+                "children": [
+                  {
+                    "name": "Bootcamp-WEB(EN).md",
+                    "type": "file",
+                    "path": "Platforms/STANDOFF 365/BOOTCAMP/WEB/Bootcamp-WEB(EN).md",
+                    "download_url": "Platforms/STANDOFF 365/BOOTCAMP/WEB/Bootcamp-WEB(EN).md"
+                  },
+                  {
+                    "name": "Bootcamp-WEB(JP).md",
+                    "type": "file",
+                    "path": "Platforms/STANDOFF 365/BOOTCAMP/WEB/Bootcamp-WEB(JP).md",
+                    "download_url": "Platforms/STANDOFF 365/BOOTCAMP/WEB/Bootcamp-WEB(JP).md"
+                  },
+                  {
+                    "name": "Bootcamp-WEB(RU).md",
+                    "type": "file",
+                    "path": "Platforms/STANDOFF 365/BOOTCAMP/WEB/Bootcamp-WEB(RU).md",
+                    "download_url": "Platforms/STANDOFF 365/BOOTCAMP/WEB/Bootcamp-WEB(RU).md"
+                  }
+                ]
               }
             ]
           },
@@ -130,22 +144,29 @@
             "path": "Platforms/STANDOFF 365/STANDALONE",
             "children": [
               {
-                "name": "Messemger(RU).md",
-                "type": "file",
-                "path": "Platforms/STANDOFF 365/STANDALONE/Messemger(RU).md",
-                "download_url": "Platforms/STANDOFF 365/STANDALONE/Messemger(RU).md"
-              },
-              {
-                "name": "Messenger(EN).md",
-                "type": "file",
-                "path": "Platforms/STANDOFF 365/STANDALONE/Messenger(EN).md",
-                "download_url": "Platforms/STANDOFF 365/STANDALONE/Messenger(EN).md"
-              },
-              {
-                "name": "Messenger(JP).md",
-                "type": "file",
-                "path": "Platforms/STANDOFF 365/STANDALONE/Messenger(JP).md",
-                "download_url": "Platforms/STANDOFF 365/STANDALONE/Messenger(JP).md"
+                "name": "Messenger",
+                "type": "dir",
+                "path": "Platforms/STANDOFF 365/STANDALONE/Messenger",
+                "children": [
+                  {
+                    "name": "Messemger(RU).md",
+                    "type": "file",
+                    "path": "Platforms/STANDOFF 365/STANDALONE/Messenger/Messemger(RU).md",
+                    "download_url": "Platforms/STANDOFF 365/STANDALONE/Messenger/Messemger(RU).md"
+                  },
+                  {
+                    "name": "Messenger(EN).md",
+                    "type": "file",
+                    "path": "Platforms/STANDOFF 365/STANDALONE/Messenger/Messenger(EN).md",
+                    "download_url": "Platforms/STANDOFF 365/STANDALONE/Messenger/Messenger(EN).md"
+                  },
+                  {
+                    "name": "Messenger(JP).md",
+                    "type": "file",
+                    "path": "Platforms/STANDOFF 365/STANDALONE/Messenger/Messenger(JP).md",
+                    "download_url": "Platforms/STANDOFF 365/STANDALONE/Messenger/Messenger(JP).md"
+                  }
+                ]
               }
             ]
           }
