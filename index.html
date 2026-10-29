@@ -16,7 +16,8 @@
         })();
     </script>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" id="hljs-dark" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" id="hljs-light" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css" disabled>
     <style>
         /* ═══════════════════════ DESIGN TOKENS — DARK (default) ═══════════════════════ */
         :root {
@@ -48,6 +49,7 @@
             --font-display:"Franklin Gothic Condensed","Liberation Sans Narrow","Nimbus Sans Narrow",sans-serif;
             --page-gap:    clamp(1rem, 3vw, 2.5rem);
             --content-max: 1400px;
+            --header-h:    120px; /* JS overrides this with the real height */
 
             --fs-3xs: clamp(0.62rem, 0.58rem + 0.2vw, 0.72rem);
             --fs-2xs: clamp(0.68rem, 0.64rem + 0.25vw, 0.78rem);
@@ -324,22 +326,24 @@
         }
         .record-count{color:var(--ink-faint);font-size:var(--fs-2xs);letter-spacing:.14em}
 
-        /* ─── Sticky archive heading on file pages (transparent + blur) ─── */
-	body.viewing-md .archive-heading{
-	    position:sticky;
-	    top:0;
-	    z-index:20;
-	    padding-top:.85rem;
-	    padding-bottom:.85rem;
-	    margin-bottom:1.25rem;
-	    background:rgba(7, 10, 8, 0.72);
-	    backdrop-filter:blur(14px) saturate(1.2);
-	    -webkit-backdrop-filter:blur(14px) saturate(1.2);
-	    box-shadow:0 1px 0 var(--border-strong);
-	}
-	html.theme-light body.viewing-md .archive-heading{
-	    background:rgba(232, 229, 221, 0.94);
-	}
+        .heading-actions{display:flex;align-items:center;gap:.6rem;flex-shrink:0;flex-wrap:wrap}
+
+        /* ─── Sticky archive heading on file pages (desktop) ─── */
+        body.viewing-md .archive-heading{
+            position:sticky;
+            top:0;
+            z-index:20;
+            padding-top:.85rem;
+            padding-bottom:.85rem;
+            margin-bottom:1.25rem;
+            background:rgba(7, 10, 8, 0.72);
+            backdrop-filter:blur(14px) saturate(1.2);
+            -webkit-backdrop-filter:blur(14px) saturate(1.2);
+            box-shadow:0 1px 0 var(--border-strong);
+        }
+        html.theme-light body.viewing-md .archive-heading{
+            background:rgba(232, 229, 221, 0.94);
+        }
 
         /* ═══════════════════════ EXPLORER ═══════════════════════ */
         .explorer-wrap{margin-top:1rem}
@@ -410,6 +414,7 @@
             transition:border-color 180ms ease,color 180ms ease,background 180ms ease;
             white-space:nowrap;
             flex-shrink:0;
+            cursor:pointer;
         }
         html.theme-light .secondary-action{background:rgba(0,0,0,.02)}
         .secondary-action:hover{
@@ -427,7 +432,7 @@
             align-items:start;
         }
         @media(max-width:900px){
-            .md-layout{grid-template-columns:1fr}
+            .md-layout{grid-template-columns:minmax(0, 1fr)}
         }
         .md-content{
             max-width:100%;padding:0 0 2rem;
@@ -472,9 +477,10 @@
         .md-content a:hover{color:var(--ink-bright)}
         .md-content strong{color:var(--ink-bright);font-weight:700}
         .md-content em{color:var(--ink-bright)}
+
+        /* ─── Tables: base (when not wrapped, still usable) ─── */
         .md-content table{
             display:table;width:100%;max-width:100%;
-            overflow-x:auto;-webkit-overflow-scrolling:touch;
             border-collapse:collapse;margin:1.2rem 0;font-size:var(--fs-sm);
         }
         .md-content thead{background:var(--surface)}
@@ -488,11 +494,98 @@
         }
         .md-content tr:nth-child(even) td{background:rgba(255,255,255,.012)}
         html.theme-light .md-content tr:nth-child(even) td{background:rgba(0,0,0,.02)}
+
+        /* ─── Horizontal-scroll wrapper for wide tables ─── */
+        .md-table-wrap{
+            display:block;
+            width:100%;
+            max-width:100%;
+            overflow-x:auto;
+            overflow-y:hidden;
+            -webkit-overflow-scrolling:touch;
+            overscroll-behavior-x:contain;
+            margin:1.2rem 0;
+            scrollbar-width:thin;
+            scrollbar-color:var(--border-strong) transparent;
+        }
+        .md-table-wrap::-webkit-scrollbar{height:8px}
+        .md-table-wrap::-webkit-scrollbar-track{background:rgba(0,0,0,.08)}
+        .md-table-wrap::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:4px}
+        .md-table-wrap::-webkit-scrollbar-thumb:hover{background:var(--signal)}
+        .md-content .md-table-wrap > table{
+            margin:0;
+            width:auto;
+            max-width:none;
+            min-width:100%;
+        }
+
         .md-content hr{border:0;border-top:1px solid var(--border);margin:2rem 0}
         .md-content img{max-width:100%;border:1px solid var(--border);border-radius:3px;margin:.5rem 0}
         .md-content input[type="checkbox"]{accent-color:var(--danger-bright);margin-right:.4rem}
 
-        /* ═══════════════════════ TABLE OF CONTENTS (sticky, fixed scroll) ═══════════════════════ */
+        /* ═══════════════════════ ENHANCED CODE BLOCKS ═══════════════════════ */
+        .code-block{
+            position:relative;
+            margin:1.2rem 0;
+            border:1px solid var(--border-strong);
+            border-radius:4px;
+            overflow:hidden;
+            background:var(--surface);
+        }
+        html.theme-light .code-block{background:#f5f3ee}
+        .code-block-header{
+            display:flex;align-items:center;justify-content:space-between;
+            padding:.42rem .85rem;
+            background:var(--surface-raised);
+            border-bottom:1px solid var(--border);
+            font-family:var(--font-mono);
+            font-size:var(--fs-3xs);
+            letter-spacing:.1em;
+        }
+        .code-lang{
+            text-transform:uppercase;
+            color:var(--signal);
+            font-weight:600;
+        }
+        html.theme-light .code-lang{color:var(--signal-bright)}
+        .code-copy{
+            display:inline-flex;align-items:center;gap:.4rem;
+            padding:.28rem .6rem;
+            border:1px solid var(--border-strong);
+            background:transparent;
+            color:var(--ink-dim);
+            font-family:var(--font-mono);
+            font-size:var(--fs-3xs);
+            letter-spacing:.1em;
+            text-transform:uppercase;
+            cursor:pointer;
+            transition:color 150ms ease,border-color 150ms ease,background 150ms ease;
+        }
+        .code-copy:hover{
+            color:var(--ink-bright);
+            border-color:var(--danger-bright);
+            background:rgba(163,37,43,.08);
+        }
+        .code-copy.copied{
+            color:var(--signal-bright);
+            border-color:var(--signal);
+            background:rgba(141,162,125,.1);
+        }
+        html.theme-light .code-copy.copied{color:var(--signal-bright)}
+        .code-copy svg{flex-shrink:0}
+        .md-content .code-block pre{
+            margin:0;
+            border:0;
+            border-radius:0;
+            background:var(--surface);
+        }
+        html.theme-light .md-content .code-block pre{background:#f5f3ee}
+        .md-content .code-block pre code{
+            display:block;
+            padding:0;
+        }
+
+        /* ═══════════════════════ TABLE OF CONTENTS (desktop) ═══════════════════════ */
         .toc-sidebar{
             position:sticky;
             top:1.5rem;
@@ -527,9 +620,90 @@
         .toc-list a.active{color:var(--ink-bright);border-left-color:var(--danger-bright);font-weight:500}
         .toc-list .toc-h3 a{padding-left:1.5rem;font-size:calc(var(--fs-2xs) - 1px)}
         .toc-list .toc-h4 a{padding-left:2.25rem;font-size:calc(var(--fs-2xs) - 1px)}
-        @media(max-width:900px){
-            .toc-sidebar{display:none}
+
+        /* ═══════════════════════ MOBILE TOC TOGGLE + OVERLAY ═══════════════════════ */
+        .toc-mobile-toggle{
+            display:none;
+            align-items:center;gap:.45rem;
+            padding:.55rem .9rem;
+            border:1px solid var(--border-strong);
+            background:rgba(255,255,255,.02);
+            color:var(--ink-dim);
+            font-family:var(--font-mono);
+            font-size:var(--fs-2xs);
+            letter-spacing:.12em;
+            text-transform:uppercase;
+            cursor:pointer;
+            transition:border-color 150ms ease,color 150ms ease,background 150ms ease;
         }
+        html.theme-light .toc-mobile-toggle{background:rgba(0,0,0,.02)}
+        .toc-mobile-toggle:hover,.toc-mobile-toggle:active{
+            border-color:var(--danger-bright);
+            color:var(--danger-bright);
+            background:rgba(163,37,43,.08);
+        }
+        .toc-mobile-toggle svg{flex-shrink:0}
+
+        .toc-mobile-overlay{
+            position:fixed;inset:0;z-index:9998;
+            display:block;
+            background:rgba(4,6,5,.95);
+            backdrop-filter:blur(8px);
+            -webkit-backdrop-filter:blur(8px);
+            padding:clamp(1rem,4vw,2rem);
+            overflow-y:auto;
+            -webkit-overflow-scrolling:touch;
+            opacity:0;visibility:hidden;
+            transition:opacity 220ms ease, visibility 220ms ease;
+        }
+        html.theme-light .toc-mobile-overlay{background:rgba(232,229,221,.97)}
+        .toc-mobile-overlay.active{opacity:1;visibility:visible}
+        .toc-mobile-panel{
+            max-width:640px;
+            margin:0 auto;
+            transform:translateY(20px);
+            transition:transform 280ms ease;
+        }
+        .toc-mobile-overlay.active .toc-mobile-panel{transform:translateY(0)}
+        .toc-mobile-header{
+            display:flex;align-items:center;justify-content:space-between;
+            padding-bottom:1rem;margin-bottom:1.5rem;
+            border-bottom:1px solid var(--border-strong);
+            color:var(--ink-bright);
+            font-family:var(--font-display);
+            font-size:var(--fs-lg);
+            font-weight:900;
+            letter-spacing:.13em;
+        }
+        .toc-mobile-close{
+            display:inline-flex;align-items:center;justify-content:center;
+            width:2.2rem;height:2.2rem;
+            border:1px solid var(--border-strong);
+            background:transparent;
+            color:var(--ink-dim);
+            cursor:pointer;
+            font-size:1rem;
+            line-height:1;
+            transition:color 150ms ease,border-color 150ms ease;
+        }
+        .toc-mobile-close:hover{color:var(--danger-bright);border-color:var(--danger-bright)}
+        .toc-mobile-list{list-style:none;padding:0;margin:0}
+        .toc-mobile-list li{margin:0}
+        .toc-mobile-list a{
+            display:block;
+            padding:.7rem .9rem;
+            border-bottom:1px solid var(--border);
+            color:var(--ink);
+            font-size:var(--fs-sm);
+            text-decoration:none;
+            transition:background 150ms ease,color 150ms ease;
+        }
+        .toc-mobile-list a:hover,.toc-mobile-list a:active{
+            background:var(--surface-active);
+            color:var(--ink-bright);
+        }
+        .toc-mobile-list .toc-h3 a{padding-left:2rem;font-size:var(--fs-xs)}
+        .toc-mobile-list .toc-h4 a{padding-left:3rem;font-size:var(--fs-xs)}
 
         /* ═══════════════════════ OBSIDIAN CALLOUTS ═══════════════════════ */
         .callout{
@@ -540,14 +714,16 @@
         }
         .callout-header{
             display:flex;align-items:center;gap:.5rem;
-            margin-bottom:.5rem;
+            margin-bottom:.6rem;
             color:var(--callout-color,var(--signal-bright));
             font-weight:700;font-size:var(--fs-sm);letter-spacing:.04em;
         }
-        .callout-icon{font-size:1.1rem;line-height:1}
-        .callout-title{text-transform:uppercase}
+        .callout-icon{font-size:1.05rem;line-height:1}
+        .callout-title{text-transform:uppercase;letter-spacing:.06em}
         .callout-body{color:var(--ink)}
         .callout-body p:last-child{margin-bottom:0}
+        .callout-body > *:first-child{margin-top:0}
+        .callout-body > *:last-child{margin-bottom:0}
         .callout-note{--callout-color:#4a9eff;--callout-bg:74,158,255}
         .callout-tip{--callout-color:#4ade80;--callout-bg:74,222,128}
         .callout-warning{--callout-color:#fbbf24;--callout-bg:251,191,36}
@@ -861,19 +1037,80 @@
             .footer-grid{grid-template-columns:1fr auto}
             .footer-system{display:none}
         }
+
         @media(max-width:900px){
             .home-hero{padding-top:1.5rem}
-            body.viewing-md .archive-heading{position:static;box-shadow:none;background:transparent}
+            .toc-sidebar{display:none}
+            .toc-mobile-toggle{display:inline-flex}
+
+            /* ── Sticky top bar on mobile ── */
+            .site-header{
+                position:sticky;
+                top:0;
+                z-index:40;
+                margin-bottom:0;
+                background:rgba(7,10,8,.88);
+                backdrop-filter:blur(14px) saturate(1.2);
+                -webkit-backdrop-filter:blur(14px) saturate(1.2);
+            }
+            html.theme-light .site-header{
+                background:rgba(232,229,221,.94);
+            }
+
+            /* ── File-page sub-header pinned below the site header ── */
+            body.viewing-md .archive-heading{
+                position:sticky;
+                top:var(--header-h, 0px);
+                z-index:30;
+                background:rgba(7,10,8,.88);
+                backdrop-filter:blur(14px) saturate(1.2);
+                -webkit-backdrop-filter:blur(14px) saturate(1.2);
+                box-shadow:0 1px 0 var(--border-strong);
+            }
+            html.theme-light body.viewing-md .archive-heading{
+                background:rgba(232,229,221,.94);
+            }
         }
+
         @media(max-width:760px){
             .site-header{align-items:flex-start;flex-direction:column;gap:1rem;padding:1rem 0}
-            .header-controls{width:100%}
-            .main-nav{width:100%;overflow-x:auto;padding-bottom:.35rem}
-            .main-nav a{flex:none}
+            .header-controls{width:100%;gap:.9rem}
+            .main-nav{width:100%;flex-wrap:wrap;overflow:visible;padding-bottom:.35rem;gap:.35rem}
+
+            /* Accordion-style dropdown on mobile — no clipping/scroll issues */
+            .nav-dropdown{display:flex;flex-direction:column;width:100%;position:relative}
+            .nav-dropdown-trigger{
+                width:100%;
+                display:flex;align-items:center;justify-content:space-between;
+                padding:.65rem .9rem;
+                border:1px solid var(--border-strong);
+                background:var(--surface-raised);
+            }
+            .nav-dropdown-trigger::after{content:"▾";transition:transform 180ms ease}
+            .nav-dropdown.open .nav-dropdown-trigger::after{transform:rotate(180deg)}
+            .nav-dropdown-menu{
+                position:static;
+                display:none;
+                width:100%;
+                min-width:0;
+                max-width:none;
+                max-height:50vh;
+                overflow-y:auto;
+                -webkit-overflow-scrolling:touch;
+                overscroll-behavior:contain;
+                margin-top:.35rem;
+                border:1px solid var(--border);
+                box-shadow:none;
+                background:var(--surface);
+            }
+            .nav-dropdown.open .nav-dropdown-menu{display:block}
+            .nav-dropdown-menu a{padding:.65rem .95rem}
+
             .explorer-grid{grid-template-columns:1fr}
             .footer-grid{grid-template-columns:1fr}
             .footer-links{justify-content:flex-start;flex-wrap:wrap}
             .archive-heading{align-items:flex-start;flex-direction:column;gap:.7rem}
+            .heading-actions{width:100%;justify-content:flex-start}
         }
         @media(max-width:520px){
             html{font-size:15px}
@@ -1029,19 +1266,59 @@
     <script>
     const SX = (function(){
 
+    function applyHljsTheme(isLight){
+        const d = document.getElementById("hljs-dark");
+        const l = document.getElementById("hljs-light");
+        if(d) d.disabled = isLight;
+        if(l) l.disabled = !isLight;
+    }
+
     function initTheme(){
         const cb = document.getElementById("theme-checkbox");
         if(!cb) return;
-        cb.checked = document.documentElement.classList.contains("theme-light");
+        const isLight = document.documentElement.classList.contains("theme-light");
+        cb.checked = isLight;
+        applyHljsTheme(isLight);
         cb.addEventListener("change", () => {
             if(cb.checked){
                 document.documentElement.classList.add("theme-light");
                 try{ localStorage.setItem("sx-theme","light"); }catch(e){}
+                applyHljsTheme(true);
             } else {
                 document.documentElement.classList.remove("theme-light");
                 try{ localStorage.setItem("sx-theme","dark"); }catch(e){}
+                applyHljsTheme(false);
             }
         });
+    }
+
+    /* ── Sticky header measurement ────────────────────────────────────────
+       Sets --header-h to the real height of the site header so that
+       the file-page archive-heading can stick right below it on mobile.
+       Re-measures on resize, font load, and whenever the header resizes
+       (e.g. when the mobile nav accordion opens). */
+    let _headerRO = null;
+    function updateHeaderVar(){
+        const header = document.querySelector(".site-header");
+        if(!header) return;
+        const h = header.offsetHeight;
+        document.documentElement.style.setProperty("--header-h", h + "px");
+    }
+    function setupStickyHeader(){
+        updateHeaderVar();
+        window.addEventListener("resize", updateHeaderVar, {passive:true});
+        const header = document.querySelector(".site-header");
+        if(header && window.ResizeObserver){
+            try{
+                if(_headerRO) _headerRO.disconnect();
+                _headerRO = new ResizeObserver(updateHeaderVar);
+                _headerRO.observe(header);
+            }catch(e){}
+        }
+        if(document.fonts && document.fonts.ready){
+            document.fonts.ready.then(updateHeaderVar).catch(()=>{});
+        }
+        window.addEventListener("load", updateHeaderVar);
     }
 
     let tree        = null;
@@ -1055,7 +1332,6 @@
 
         const h = raw.replace(/^#/,"");
 
-        // If it's a bare anchor (not starting with /), don't treat as route
         if(!h.startsWith("/")) return null;
 
         const parts = h.split("/").filter(Boolean);
@@ -1162,12 +1438,16 @@
         }
 
         nav.innerHTML = html;
+        // header contents changed → remeasure
+        setTimeout(updateHeaderVar, 0);
     }
 
     function toggleDropdown(e){
         e.stopPropagation();
         const dd = document.getElementById("navDropdown");
         if(dd) dd.classList.toggle("open");
+        // accordion changes header height; let layout settle then remeasure
+        setTimeout(updateHeaderVar, 0);
     }
     document.addEventListener("click", ()=>{
         const dd = document.getElementById("navDropdown");
@@ -1553,15 +1833,111 @@
             </div>`;
     }
 
+    // ═══════════════════════ COPY TO CLIPBOARD ═══════════════════════
+    function copyToClipboard(text){
+        if(navigator.clipboard && window.isSecureContext){
+            return navigator.clipboard.writeText(text);
+        }
+        return new Promise((resolve, reject) => {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try{
+                const ok = document.execCommand("copy");
+                document.body.removeChild(ta);
+                ok ? resolve() : reject(new Error("execCommand copy failed"));
+            }catch(e){
+                document.body.removeChild(ta);
+                reject(e);
+            }
+        });
+    }
+
+    // ═══════════════════════ CODE BLOCK ENHANCEMENT ═══════════════════════
+    function enhanceCodeBlocks(container){
+        if(!container) return;
+        const codeEls = container.querySelectorAll("pre > code");
+        codeEls.forEach(codeEl => {
+            const pre = codeEl.parentElement;
+            if(!pre || (pre.parentElement && pre.parentElement.classList.contains("code-block"))) return;
+
+            const langMatch = (codeEl.className || "").match(/language-([\w+#.-]+)/i);
+            let lang = langMatch ? langMatch[1].toLowerCase() : "";
+
+            if(window.hljs && !codeEl.classList.contains("hljs")){
+                try{
+                    if(lang && hljs.getLanguage(lang)){
+                        codeEl.innerHTML = hljs.highlight(codeEl.textContent, {language: lang, ignoreIllegals: true}).value;
+                        codeEl.classList.add("hljs");
+                    } else {
+                        hljs.highlightElement(codeEl);
+                    }
+                }catch(e){
+                    console.warn("SX: code highlight failed", e);
+                }
+            }
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "code-block";
+
+            const header = document.createElement("div");
+            header.className = "code-block-header";
+
+            const langLabel = document.createElement("span");
+            langLabel.className = "code-lang";
+            langLabel.textContent = lang || "code";
+
+            const copyBtn = document.createElement("button");
+            copyBtn.type = "button";
+            copyBtn.className = "code-copy";
+            copyBtn.setAttribute("aria-label", "Copy code");
+            copyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>COPY</span>`;
+
+            const labelSpan = copyBtn.querySelector("span");
+
+            copyBtn.addEventListener("click", () => {
+                const text = codeEl.textContent;
+                copyToClipboard(text).then(() => {
+                    copyBtn.classList.add("copied");
+                    labelSpan.textContent = "COPIED!";
+                    setTimeout(() => {
+                        copyBtn.classList.remove("copied");
+                        labelSpan.textContent = "COPY";
+                    }, 1600);
+                }).catch(() => {
+                    labelSpan.textContent = "FAILED";
+                    setTimeout(() => { labelSpan.textContent = "COPY"; }, 1600);
+                });
+            });
+
+            header.appendChild(langLabel);
+            header.appendChild(copyBtn);
+
+            pre.parentNode.insertBefore(wrapper, pre);
+            wrapper.appendChild(header);
+            wrapper.appendChild(pre);
+        });
+    }
+
+    // ═══════════════════════ TABLE WRAPPER (horizontal scroll) ═══════════════════════
+    function wrapTables(container){
+        if(!container) return;
+        container.querySelectorAll("table").forEach(table => {
+            const parent = table.parentElement;
+            if(parent && parent.classList && parent.classList.contains("md-table-wrap")) return;
+            const wrap = document.createElement("div");
+            wrap.className = "md-table-wrap";
+            parent.insertBefore(wrap, table);
+            wrap.appendChild(table);
+        });
+    }
+
     // ═══════════════════════ MARKDOWN + TOC ═══════════════════════
     function renderMarkdown(mdText){
         marked.setOptions({
-            highlight: function(code, lang){
-                if(lang && hljs.getLanguage(lang)){
-                    return hljs.highlight(code, { language: lang }).value;
-                }
-                return hljs.highlightAuto(code).value;
-            },
             breaks: true,
             gfm: true
         });
@@ -1588,12 +1964,25 @@
             const firstP = bq.querySelector("p");
             if(!firstP) return;
 
-            const firstLine = firstP.textContent.trim();
-            const match = firstLine.match(/^\[!(\w+)\]([+-])?\s*(.*)$/);
-            if(!match) return;
+            const firstPHTML = firstP.innerHTML;
+            const m = firstPHTML.match(/^\s*\[!(\w+)\]([+-])?\s*([^<\n]*?)(?:<br\s*\/?>|$)/i);
+            if(!m) return;
 
-            const type = match[1].toLowerCase();
-            const titleText = match[3].trim() || type.charAt(0).toUpperCase() + type.slice(1);
+            const type = m[1].toLowerCase();
+            const titleText = (m[3] || "").trim() || (type.charAt(0).toUpperCase() + type.slice(1));
+
+            let remainingHTML = firstPHTML.slice(m[0].length).trim();
+            remainingHTML = remainingHTML.replace(/^<br\s*\/?>/i, "").trim();
+
+            let bodyHTML = "";
+            if(remainingHTML){
+                bodyHTML += `<p>${remainingHTML}</p>`;
+            }
+            let sibling = firstP.nextElementSibling;
+            while(sibling){
+                bodyHTML += sibling.outerHTML;
+                sibling = sibling.nextElementSibling;
+            }
 
             const calloutDiv = document.createElement("div");
             calloutDiv.className = `callout callout-${type}`;
@@ -1609,11 +1998,17 @@
                     <span class="callout-icon">${icons[type] || "📌"}</span>
                     <span class="callout-title">${escapeHTML(titleText)}</span>
                 </div>
-                <div class="callout-body">${bq.innerHTML.replace(/<p>\[!\w+\][^<]*<\/p>/, "")}</div>
+                <div class="callout-body">${bodyHTML}</div>
             `;
 
             bq.parentNode.replaceChild(calloutDiv, bq);
         });
+
+        // Wrap tables so wide ones can scroll horizontally
+        wrapTables(tempDiv);
+
+        // Enhance code blocks (language label + copy button + syntax highlight)
+        enhanceCodeBlocks(tempDiv);
 
         return { html: tempDiv.innerHTML, headings };
     }
@@ -1633,6 +2028,24 @@
         return tocHTML;
     }
 
+    function buildMobileTOC(headings){
+        if(!headings.length) return "";
+        let html = `<div class="toc-mobile-overlay" id="tocMobileOverlay" aria-hidden="true">
+            <div class="toc-mobile-panel" role="dialog" aria-modal="true" aria-label="Table of contents">
+                <div class="toc-mobile-header">
+                    <span>TABLE OF CONTENTS</span>
+                    <button type="button" class="toc-mobile-close" onclick="SX.closeMobileTOC()" aria-label="Close">✕</button>
+                </div>
+                <ul class="toc-mobile-list">`;
+        headings.forEach(h => {
+            const level = parseInt(h.tagName[1]);
+            const className = level === 1 ? "toc-h1" : level === 2 ? "toc-h2" : level === 3 ? "toc-h3" : "toc-h4";
+            html += `<li class="${className}"><a href="#${h.id}" data-target="${h.id}">${escapeHTML(h.textContent)}</a></li>`;
+        });
+        html += `</ul></div></div>`;
+        return html;
+    }
+
     // ═══════════════════════ FILE RENDERER ═══════════════════════
     async function renderFile(catPath, filename){
         const categories = getCategories();
@@ -1644,7 +2057,6 @@
         const displayName = filename.replace(/\.md$/, "");
         const main = document.getElementById("mainContent");
 
-        // Ensure body class is set BEFORE rendering (so sticky works immediately)
         document.body.classList.add("viewing-md");
 
         main.innerHTML = `
@@ -1670,6 +2082,10 @@
 
         const { html: mdHTML, headings } = renderMarkdown(mdText);
         const tocHTML = buildTOC(headings);
+        const mobileTOC = buildMobileTOC(headings);
+        const mobileToggle = headings.length
+            ? `<button type="button" class="toc-mobile-toggle" onclick="SX.toggleMobileTOC()" aria-label="Open table of contents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg><span>CONTENTS</span></button>`
+            : "";
 
         const altH = (MD_LAYOUT.useAltHeader && MD_LAYOUT.altHeaderHTML) ? MD_LAYOUT.altHeaderHTML : "";
         const altF = (MD_LAYOUT.useAltFooter && MD_LAYOUT.altFooterHTML) ? MD_LAYOUT.altFooterHTML : "";
@@ -1682,60 +2098,89 @@
                     <h2>${escapeHTML(displayName)}</h2>
                     ${getFileDate(fileNode) ? `<span style="color:var(--ink-faint);font-size:var(--fs-2xs);letter-spacing:.1em">${getFileDate(fileNode)}</span>` : ""}
                 </div>
-                <a href="#/category/${encodePath(catPath)}" class="secondary-action">← BACK</a>
+                <div class="heading-actions">
+                    ${mobileToggle}
+                    <a href="#/category/${encodePath(catPath)}" class="secondary-action">← BACK</a>
+                </div>
             </div>
             ${MD_LAYOUT.beforeContent || ""}
             <div class="md-layout">
                 <div class="md-content">${mdHTML}</div>
                 ${tocHTML}
             </div>
+            ${mobileTOC}
             ${MD_LAYOUT.afterContent || ""}
             ${altF}`;
 
         initTOCInteractions();
+        // header height may have changed while re-rendering
+        setTimeout(updateHeaderVar, 0);
+    }
+
+    // ═══════════════════════ MOBILE TOC TOGGLE ═══════════════════════
+    function toggleMobileTOC(){
+        const overlay = document.getElementById("tocMobileOverlay");
+        if(!overlay) return;
+        overlay.classList.toggle("active");
+        overlay.setAttribute("aria-hidden", overlay.classList.contains("active") ? "false" : "true");
+    }
+
+    function closeMobileTOC(){
+        const overlay = document.getElementById("tocMobileOverlay");
+        if(!overlay) return;
+        overlay.classList.remove("active");
+        overlay.setAttribute("aria-hidden", "true");
     }
 
     // ═══════════════════════ TOC CLICK + SCROLLSPY ═══════════════════════
     function initTOCInteractions(){
-        const tocLinks = document.querySelectorAll(".toc-list a");
+        const tocLinks = document.querySelectorAll(".toc-list a, .toc-mobile-list a");
         if(!tocLinks.length) return;
 
-        const targets = [];
         tocLinks.forEach(link => {
             const targetId = link.dataset.target;
-            const target = document.getElementById(targetId);
+            const target = targetId ? document.getElementById(targetId) : null;
             if(!target) return;
 
-            targets.push({ link, target });
-
-            // ── Fix: prevent hash change so router doesn't 404 ──
             link.addEventListener("click", (e) => {
                 e.preventDefault();
+                closeMobileTOC();
                 const offset = getStickyOffset();
                 const targetY = target.getBoundingClientRect().top + window.scrollY - offset;
                 window.scrollTo({ top: targetY, behavior: "smooth" });
             });
         });
 
-        if(!targets.length) return;
+        const desktopLinks = document.querySelectorAll(".toc-list a");
+        if(!desktopLinks.length) return;
+
+        const desktopTargets = [];
+        desktopLinks.forEach(link => {
+            const target = link.dataset.target ? document.getElementById(link.dataset.target) : null;
+            if(target) desktopTargets.push({ link, target });
+        });
+        if(!desktopTargets.length) return;
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if(entry.isIntersecting){
-                    tocLinks.forEach(l => l.classList.remove("active"));
-                    const active = targets.find(t => t.target === entry.target);
+                    desktopLinks.forEach(l => l.classList.remove("active"));
+                    const active = desktopTargets.find(t => t.target === entry.target);
                     if(active) active.link.classList.add("active");
                 }
             });
         }, { rootMargin: "-20% 0px -70% 0px" });
 
-        targets.forEach(t => observer.observe(t.target));
+        desktopTargets.forEach(t => observer.observe(t.target));
     }
 
     function getStickyOffset(){
-        // Rough offset = height of sticky archive-heading + a bit of breathing room
         const isMobile = window.innerWidth <= 900;
-        if(isMobile) return 20;
+        if(isMobile){
+            // Account for the two stacked sticky bars
+            const h = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-h"), 10) || 0;
+            return h + 24;
+        }
         return 150;
     }
 
@@ -1770,6 +2215,7 @@
     // ═══════════════════════ INIT ═══════════════════════
     async function init(){
         initTheme();
+        setupStickyHeader();
         try{ await loadPlaybook(); }catch(e){ console.error("SX init error:", e); tree = []; }
 
         if(tree && tree.length){
@@ -1779,7 +2225,6 @@
 
         const route = getRoute();
         if(route === null){
-            // Landing on a bare anchor — treat as home for now
             renderHome();
             buildNav(getCategories());
             return;
@@ -1794,12 +2239,33 @@
 
     function handleHashChange(){
         const route = getRoute();
-        if(route === null) return; // bare anchor, browser handles scroll
+        if(route === null) return;
+        closeMobileTOC();
+        try{ window.scrollTo({ top: 0, left: 0, behavior: "instant" }); }
+        catch(e){ window.scrollTo(0, 0); }
         if(route.page === "home"){ document.body.classList.remove("viewing-md"); renderHome(); }
         else if(route.page === "category"){ document.body.classList.remove("viewing-md"); renderCategory(route.cat); }
         else if(route.page === "file"){ renderFile(route.cat, route.file); }
         else{ render404(); }
     }
+
+    // ESC closes mobile TOC overlay
+    document.addEventListener("keydown", (e) => {
+        if(e.key === "Escape"){
+            const overlay = document.getElementById("tocMobileOverlay");
+            if(overlay && overlay.classList.contains("active")){
+                closeMobileTOC();
+            }
+        }
+    });
+
+    // Click on overlay backdrop closes it
+    document.addEventListener("click", (e) => {
+        const overlay = document.getElementById("tocMobileOverlay");
+        if(overlay && e.target === overlay && overlay.classList.contains("active")){
+            closeMobileTOC();
+        }
+    });
 
     window.addEventListener("hashchange", handleHashChange);
     window.addEventListener("DOMContentLoaded", init);
@@ -1809,6 +2275,8 @@
         navigateCategory: (path) => { navigate("/category/" + encodePath(path)); },
         navigateFile:   (cat, file) => { navigate("/file/" + encodePath(cat) + "/" + encodeURIComponent(file)); },
         toggleDropdown: toggleDropdown,
+        toggleMobileTOC: toggleMobileTOC,
+        closeMobileTOC:  closeMobileTOC,
         getStats:       () => ({ totalMd, flatFiles, categories: getCategories() }),
         refresh:        async () => { await init(); },
     };
