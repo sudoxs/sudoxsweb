@@ -1129,6 +1129,174 @@
             .footer-icon-fx::before{animation:none}
         }
 
+        /* ═══════════════════════ PORTFOLIO SECTIONS ═══════════════════════ */
+
+        .profile-section {
+            margin-top: 2rem;
+            padding: 1.6rem;
+            border: 1px solid var(--border);
+            background: linear-gradient(
+                135deg,
+                rgba(255,255,255,.018),
+                transparent 60%
+            );
+        }
+
+        .profile-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+            padding-bottom: .8rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .profile-section-header h2 {
+            color: var(--ink-bright);
+            font-family: var(--font-display);
+            font-size: var(--fs-xl);
+            font-weight: 900;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .profile-section-label {
+            color: var(--danger-bright);
+            font-size: var(--fs-2xs);
+            letter-spacing: .15em;
+        }
+
+        .profile-about {
+            max-width: 850px;
+            color: var(--ink);
+            font-size: var(--fs-sm);
+            line-height: 1.9;
+        }
+
+        .profile-about strong {
+            color: var(--ink-bright);
+        }
+
+        .profile-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .7rem;
+            margin-top: 1rem;
+        }
+
+        .profile-link {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .5rem .8rem;
+            border: 1px solid var(--border-strong);
+            color: var(--signal-bright);
+            font-size: var(--fs-xs);
+            text-decoration: none;
+            transition: background 180ms ease, border-color 180ms ease;
+        }
+
+        .profile-link:hover {
+            border-color: var(--danger-bright);
+            background: var(--surface-active);
+        }
+
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .project-card {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            padding: 1.2rem;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            transition: border-color 180ms ease, transform 180ms ease;
+        }
+
+        .project-card:hover {
+            border-color: var(--border-strong);
+            transform: translateY(-3px);
+        }
+
+        .project-index {
+            color: var(--danger-bright);
+            font-size: var(--fs-2xs);
+            letter-spacing: .16em;
+        }
+
+        .project-card h3 {
+            margin: .7rem 0;
+            color: var(--ink-bright);
+            font-family: var(--font-display);
+            font-size: var(--fs-lg);
+            font-weight: 800;
+        }
+
+        .project-card p {
+            flex: 1;
+            color: var(--ink-dim);
+            font-size: var(--fs-xs);
+            line-height: 1.8;
+        }
+
+        .project-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .4rem;
+            margin: 1rem 0;
+        }
+
+        .project-tags span {
+            padding: .2rem .45rem;
+            border: 1px solid var(--border);
+            color: var(--signal);
+            font-size: var(--fs-3xs);
+        }
+
+        .project-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .8rem;
+            margin-top: .5rem;
+        }
+
+        .project-actions a {
+            color: var(--danger-bright);
+            font-size: var(--fs-xs);
+            text-decoration: none;
+        }
+
+        .project-actions a:hover {
+            color: var(--ink-bright);
+            text-decoration: underline;
+        }
+
+        @media(max-width:900px) {
+            .project-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media(max-width:600px) {
+            .project-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-section {
+                padding: 1rem;
+            }
+
+            .profile-section-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+
         /* ═══════════════════════ MISC ═══════════════════════ */
         ::selection{background:var(--selection-bg);color:var(--selection-fg)}
         .hidden{display:none!important}
@@ -1753,6 +1921,138 @@
                 <div class="stat-item"><span class="stat-index">02</span><span class="stat-num" id="totalCats">${String(categories.length).padStart(2, "0")}</span><span class="stat-label">attack surfaces</span></div>
                 <div class="stat-item"><span class="stat-index">03</span><span class="stat-num">24/7</span><span class="stat-label">archive availability</span></div>
                 <div class="stat-item"><span class="stat-index">04</span><span class="stat-num">0x01</span><span class="stat-label">operator clearance</span></div>
+            </section>
+
+            <section class="profile-section" id="about">
+                <div class="profile-section-header">
+                    <h2>About Me</h2>
+                    <span class="profile-section-label">OPERATOR PROFILE // 001</span>
+                </div>
+
+                <div class="profile-about">
+                    <p>
+                        I am an Information and Communication Systems Engineering student
+                        with a focus on offensive security and systems engineering.
+                        I am driven by curiosity about how systems work at a fundamental level.
+                    </p>
+
+                    <p style="margin-top: .8rem;">
+                        I enjoy building practical software tools and exploring
+                        how systems work under the hood. My interests include
+                        Python development, web technologies, automation,
+                        application security, and offensive security research.
+                    </p>
+
+                    <p style="margin-top: .8rem;">
+                        I believe in learning by building, testing, documenting,
+                        and continuously improving my work.
+                    </p>
+                </div>
+
+                <div class="profile-links">
+                    <a class="profile-link"
+                       href="https://github.com/sudoxs"
+                       target="_blank"
+                       rel="noopener">GITHUB ↗</a>
+
+                    <a class="profile-link"
+                       href="https://app.hackthebox.com/public/users/2277802"
+                       target="_blank"
+                       rel="noopener">HACK THE BOX ↗</a>
+
+                    <a class="profile-link"
+                       href="https://standoff365.com/en-US/profile/sudoxs/"
+                       target="_blank"
+                       rel="noopener">STANDOFF 365 ↗</a>
+                </div>
+            </section>
+
+            <section class="profile-section" id="featured-projects">
+                <div class="profile-section-header">
+                    <h2>Featured Projects</h2>
+                    <span class="profile-section-label">SELECTED ENGINEERING WORK</span>
+                </div>
+
+                <div class="project-grid">
+
+                    <article class="project-card">
+                        <span class="project-index">PROJECT // 001</span>
+
+                        <h3>SQL Injection Testing Toolkit</h3>
+
+                        <p>
+                            A Python-based toolkit for authorized web application
+                            SQL injection testing, including multiple input vectors,
+                            detection workflows, payload transformations, and
+                            optional browser-based response inspection.
+                        </p>
+
+                        <div class="project-tags">
+                            <span>PYTHON</span>
+                            <span>REQUESTS</span>
+                            <span>WEB SECURITY</span>
+                        </div>
+
+                        <div class="project-actions">
+                            <a href="https://github.com/sudoxs/SQL_Injection_tool"
+                               target="_blank"
+                               rel="noopener">SOURCE CODE ↗</a>
+                        </div>
+                    </article>
+
+                    <article class="project-card">
+                        <span class="project-index">PROJECT // 002</span>
+
+                        <h3>Reverse Shell Generator</h3>
+
+                        <p>
+                            A browser-based application built with vanilla JavaScript.
+                            It provides an interactive interface for generating,
+                            encoding, copying, and downloading command templates.
+                        </p>
+
+                        <div class="project-tags">
+                            <span>JAVASCRIPT</span>
+                            <span>HTML</span>
+                            <span>CSS</span>
+                        </div>
+
+                        <div class="project-actions">
+                            <a href="https://github.com/sudoxs/reverse-shell-generator"
+                               target="_blank"
+                               rel="noopener">SOURCE CODE ↗</a>
+
+                            <a href="https://sudoxs.github.io/reverse-shell-generator/"
+                               target="_blank"
+                               rel="noopener">LIVE DEMO ↗</a>
+                        </div>
+                    </article>
+
+                    <article class="project-card">
+                        <span class="project-index">PROJECT // 003</span>
+
+                        <h3>Tprotocol</h3>
+
+                        <p>
+                            A Python desktop application for configurable protocol
+                            testing, concurrent execution, result classification,
+                            and HTML report generation.
+                        </p>
+
+                        <div class="project-tags">
+                            <span>PYTHON</span>
+                            <span>TKINTER</span>
+                            <span>THREADING</span>
+                        </div>
+
+                        <div class="project-actions">
+                            <a href="https://github.com/sudoxs/Tprotocol"
+                               target="_blank"
+                               rel="noopener">SOURCE CODE ↗</a>
+                        </div>
+                    </article>
+
+                </div>
             </section>`;
 
         initInvExplorer();
