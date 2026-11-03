@@ -180,6 +180,25 @@
     "path": "Security-Society",
     "children": [
       {
+        "name": "Six Malware That Defined the History of Cyber Threats",
+        "type": "dir",
+        "path": "Security-Society/Six Malware That Defined the History of Cyber Threats",
+        "children": [
+          {
+            "name": "Six Malware That Defined the History of Cyber Threats.md",
+            "type": "file",
+            "path": "Security-Society/Six Malware That Defined the History of Cyber Threats/Six Malware That Defined the History of Cyber Threats.md",
+            "download_url": "Security-Society/Six Malware That Defined the History of Cyber Threats/Six Malware That Defined the History of Cyber Threats.md"
+          },
+          {
+            "name": "サイバー脅威の歴史を定義した6つのマルウェア.md",
+            "type": "file",
+            "path": "Security-Society/Six Malware That Defined the History of Cyber Threats/サイバー脅威の歴史を定義した6つのマルウェア.md",
+            "download_url": "Security-Society/Six Malware That Defined the History of Cyber Threats/サイバー脅威の歴史を定義した6つのマルウェア.md"
+          }
+        ]
+      },
+      {
         "name": "Video Game Cracking - From DRM to the Fall of EMPRESS",
         "type": "dir",
         "path": "Security-Society/Video Game Cracking - From DRM to the Fall of EMPRESS",
