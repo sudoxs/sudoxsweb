@@ -125,46 +125,27 @@ html.theme-light .site-header{background:rgba(243,241,236,.97)}
 .lang-switch button:hover{color:var(--ink-bright)}
 .lang-switch button[aria-pressed="true"]{background:var(--danger-bright);color:#fff}
 
-/* ── uiverse: CacaceRoberto/horrible-swan-62 — day/night switch (scaled, theme-bound) ── */
-.tsw-holder{width:63px;height:28px;position:relative;flex-shrink:0}
-.tsw{position:absolute;top:0;left:0;display:inline-block;width:90px;height:40px;border:1px solid rgb(58,58,58);border-radius:22px;transform:scale(.7);transform-origin:top left;cursor:pointer}
-.tsw input{opacity:0;width:0;height:0}
-.tsw-slider{position:absolute;inset:0;background-color:black;border-radius:20px;transition:.4s;overflow:hidden;z-index:2}
-.tsw-slider:before{position:absolute;content:"";height:30px;width:30px;left:4px;bottom:5px;background-color:white;transition:1s;border-radius:50%;overflow:hidden}
-.tsw-moons{position:absolute;opacity:1;transition:1s}
-.tsw-hole{position:absolute;border-radius:50%;background-color:rgb(85,85,85)}
-.tsw-hole:nth-child(1){height:5px;width:5px;top:26px;left:20px}
-.tsw-hole:nth-child(2){height:10px;width:10px;top:16px;left:7px}
-.tsw-hole:nth-child(3){height:4px;width:4px;top:12px;left:21px}
-.tsw input:checked + .tsw-slider{background-color:#62cff0}
-.tsw input:checked + .tsw-slider:before{transform:translateX(52px);background-color:orange}
-.tsw input:checked + .tsw-slider .tsw-moons{transform:translateX(52px);opacity:0}
-.tsw-stars{position:absolute;right:6px;top:0;bottom:0;width:60px;transition:1s;transform:translateY(0)}
-.tsw-star{position:absolute;fill:white;animation:tsw-twinkle 2s infinite}
-.tsw-star:nth-child(1){top:5px;right:29px;width:20px;animation-delay:.3s}
-.tsw-star:nth-child(2){top:18px;right:9px;width:15px}
-.tsw-star:nth-child(3){top:5px;right:15px;width:10px;animation-delay:.6s}
-.tsw-star:nth-child(4){top:26px;right:28px;width:12px;animation-delay:.9s}
-.tsw-star:nth-child(5){top:2px;right:50px;width:8px;animation-delay:1.2s}
-.tsw input:checked + .tsw-slider .tsw-stars{transform:translateY(-32px);opacity:0}
-@keyframes tsw-twinkle{0%{transform:scale(1)}40%{transform:scale(1.2)}80%{transform:scale(.8)}100%{transform:scale(1)}}
-.tsw-clouds,.tsw-bclouds{position:absolute;left:6px;top:0;bottom:0;width:20px;transition:1s;transform:translateX(-55px)}
-.tsw-bclouds{opacity:0;z-index:0}
-.tsw-bcloud{position:absolute;width:20px;height:20px;background-color:#555;opacity:60%;border-radius:50%;animation:tsw-cloud 6s infinite;animation-delay:1s}
-.tsw-bcloud:nth-child(1){top:1px;right:3px}
-.tsw-bcloud:nth-child(2){top:15px;left:9px}
-.tsw-bcloud:nth-child(3){top:20px;left:27px}
-.tsw input:checked + .tsw-slider .tsw-bclouds{transform:translateX(32px);opacity:1}
-.tsw-cloud{position:absolute;width:20px;height:20px;background-color:white;border-radius:50%;z-index:1;animation:tsw-cloud 6s infinite}
-.tsw-cloud:nth-child(1){top:0;height:21px;width:21px;right:14px}
-.tsw-cloud:nth-child(2){height:25px;width:25px;top:14px;right:6px}
-.tsw-cloud:nth-child(3){height:23px;width:23px;top:28px;left:4px}
-.tsw-cloud:nth-child(4){top:26px;left:20px}
-.tsw-cloud:nth-child(5){top:30px;left:30px}
-.tsw-cloud:nth-child(6){top:27px;left:46px}
-.tsw-cloud:nth-child(7){top:31px;left:58px}
-.tsw input:checked + .tsw-slider .tsw-clouds{transform:translateX(32px);opacity:1}
-@keyframes tsw-cloud{0%{transform:translateX(-32px)}40%{transform:translateX(-36px)}80%{transform:translateX(-28px)}100%{transform:translateX(-32px)}}
+/* ── theme switch — same component as the archive home page ── */
+.theme-switch{position:relative;display:flex;justify-content:center;direction:rtl}
+#theme-checkbox{display:none}
+#theme-checkbox + label{
+    font-size:1.35rem;height:1em;width:2.5em;border-radius:.25em;
+    cursor:pointer;display:flex;justify-content:space-between;
+    background-color:#cecece;position:relative;transition:background-color .3s ease;
+}
+#theme-checkbox:checked + label{background-color:#3a3a3a}
+#theme-checkbox + label:active{transform:scale(.85);transition:transform .2s}
+#theme-checkbox + label div{
+    width:.8em;height:.8em;border-radius:inherit;
+    position:absolute;top:.1em;left:.1em;z-index:10;
+    transition:.5s cubic-bezier(1,.33,.11,1.34);
+    background-color:#f2f2f2;
+}
+#theme-checkbox:checked + label div{left:1.6em;background-color:#212121}
+#theme-checkbox + label span{display:flex}
+#theme-checkbox + label svg{display:inline-block;height:1em;width:1em;padding:.15em;box-sizing:border-box}
+#theme-checkbox + label span:first-of-type{color:#3a3a3a}
+#theme-checkbox + label span:last-of-type{color:#cecece}
 
 /* ═══════════════════════ HERO ═══════════════════════ */
 .hero{
@@ -221,49 +202,39 @@ html.theme-light .hero::before{color:rgba(0,0,0,.035)}
 .hv-corner.tl{top:.6rem;left:.8rem}.hv-corner.tr{top:.6rem;right:.8rem;color:var(--signal)}
 .hv-corner.bl{bottom:.6rem;left:.8rem}.hv-corner.br{bottom:.6rem;right:.8rem}
 
-/* ── uiverse: r0n-dev/stupid-owl-56 — orbital loader as an "RF radar" (trimmed: core + 3 orbits, composited animations only) ── */
+/* ── uiverse: r0n-dev/stupid-owl-56 — orbital loader as an "RF radar" (static: core + 3 orbits) ── */
 .orbital-wrap{position:relative;z-index:2;width:250px;height:250px;display:flex;align-items:center;justify-content:center}
 .orbital-loader{position:relative;width:140px;height:140px;margin:auto;display:flex;align-items:center;justify-content:center;perspective:800px;transform-style:preserve-3d;transform:scale(1.7)}
 .orbital-loader *{box-sizing:border-box;transform-style:preserve-3d}
 .core-system{position:absolute;width:10px;height:10px;display:flex;align-items:center;justify-content:center}
-.core-micro-center{position:absolute;width:3px;height:3px;background-color:rgb(var(--orb));border-radius:50%;box-shadow:0 0 6px 1px rgba(var(--neon-a),.9);animation:corePulse 3.7s ease-in-out infinite alternate}
+.core-micro-center{position:absolute;width:3px;height:3px;background-color:rgb(var(--orb));border-radius:50%;box-shadow:0 0 6px 1px rgba(var(--neon-a),.9);}
 .core-inner-glow{position:absolute;width:8px;height:8px;border-radius:50%;background:radial-gradient(circle,rgba(var(--neon-a),.9) 0%,rgba(var(--orb),0) 70%)}
 .core-thin-ring{position:absolute;width:14px;height:14px;border:1px solid rgba(var(--orb),.6);border-radius:50%}
-.core-secondary-ring{position:absolute;width:22px;height:22px;border:1px dashed rgba(var(--orb2),.45);border-radius:50%;animation:spinCounterClockwise 6.3s linear infinite}
-.core-outer-ring{position:absolute;width:32px;height:32px;border:1px solid rgba(var(--orb),.15);border-top-color:rgba(var(--neon-a),.7);border-radius:50%;animation:spinClockwise 9s linear infinite}
+.core-secondary-ring{position:absolute;width:22px;height:22px;border:1px dashed rgba(var(--orb2),.45);border-radius:50%}
+.core-outer-ring{position:absolute;width:32px;height:32px;border:1px solid rgba(var(--orb),.15);border-top-color:rgba(var(--neon-a),.7);border-radius:50%}
 .core-halo{position:absolute;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle,rgba(var(--neon-a),.18) 0%,rgba(var(--orb),0) 75%)}
-.radar-ping{position:absolute;width:150px;height:150px;border-radius:50%;border:1px solid rgba(var(--orb2),.55);transform:scale(.05);opacity:0;animation:radarPing 4s ease-out infinite}
 .orbit-system{position:absolute;display:flex;align-items:center;justify-content:center;border-radius:50%}
 .orbit-path{position:absolute;width:100%;height:100%;border-radius:50%;pointer-events:none}
 .orbit-object-wrapper{position:absolute;width:100%;height:100%;border-radius:50%}
 .orbit-object{position:absolute;top:50%;left:100%;transform:translate(-50%,-50%)}
 .orbit-1{width:90px;height:90px;transform:rotateX(68deg) rotateY(12deg)}
 .orbit-1 .orbit-path{border:1px solid rgba(var(--orb),.22)}
-.orbit-1 .orbit-object-wrapper{animation:spinClockwise 3.7s linear infinite}
+.orbit-1 .orbit-object-wrapper{transform:rotate(-35deg)}
 .orbit-1 .obj-circle{width:4px;height:4px;background-color:rgb(var(--orb));border-radius:50%;box-shadow:0 0 5px rgb(var(--orb))}
 .orbit-2{width:118px;height:118px;transform:rotateX(58deg) rotateY(-28deg) rotateZ(25deg)}
 .orbit-2 .orbit-path{border:1px solid rgba(var(--orb2),.2)}
-.orbit-2 .orbit-object-wrapper{animation:spinCounterClockwise 5.2s linear infinite}
+.orbit-2 .orbit-object-wrapper{transform:rotate(140deg)}
 .orbit-2 .obj-ring{width:5px;height:5px;border:1px solid rgba(var(--orb),.9);border-radius:50%}
 .orbit-3{width:54px;height:54px;transform:rotateX(76deg) rotateY(38deg) rotateZ(-15deg)}
 .orbit-3 .orbit-path{border:1px dashed rgba(var(--orb),.28)}
-.orbit-3 .orbit-object-wrapper{animation:spinClockwise 2.3s linear infinite}
+.orbit-3 .orbit-object-wrapper{transform:rotate(250deg)}
 .orbit-3 .obj-bright-point{width:3px;height:3px;background-color:rgb(var(--neon-a));border-radius:50%;box-shadow:0 0 6px 1px rgba(var(--neon-a),.9)}
 .orbit-dot{position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(var(--orb),.55)}
-@keyframes spinClockwise{to{transform:rotate(360deg)}}
-@keyframes spinCounterClockwise{to{transform:rotate(-360deg)}}
-@keyframes corePulse{0%{transform:scale(.85);opacity:.7}100%{transform:scale(1.25);opacity:1}}
-@keyframes radarPing{0%{transform:scale(.05);opacity:0}10%{opacity:.8}100%{transform:scale(1);opacity:0}}
 
-/* ── uiverse: R5Program/fast-mule-73 — wave bars as a "signal" meter (scaleY instead of height) ── */
+/* ── uiverse: R5Program/fast-mule-73 — wave bars as a "signal" meter (static snapshot) ── */
 .wave{display:flex;align-items:flex-end;justify-content:center;gap:4px;height:54px;position:relative;z-index:2}
-.wave div{
-    width:8px;height:100%;border-radius:4px 4px 0 0;transform-origin:bottom;transform:scaleY(.1);
-    background-color:rgba(var(--neon-a),.85);
-    animation:wave 3.2s cubic-bezier(.5,.2,.3,1) infinite;animation-delay:var(--d,0s);
-}
+.wave div{width:8px;height:var(--h,50%);border-radius:4px 4px 0 0;background-color:rgba(var(--neon-a),.85)}
 .wave div:nth-child(3n){background-color:rgba(var(--neon-b),.85)}
-@keyframes wave{0%,100%{transform:scaleY(.1)}25%{transform:scaleY(1)}50%{transform:scaleY(.5)}75%{transform:scaleY(.75)}}
 
 /* ── uiverse: reglobby/rude-walrus-96 — holographic launch button (trimmed: no blur/filter animations) ── */
 .cta-zone{
@@ -409,9 +380,8 @@ html.theme-light .feature{background:var(--surface)}
 .lamp .boop.blob:nth-child(5){height:3em;width:3em;top:-3em;left:45%;animation:lava-down-1 9s linear -1s infinite}
 .lamp .boop.blob:nth-child(6){height:6em;width:4em;top:-8em;left:40%;animation:lava-down-2 9s linear -6s infinite}
 .lamp .boop.blob:nth-child(7){height:3em;width:4em;bottom:-3em;left:50%;animation:lava-deform 9s linear -2.5s infinite}
+/* the lamp is a still image: the blob keyframes only position the blobs (negative delays), they never run */
 .lamp .boop,.lamp .shadow{animation-play-state:paused!important}
-.lava-panel:hover .lamp .boop,.lava-panel:hover .lamp .shadow{animation-play-state:running!important}
-.lava-panel .io.hint{opacity:.55}
 .lamp .boop.blob-top{width:100%;height:5em;top:-2em}
 .lamp .boop.blob-bottom{width:100%;height:3em;bottom:-2em}
 .lamp .base-one{transform:perspective(1em) rotateX(-5deg);bottom:3.125em;border:.375em solid #151b16;border-top:.1875em solid #151b16;border-radius:0 0 .75em .75em;height:3.5em;width:6.125em}
@@ -484,12 +454,10 @@ html.theme-light .gh-backdrop{background:radial-gradient(circle at 50% 50%,#0000
 .gh-spin-blur{filter:blur(3em) url(#unopaq)}
 .gh-spin-intense{inset:-.125em;filter:blur(.5em) url(#unopaq2);border-radius:.75em}
 .gh-spin-inside{inset:-2px;border-radius:inherit;filter:blur(2px) url(#unopaq3);z-index:0}
-.gh-spin::before{content:"";position:absolute;inset:-30%;rotate:10deg;animation:speen 8s cubic-bezier(.56,.15,.28,.86) infinite paused}
-.gh-wrap:hover .gh-spin::before{animation-play-state:running}
+.gh-spin::before{content:"";position:absolute;inset:-30%;rotate:10deg}
 .gh-spin-blur::before{background:linear-gradient(-45deg,rgb(var(--neon-a)),#0000 46% 54%,rgb(var(--neon-b)))}
 .gh-spin-intense::before{background:linear-gradient(-45deg,rgba(var(--neon-a),.9),#0000 35% 65%,rgba(var(--neon-b),.9))}
 .gh-spin-inside::before{background:linear-gradient(-45deg,#f6b3b6,#0000 35% 65%,#cfe8c6)}
-@keyframes speen{0%{rotate:10deg}50%{rotate:190deg}to{rotate:370deg}}
 
 /* terminal snippet */
 .term{margin-top:1.4rem;border:1px solid var(--border-strong);background:var(--surface);font-size:var(--fs-xs)}
@@ -616,20 +584,19 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
                 <button type="button" data-set-lang="ja" aria-pressed="false">日本語</button>
             </div>
-            <div class="tsw-holder" title="Light / Dark">
-                <label class="tsw" aria-label="Toggle light / dark theme">
-                    <input type="checkbox" id="theme-checkbox">
-                    <span class="tsw-slider">
-                        <span class="tsw-moons"><span class="tsw-hole"></span><span class="tsw-hole"></span><span class="tsw-hole"></span></span>
-                        <span class="tsw-bclouds"><span class="tsw-bcloud"></span><span class="tsw-bcloud"></span><span class="tsw-bcloud"></span></span>
-                        <span class="tsw-clouds"><span class="tsw-cloud"></span><span class="tsw-cloud"></span><span class="tsw-cloud"></span><span class="tsw-cloud"></span><span class="tsw-cloud"></span><span class="tsw-cloud"></span><span class="tsw-cloud"></span></span>
-                        <span class="tsw-stars">
-                            <svg class="tsw-star" viewBox="0 0 20 20"><path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path></svg>
-                            <svg class="tsw-star" viewBox="0 0 20 20"><path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path></svg>
-                            <svg class="tsw-star" viewBox="0 0 20 20"><path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path></svg>
-                            <svg class="tsw-star" viewBox="0 0 20 20"><path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path></svg>
-                            <svg class="tsw-star" viewBox="0 0 20 20"><path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path></svg>
-                        </span>
+            <div class="theme-switch">
+                <input type="checkbox" id="theme-checkbox" />
+                <label for="theme-checkbox" aria-label="Toggle light / dark theme">
+                    <div></div>
+                    <span>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clip-rule="evenodd"></path>
+                        </svg>
+                    </span>
+                    <span>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"></path>
+                        </svg>
                     </span>
                 </label>
             </div>
@@ -660,7 +627,6 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 <span class="hv-corner br">TX: 0</span>
                 <div class="orbital-wrap">
                     <div class="orbital-loader">
-                        <div class="radar-ping"></div>
                         <div class="core-system"><div class="core-halo"></div><div class="core-outer-ring"></div><div class="core-secondary-ring"></div><div class="core-thin-ring"></div><div class="core-inner-glow"></div><div class="core-micro-center"></div></div>
                         <div class="orbit-system orbit-1"><div class="orbit-path"></div><div class="orbit-object-wrapper"><div class="orbit-object obj-circle"></div></div></div>
                         <div class="orbit-system orbit-2"><div class="orbit-path"></div><div class="orbit-object-wrapper"><div class="orbit-object obj-ring"></div></div></div>
@@ -669,7 +635,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                     </div>
                 </div>
                 <div class="wave">
-                    <div style="--d:.3s"></div><div style="--d:.25s"></div><div style="--d:.2s"></div><div style="--d:.15s"></div><div style="--d:.1s"></div><div style="--d:.05s"></div><div style="--d:.01s"></div><div style="--d:.05s"></div><div style="--d:.1s"></div><div style="--d:.15s"></div><div style="--d:.2s"></div><div style="--d:.25s"></div><div style="--d:.3s"></div>
+                    <div style="--h:35%"></div><div style="--h:48%"></div><div style="--h:62%"></div><div style="--h:76%"></div><div style="--h:88%"></div><div style="--h:96%"></div><div style="--h:100%"></div><div style="--h:96%"></div><div style="--h:88%"></div><div style="--h:76%"></div><div style="--h:62%"></div><div style="--h:48%"></div><div style="--h:35%"></div>
                 </div>
                 <span class="hv-label"><span class="en">LISTENING · NOTHING IS TRANSMITTED</span><span class="ja">受信のみ · 送信は一切なし</span></span>
             </div>
@@ -839,7 +805,6 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                         </div>
                     </div>
                     <span class="io"><b>OUT</b> · report.{json,csv,html}</span>
-                    <span class="io hint"><span class="en">hover to process</span><span class="ja">ホバーで処理開始</span></span>
                 </div>
             </div>
         </section>
@@ -1098,7 +1063,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
         var live = new IntersectionObserver(function(entries){
             entries.forEach(function(e){ e.target.classList.toggle("offscreen", !e.isIntersecting); });
         });
-        document.querySelectorAll(".hero, .cta-zone, .lava-panel, .gh-stage, .term, .tsw-holder, .site-footer").forEach(function(el){ live.observe(el); });
+        document.querySelectorAll(".hero, .cta-zone, .term, .site-footer").forEach(function(el){ live.observe(el); });
     }
 
     /* ── reveal on scroll ── */
