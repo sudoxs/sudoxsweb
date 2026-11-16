@@ -523,6 +523,45 @@
         .md-content img{max-width:100%;border:1px solid var(--border);border-radius:3px;margin:.5rem 0}
         .md-content input[type="checkbox"]{accent-color:var(--danger-bright);margin-right:.4rem}
 
+        /* ═══════════════════════ FOLDABLE SECTIONS ═══════════════════════ */
+        .md-content .md-doc-title{margin-top:0}
+        .md-fold{margin:0;border-bottom:1px solid var(--border)}
+        .md-fold-body > .md-fold:last-child{border-bottom:0}
+        .md-fold-summary{
+            list-style:none;cursor:pointer;position:relative;
+            display:flex;align-items:center;gap:.7rem;
+            padding:.15rem .4rem .15rem 0;
+            transition:background 160ms ease;
+        }
+        .md-fold-summary::-webkit-details-marker{display:none}
+        .md-fold-summary::marker{content:""}
+        .md-fold-summary::before{
+            content:"▸";flex-shrink:0;width:1rem;text-align:center;
+            color:var(--danger-bright);font-size:.85em;
+            transition:transform 180ms ease;
+        }
+        details[open] > .md-fold-summary::before{transform:rotate(90deg)}
+        .md-fold-summary:hover{background:rgba(255,255,255,.02)}
+        html.theme-light .md-fold-summary:hover{background:rgba(0,0,0,.025)}
+        .md-fold-summary:hover > h1,.md-fold-summary:hover > h2,.md-fold-summary:hover > h3,
+        .md-fold-summary:hover > h4,.md-fold-summary:hover > h5,.md-fold-summary:hover > h6{color:var(--danger-bright)}
+        .md-content .md-fold-summary > h1,.md-content .md-fold-summary > h2,.md-content .md-fold-summary > h3,
+        .md-content .md-fold-summary > h4,.md-content .md-fold-summary > h5,.md-content .md-fold-summary > h6{
+            margin:.85rem 0;flex:1;min-width:0;transition:color 160ms ease;
+        }
+        .md-content .md-fold-summary > h1{border-bottom:0;padding-bottom:0}
+        .md-fold-summary:focus-visible{outline:1px solid var(--danger-bright);outline-offset:2px}
+        .md-fold-body{padding:0 0 1rem 1.7rem;border-left:1px solid var(--border);margin-left:.5rem}
+        details.md-fold:not([open]) > .md-fold-summary{opacity:.88}
+        details.md-fold[open] > .md-fold-body{animation:md-fold-in 220ms ease-out}
+        @keyframes md-fold-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+        .md-flash{animation:md-flash 1.4s ease-out}
+        @keyframes md-flash{0%{color:var(--danger-bright);text-shadow:0 0 12px rgba(207,74,80,.55)}100%{text-shadow:none}}
+        .fold-action{font-size:var(--fs-3xs)}
+        @media(max-width:600px){
+            .md-fold-body{padding-left:.9rem;margin-left:.3rem}
+        }
+
         /* ═══════════════════════ ENHANCED CODE BLOCKS ═══════════════════════ */
         .code-block{
             position:relative;
@@ -890,12 +929,15 @@
         #tab-stat:checked ~ .pipboy-chassis .dynamic-title::before { content: "SYS_STATUS"; }
         #tab-inv:checked ~ .pipboy-chassis .dynamic-title::before { content: "ARCHIVE"; }
         #tab-data:checked ~ .pipboy-chassis .dynamic-title::before { content: "LINKS"; }
+        #tab-proj:checked ~ .pipboy-chassis .dynamic-title::before { content: "PROJECTS"; }
         #tab-stat:checked ~ .pipboy-chassis .content-stat,
         #tab-inv:checked ~ .pipboy-chassis .content-inv,
-        #tab-data:checked ~ .pipboy-chassis .content-data { display: flex; }
+        #tab-data:checked ~ .pipboy-chassis .content-data,
+        #tab-proj:checked ~ .pipboy-chassis .content-proj { display: flex; }
         #tab-stat:checked ~ .pipboy-chassis label[for="tab-stat"],
         #tab-inv:checked ~ .pipboy-chassis label[for="tab-inv"],
-        #tab-data:checked ~ .pipboy-chassis label[for="tab-data"] { background-color: var(--pip-green); color: var(--bg-dark); text-shadow: none; box-shadow: 0 0 10px var(--pip-glow); }
+        #tab-data:checked ~ .pipboy-chassis label[for="tab-data"],
+        #tab-proj:checked ~ .pipboy-chassis label[for="tab-proj"] { background-color: var(--pip-green); color: var(--bg-dark); text-shadow: none; box-shadow: 0 0 10px var(--pip-glow); }
         .pipboy-wrapper .content-stat { justify-content: center; align-items: center; }
         .pipboy-wrapper .archive-note {
             display: flex; flex-direction: column; align-items: center;
@@ -967,7 +1009,8 @@
         .pipboy-wrapper .inv-meta { margin-left: 10px; flex-shrink: 0; opacity: .6; font-size: clamp(0.64rem, 0.56rem + 0.3vw, 0.8rem); }
         .pipboy-wrapper .inv-empty { padding: .8rem .2rem; font-size: clamp(0.7rem, 0.62rem + 0.3vw, 0.88rem); opacity: .7; white-space: normal; }
         .pipboy-wrapper .inv-tree mark { background: var(--pip-green); color: var(--bg-dark); }
-        .pipboy-wrapper .content-data { justify-content: center; align-items: center; flex-direction: column; gap: 15px; }
+        .pipboy-wrapper .content-data,
+        .pipboy-wrapper .content-proj { justify-content: center; align-items: center; flex-direction: column; gap: 15px; }
         .pipboy-wrapper .radio-visualizer { display: flex; gap: 4px; align-items: flex-end; height: 18px; margin-left: 12px; }
         .pipboy-wrapper .bar { width: 4px; background-color: var(--pip-green); animation: sxpip-eqBounce 1s infinite alternate; transition:background-color .3s ease; }
         .pipboy-wrapper .bar-1 { animation-delay: 0.1s; }
@@ -1002,7 +1045,8 @@
         html.theme-light .pipboy-wrapper .nav-item:hover { background-color: rgba(47, 77, 42, 0.10); }
         html.theme-light .pipboy-wrapper #tab-stat:checked ~ .pipboy-chassis label[for="tab-stat"],
         html.theme-light .pipboy-wrapper #tab-inv:checked ~ .pipboy-chassis label[for="tab-inv"],
-        html.theme-light .pipboy-wrapper #tab-data:checked ~ .pipboy-chassis label[for="tab-data"] {
+        html.theme-light .pipboy-wrapper #tab-data:checked ~ .pipboy-chassis label[for="tab-data"],
+        html.theme-light .pipboy-wrapper #tab-proj:checked ~ .pipboy-chassis label[for="tab-proj"] {
           background-color: var(--pip-green); color: #f4f2ec; text-shadow: none; box-shadow: none;
         }
         html.theme-light .pipboy-wrapper .inv-search-box { border-color: var(--pip-green); background: rgba(47, 77, 42, 0.05); box-shadow: none; }
@@ -1204,7 +1248,7 @@
 
         .project-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1rem;
         }
 
@@ -1525,6 +1569,8 @@
             const res = await fetch("tree.json");
             if(!res.ok) throw new Error("tree.json not found ("+res.status+")");
             tree = await res.json();
+            const excluded = (MD_LAYOUT.excludeFolders || []).map(x => String(x).toLowerCase());
+            if(Array.isArray(tree)) tree = tree.filter(n => !excluded.includes(String(n.name).toLowerCase()));
             console.log("SX: Loaded tree.json — "+tree.length+" top folders");
         }catch(e){
             console.error("SX: Could not load tree.json", e);
@@ -1578,6 +1624,7 @@
         afterContent:   "",
         altHeaderHTML:  "",
         altFooterHTML:  "",
+        excludeFolders: ["projects"],
     }, window.SX_MD_LAYOUT || {});
 
     // ═══════════════════════ NAV — single dropdown ═══════════════════════
@@ -1846,6 +1893,7 @@
                       <input type="radio" id="tab-stat" name="pip-tabs" checked="" />
                       <input type="radio" id="tab-inv" name="pip-tabs" />
                       <input type="radio" id="tab-data" name="pip-tabs" />
+                      <input type="radio" id="tab-proj" name="pip-tabs" />
 
                       <div class="pipboy-chassis">
                         <div class="crt-screen">
@@ -1856,7 +1904,6 @@
                             <header class="top-bar">
                               <div class="dynamic-title flicker-text"></div>
                               <div class="line flexible"></div>
-                              <div class="stats-info"><span class="pulse-icon">⚡</span></div>
                             </header>
 
                             <main class="middle-section">
@@ -1894,6 +1941,15 @@
                                   <li><a href="https://ctftime.org/event/3104" target="_blank" rel="noopener"><span class="item-name">OmniCTF 2026 Quals — v1olet (sudoxs) · Rank #66</span><span class="item-wgt">CTFTIME</span></a></li>
                                 </ul>
                               </div>
+
+                              <div class="tab-content content-proj">
+                                <ul class="inventory-list">
+                                  <li><a href="projects/airwarden/"><span class="item-name">AirWarden — Wi-Fi Vulnerability Auditor</span><span class="item-wgt">PAGE</span></a></li>
+                                  <li><a href="https://github.com/sudoxs/SQL_Injection_tool" target="_blank" rel="noopener"><span class="item-name">SQL Injection Testing Toolkit</span><span class="item-wgt">SRC</span></a></li>
+                                  <li><a href="https://sudoxs.github.io/reverse-shell-generator/" target="_blank" rel="noopener"><span class="item-name">Reverse Shell Generator</span><span class="item-wgt">DEMO</span></a></li>
+                                  <li><a href="https://github.com/sudoxs/Tprotocol" target="_blank" rel="noopener"><span class="item-name">Tprotocol</span><span class="item-wgt">SRC</span></a></li>
+                                </ul>
+                              </div>
                             </main>
 
                             <footer class="bottom-bar">
@@ -1902,6 +1958,8 @@
                               <label for="tab-inv" class="nav-item">INV</label>
                               <div class="line flexible"></div>
                               <label for="tab-data" class="nav-item">DATA</label>
+                              <div class="line flexible"></div>
+                              <label for="tab-proj" class="nav-item">PROJ</label>
                               <div class="line flexible"></div>
                               <div class="radio-visualizer">
                                 <div class="bar bar-1"></div><div class="bar bar-2"></div><div class="bar bar-3"></div><div class="bar bar-4"></div>
@@ -2059,6 +2117,33 @@
                             <a href="https://github.com/sudoxs/Tprotocol"
                                target="_blank"
                                rel="noopener">SOURCE CODE ↗</a>
+                        </div>
+                    </article>
+
+                    <article class="project-card">
+                        <span class="project-index">PROJECT // 004</span>
+
+                        <h3>AirWarden</h3>
+
+                        <p>
+                            A passive-first Wi-Fi vulnerability auditor for authorized
+                            engagements. It reads a pcap or sniffs live, inventories
+                            every access point, and reports confirmed and potential
+                            weaknesses, captured key material, and cleartext data leaks.
+                        </p>
+
+                        <div class="project-tags">
+                            <span>PYTHON</span>
+                            <span>SCAPY</span>
+                            <span>WI-FI SECURITY</span>
+                        </div>
+
+                        <div class="project-actions">
+                            <a href="https://github.com/sudoxs/AirWarden"
+                               target="_blank"
+                               rel="noopener">SOURCE CODE ↗</a>
+
+                            <a href="projects/airwarden/">PROJECT PAGE ↗</a>
                         </div>
                     </article>
 
@@ -2320,7 +2405,70 @@
         // Enhance code blocks (language label + copy button + syntax highlight)
         enhanceCodeBlocks(tempDiv);
 
+        // Fold every section under its heading (all collapsed on open)
+        buildFolds(tempDiv);
+
         return { html: tempDiv.innerHTML, headings };
+    }
+
+    // ═══════════════════════ FOLDABLE SECTIONS ═══════════════════════
+    // Every heading (h1–h6) becomes a <details> whose body runs until the next
+    // heading of the same or higher level, so sections nest like the outline.
+    // A leading h1 is the document title and stays visible. All folds start closed.
+    function buildFolds(root){
+        const nodes = Array.from(root.childNodes);
+        const frag = document.createDocumentFragment();
+        const stack = [{ level: 0, body: frag }];
+        let seenContent = false;
+
+        nodes.forEach(node => {
+            const m = node.nodeType === 1 ? /^H([1-6])$/.exec(node.tagName) : null;
+
+            if(m && m[1] === "1" && !seenContent){
+                node.classList.add("md-doc-title");
+                frag.appendChild(node);
+                seenContent = true;
+                return;
+            }
+            if(node.nodeType === 1 || (node.nodeType === 3 && node.textContent.trim())) seenContent = true;
+
+            if(!m){
+                stack[stack.length - 1].body.appendChild(node);
+                return;
+            }
+
+            const level = parseInt(m[1], 10);
+            while(stack.length > 1 && stack[stack.length - 1].level >= level) stack.pop();
+
+            const details = document.createElement("details");
+            details.className = "md-fold md-fold-h" + level;
+            const summary = document.createElement("summary");
+            summary.className = "md-fold-summary";
+            summary.appendChild(node);
+            const body = document.createElement("div");
+            body.className = "md-fold-body";
+            details.appendChild(summary);
+            details.appendChild(body);
+
+            stack[stack.length - 1].body.appendChild(details);
+            stack.push({ level, body });
+        });
+
+        root.innerHTML = "";
+        root.appendChild(frag);
+    }
+
+    // Open every fold that contains `el` (and the fold `el` heads, if any)
+    function revealInFolds(el){
+        let n = el;
+        while(n && n !== document.body){
+            if(n.tagName === "DETAILS") n.open = true;
+            n = n.parentElement;
+        }
+    }
+
+    function setAllFolds(open){
+        document.querySelectorAll(".md-content details.md-fold").forEach(d => { d.open = open; });
     }
 
     function buildTOC(headings){
@@ -2409,6 +2557,7 @@
                     ${getFileDate(fileNode) ? `<span style="color:var(--ink-faint);font-size:var(--fs-2xs);letter-spacing:.1em">${getFileDate(fileNode)}</span>` : ""}
                 </div>
                 <div class="heading-actions">
+                    ${headings.length ? `<button type="button" class="secondary-action fold-action" onclick="SX.expandAll()" title="Expand all sections">⊞ EXPAND</button><button type="button" class="secondary-action fold-action" onclick="SX.collapseAll()" title="Collapse all sections">⊟ COLLAPSE</button>` : ""}
                     ${mobileToggle}
                     <a href="#/category/${encodePath(catPath)}" class="secondary-action">← BACK</a>
                 </div>
@@ -2455,9 +2604,15 @@
             link.addEventListener("click", (e) => {
                 e.preventDefault();
                 closeMobileTOC();
-                const offset = getStickyOffset();
-                const targetY = target.getBoundingClientRect().top + window.scrollY - offset;
-                window.scrollTo({ top: targetY, behavior: "smooth" });
+                revealInFolds(target);
+                requestAnimationFrame(() => {
+                    const offset = getStickyOffset();
+                    const targetY = target.getBoundingClientRect().top + window.scrollY - offset;
+                    window.scrollTo({ top: targetY, behavior: "smooth" });
+                    target.classList.remove("md-flash");
+                    void target.offsetWidth;
+                    target.classList.add("md-flash");
+                });
             });
         });
 
@@ -2587,6 +2742,8 @@
         toggleDropdown: toggleDropdown,
         toggleMobileTOC: toggleMobileTOC,
         closeMobileTOC:  closeMobileTOC,
+        expandAll:      () => setAllFolds(true),
+        collapseAll:    () => setAllFolds(false),
         getStats:       () => ({ totalMd, flatFiles, categories: getCategories() }),
         refresh:        async () => { await init(); },
     };

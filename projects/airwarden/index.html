@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="AirWarden — passive-first Wi-Fi vulnerability auditor for authorized engagements. Project page by sudoxs.">
+<meta name="author" content="sudoxs">
+<title>AirWarden // sudoxs projects</title>
+
+<script>
+    /* Theme + language are applied before first paint (no flash). Theme key is shared with the archive. */
+    (function(){
+        try{
+            if(localStorage.getItem("sx-theme") === "light") document.documentElement.classList.add("theme-light");
+            var l = localStorage.getItem("sx-lang");
+            if(!l) l = (navigator.language || "").toLowerCase().indexOf("ja") === 0 ? "ja" : "en";
+            document.documentElement.setAttribute("data-lang", l === "ja" ? "ja" : "en");
+            document.documentElement.lang = l === "ja" ? "ja" : "en";
+        }catch(e){ document.documentElement.setAttribute("data-lang","en"); }
+    })();
+</script>
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'&gt;&lt;rect fill='%230a0a0a' width='32' height='32' rx='2'/&gt;&lt;text x='16' y='22' text-anchor='middle' fill='%23cc0000' font-size='16' font-family='monospace'&gt;xs&lt;/text&gt;&lt;/svg&gt;">
+
+<style>
+/* ═══════════════════════ DESIGN TOKENS — same palette as the archive ═══════════════════════ */
+:root{
+    --bg:#070a08; --bg-deep:#040605; --surface:#0c100d; --surface-raised:#111611; --surface-active:#151b16;
+    --ink:#c2c8c1; --ink-dim:#7a837a; --ink-faint:#4a534b; --ink-bright:#e8ebe5;
+    --danger:#a9252b; --danger-bright:#cf4a50; --danger-dark:#4d1518;
+    --signal:#93a886; --signal-bright:#b8c9ab; --amber:#a88747;
+    --border:#232a23; --border-strong:#3a423b;
+    --ambient-1:rgba(74,91,65,.11); --ambient-2:rgba(126,23,29,.08); --ambient-3:#090d0a;
+    --selection-bg:#4d1518; --selection-fg:#e8ebe5;
+    /* neon channels (r,g,b) used by the animated components */
+    --neon-a:214,74,82;    /* red    */
+    --neon-b:147,192,138;  /* green  */
+    --neon-c:214,170,90;   /* amber  */
+    --orb:255,255,255;     /* orbital loader ink */
+    --orb2:255,205,205;
+    --panel:rgba(10,14,11,.72);
+    --font-mono:"IBM Plex Mono","Cascadia Code",Consolas,"Liberation Mono",monospace;
+    --font-display:"Franklin Gothic Condensed","Liberation Sans Narrow","Nimbus Sans Narrow",sans-serif;
+    --font-ja:"Hiragino Kaku Gothic ProN","Yu Gothic UI","Yu Gothic","Meiryo","Noto Sans JP",sans-serif;
+    --content-max:1240px;
+    --fs-3xs:clamp(.62rem,.58rem + .2vw,.72rem);
+    --fs-2xs:clamp(.68rem,.64rem + .25vw,.78rem);
+    --fs-xs:clamp(.74rem,.70rem + .3vw,.85rem);
+    --fs-sm:clamp(.82rem,.78rem + .35vw,.95rem);
+    --fs-md:clamp(.92rem,.88rem + .4vw,1.05rem);
+    --fs-lg:clamp(1.05rem,1rem + .6vw,1.25rem);
+    --fs-xl:clamp(1.25rem,1.1rem + 1vw,1.6rem);
+    --fs-2xl:clamp(1.6rem,1.3rem + 2vw,2.4rem);
+}
+html.theme-light{
+    --bg:#f3f1ec; --bg-deep:#e8e5dd; --surface:#ffffff; --surface-raised:#f7f5f0; --surface-active:#ece9e2;
+    --ink:#2a2f2a; --ink-dim:#5a635a; --ink-faint:#8b938b; --ink-bright:#0d100d;
+    --danger:#b8292f; --danger-bright:#c9363c; --danger-dark:#f0d5d6;
+    --signal:#4f7040; --signal-bright:#38542c; --amber:#8a6d2c;
+    --border:#d6d2c8; --border-strong:#b8b3a6;
+    --ambient-1:rgba(74,91,65,.06); --ambient-2:rgba(126,23,29,.04); --ambient-3:#ebe8e0;
+    --selection-bg:#c9363c; --selection-fg:#ffffff;
+    --neon-a:184,41,47; --neon-b:56,84,44; --neon-c:138,109,44;
+    --orb:45,28,30; --orb2:150,50,56;
+    --panel:rgba(255,255,255,.78);
+}
+
+/* ═══════════════════════ BASE ═══════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth;background:var(--bg-deep);overflow-x:clip}
+body{
+    min-height:100vh;overflow-x:clip;
+    background:radial-gradient(circle at 78% 12%,var(--ambient-1),transparent 27rem),
+               radial-gradient(circle at 13% 76%,var(--ambient-2),transparent 30rem),
+               linear-gradient(135deg,var(--bg-deep),var(--bg) 46%,var(--ambient-3));
+    color:var(--ink);font-family:var(--font-mono);line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    transition:background-color .3s ease,color .3s ease;
+}
+html[data-lang="ja"] body{font-family:var(--font-mono),var(--font-ja)}
+a{color:inherit}
+a:focus-visible,button:focus-visible{outline:1px solid var(--danger-bright);outline-offset:4px}
+::selection{background:var(--selection-bg);color:var(--selection-fg)}
+code{font-family:var(--font-mono);font-size:.92em;color:var(--signal-bright);background:var(--surface-active);border:1px solid var(--border);padding:.08rem .38rem;border-radius:3px}
+html.theme-light code{color:var(--danger-bright)}
+
+/* bilingual switch: every text exists twice, the inactive language is hidden */
+html[data-lang="ja"] .en{display:none!important}
+html:not([data-lang="ja"]) .ja{display:none!important}
+.ja{font-family:var(--font-ja);letter-spacing:.02em}
+
+.ambient-grid,.noise,.scanlines{position:fixed;inset:0;pointer-events:none}
+.ambient-grid{z-index:0;opacity:.24;background-image:linear-gradient(rgba(132,150,122,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(132,150,122,.035) 1px,transparent 1px);background-size:48px 48px}
+.noise{z-index:1;opacity:.022;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:180px 180px}
+.scanlines{z-index:2;opacity:.04;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.18) 2px,rgba(0,0,0,.18) 4px)}
+html.theme-light .scanlines{opacity:.015}
+html.theme-light .ambient-grid{opacity:.18}
+
+.container{position:relative;z-index:5;width:min(100% - 2*clamp(1rem,3vw,2.5rem),var(--content-max));margin:0 auto;padding:1.2rem 0 3rem}
+
+/* ═══════════════════════ HEADER ═══════════════════════ */
+.site-header{
+    position:sticky;top:0;z-index:40;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem 1.5rem;
+    padding:.8rem 0;margin-bottom:1rem;border-bottom:1px solid var(--border);
+    background:rgba(7,10,8,.82);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);
+}
+html.theme-light .site-header{background:rgba(243,241,236,.9)}
+.brand-lockup{display:flex;align-items:center;gap:.8rem}
+.logo{color:var(--ink-bright);font-family:var(--font-display);font-size:var(--fs-lg);font-weight:900;letter-spacing:.13em;line-height:1;text-decoration:none}
+.logo-bracket{color:var(--danger-bright)}
+.brand-code{padding-left:.8rem;border-left:1px solid var(--border-strong);color:var(--ink-dim);font-size:var(--fs-2xs);letter-spacing:.17em}
+.header-controls{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.hdr-link{color:var(--ink-dim);font-size:var(--fs-xs);letter-spacing:.13em;text-decoration:none;text-transform:uppercase;padding:.45rem .7rem;border:1px solid transparent;transition:color .18s,border-color .18s}
+.hdr-link:hover{color:var(--ink-bright);border-color:var(--border-strong)}
+
+/* language segmented control */
+.lang-switch{display:inline-flex;border:1px solid var(--border-strong)}
+.lang-switch button{
+    background:transparent;border:0;color:var(--ink-dim);cursor:pointer;
+    font-family:var(--font-mono);font-size:var(--fs-2xs);letter-spacing:.12em;padding:.42rem .7rem;
+    transition:background .18s,color .18s;
+}
+.lang-switch button + button{border-left:1px solid var(--border-strong)}
+.lang-switch button:hover{color:var(--ink-bright)}
+.lang-switch button[aria-pressed="true"]{background:var(--danger-bright);color:#fff}
+
+/* ── uiverse: CacaceRoberto/horrible-swan-62 — day/night switch (scaled, theme-bound) ── */
+.tsw-holder{width:63px;height:28px;position:relative;flex-shrink:0}
+.tsw{position:absolute;top:0;left:0;display:inline-block;width:90px;height:40px;border:1px solid rgb(58,58,58);border-radius:22px;transform:scale(.7);transform-origin:top left;cursor:pointer}
+.tsw input{opacity:0;width:0;height:0}
+.tsw-slider{position:absolute;inset:0;background-color:black;border-radius:20px;transition:.4s;overflow:hidden;z-index:2}
+.tsw-slider:before{position:absolute;content:"";height:30px;width:30px;left:4px;bottom:5px;background-color:white;transition:1s;border-radius:50%;overflow:hidden}
+.tsw-moons{position:absolute;opacity:1;transition:1s}
+.tsw-hole{position:absolute;border-radius:50%;background-color:rgb(85,85,85)}
+.tsw-hole:nth-child(1){height:5px;width:5px;top:26px;left:20px}
+.tsw-hole:nth-child(2){height:10px;width:10px;top:16px;left:7px}
+.tsw-hole:nth-child(3){height:4px;width:4px;top:12px;left:21px}
+.tsw input:checked + .tsw-slider{background-color:#62cff0}
+.tsw input:checked + .tsw-slider:before{transform:translateX(52px);background-color:orange}
+.tsw input:checked + .tsw-slider .tsw-moons{transform:translateX(52px);opacity:0}
+.tsw-stars{position:absolute;right:6px;top:0;bottom:0;width:60px;transition:1s;transform:translateY(0)}
+.tsw-star{position:absolute;fill:white;animation:tsw-twinkle 2s infinite}
+.tsw-star:nth-child(1){top:5px;right:29px;width:20px;animation-delay:.3s}
+.tsw-star:nth-child(2){top:18px;right:9px;width:15px}
+.tsw-star:nth-child(3){top:5px;right:15px;width:10px;animation-delay:.6s}
+.tsw-star:nth-child(4){top:26px;right:28px;width:12px;animation-delay:.9s}
+.tsw-star:nth-child(5){top:2px;right:50px;width:8px;animation-delay:1.2s}
+.tsw input:checked + .tsw-slider .tsw-stars{transform:translateY(-32px);opacity:0}
+@keyframes tsw-twinkle{0%{transform:scale(1)}40%{transform:scale(1.2)}80%{transform:scale(.8)}100%{transform:scale(1)}}
+.tsw-clouds,.tsw-bclouds{position:absolute;left:6px;top:0;bottom:0;width:20px;transition:1s;transform:translateX(-55px)}
+.tsw-bclouds{opacity:0;z-index:0}
+.tsw-bcloud{position:absolute;width:20px;height:20px;background-color:#555;opacity:60%;border-radius:50%;animation:tsw-cloud 6s infinite;animation-delay:1s}
+.tsw-bcloud:nth-child(1){top:1px;right:3px}
+.tsw-bcloud:nth-child(2){top:15px;left:9px}
+.tsw-bcloud:nth-child(3){top:20px;left:27px}
+.tsw input:checked + .tsw-slider .tsw-bclouds{transform:translateX(32px);opacity:1}
+.tsw-cloud{position:absolute;width:20px;height:20px;background-color:white;border-radius:50%;z-index:1;animation:tsw-cloud 6s infinite}
+.tsw-cloud:nth-child(1){top:0;height:21px;width:21px;right:14px}
+.tsw-cloud:nth-child(2){height:25px;width:25px;top:14px;right:6px}
+.tsw-cloud:nth-child(3){height:23px;width:23px;top:28px;left:4px}
+.tsw-cloud:nth-child(4){top:26px;left:20px}
+.tsw-cloud:nth-child(5){top:30px;left:30px}
+.tsw-cloud:nth-child(6){top:27px;left:46px}
+.tsw-cloud:nth-child(7){top:31px;left:58px}
+.tsw input:checked + .tsw-slider .tsw-clouds{transform:translateX(32px);opacity:1}
+@keyframes tsw-cloud{0%{transform:translateX(-32px)}40%{transform:translateX(-36px)}80%{transform:translateX(-28px)}100%{transform:translateX(-32px)}}
+
+/* ═══════════════════════ HERO ═══════════════════════ */
+.hero{
+    position:relative;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);
+    gap:2rem;align-items:center;padding:3rem 0 2rem;
+}
+.hero::before{
+    content:"WI-FI";position:absolute;top:-.5rem;left:-1rem;z-index:-1;
+    color:rgba(255,255,255,.02);font-family:var(--font-display);font-size:clamp(6rem,18vw,15rem);
+    font-weight:900;letter-spacing:-.06em;line-height:1;pointer-events:none;
+}
+html.theme-light .hero::before{color:rgba(0,0,0,.035)}
+.eyebrow{
+    display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+    padding:.55rem 0;margin-bottom:1.6rem;
+    border-top:1px solid var(--danger-dark);border-bottom:1px solid var(--border);
+    color:var(--ink-dim);font-size:var(--fs-2xs);letter-spacing:.17em;
+}
+.eyebrow b{color:var(--danger-bright);font-weight:500}
+
+/* ── uiverse: LeonKohli/clever-dog-9 — glitch title (recoloured to the site palette) ── */
+.glitch{
+    position:relative;display:inline-block;
+    font-family:"Orbitron",var(--font-display);font-size:clamp(3rem,9vw,7rem);font-weight:900;
+    line-height:1;text-transform:uppercase;letter-spacing:.02em;color:var(--ink-bright);
+    text-shadow:.05em 0 0 rgba(var(--neon-a),.9),-.03em -.04em 0 rgba(var(--neon-c),.8),.025em .04em 0 rgba(var(--neon-b),.85);
+    animation:glitch 725ms infinite;
+}
+.glitch span{position:absolute;top:0;left:0}
+.glitch span:first-child{animation:glitch 500ms infinite;clip-path:polygon(0 0,100% 0,100% 35%,0 35%);transform:translate(-.04em,-.03em);opacity:.75}
+.glitch span:last-child{animation:glitch 375ms infinite;clip-path:polygon(0 65%,100% 65%,100% 100%,0 100%);transform:translate(.04em,.03em);opacity:.75}
+@keyframes glitch{
+    0%,15%{text-shadow:.05em 0 0 rgba(var(--neon-a),.9),-.03em -.04em 0 rgba(var(--neon-c),.8),.025em .04em 0 rgba(var(--neon-b),.85)}
+    16%,49%{text-shadow:-.05em -.025em 0 rgba(var(--neon-a),.9),.025em .035em 0 rgba(var(--neon-c),.8),-.05em -.05em 0 rgba(var(--neon-b),.85)}
+    50%,99%{text-shadow:.05em .035em 0 rgba(var(--neon-a),.9),.03em 0 0 rgba(var(--neon-c),.8),0 -.04em 0 rgba(var(--neon-b),.85)}
+    100%{text-shadow:-.05em 0 0 rgba(var(--neon-a),.9),-.025em -.04em 0 rgba(var(--neon-c),.8),-.04em -.025em 0 rgba(var(--neon-b),.85)}
+}
+.hero-tagline{margin-top:1.2rem;color:var(--ink-bright);font-size:var(--fs-lg);max-width:46ch;line-height:1.55}
+.hero-sub{margin-top:.9rem;color:var(--ink-dim);font-size:var(--fs-sm);max-width:60ch}
+.tag-row{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1.3rem}
+.tag-row span{padding:.22rem .55rem;border:1px solid var(--border-strong);color:var(--signal);font-size:var(--fs-3xs);letter-spacing:.1em}
+
+.hero-visual{
+    position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;
+    min-height:360px;padding:2.2rem 1rem 2.4rem;border:1px solid var(--border);background:var(--panel);overflow:hidden;
+}
+.hero-visual::before{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(circle at 50% 45%,rgba(var(--neon-a),.12),transparent 60%);
+}
+.hv-label{position:relative;z-index:2;color:var(--ink-dim);font-size:var(--fs-3xs);letter-spacing:.16em;text-align:center}
+.hv-corner{position:absolute;color:var(--ink-faint);font-size:var(--fs-3xs);letter-spacing:.14em;z-index:2}
+.hv-corner.tl{top:.6rem;left:.8rem}.hv-corner.tr{top:.6rem;right:.8rem;color:var(--signal)}
+.hv-corner.bl{bottom:.6rem;left:.8rem}.hv-corner.br{bottom:.6rem;right:.8rem}
+
+/* ── uiverse: r0n-dev/stupid-owl-56 — orbital loader, used as an "RF radar" (colours via --orb) ── */
+.orbital-wrap{position:relative;z-index:2;width:250px;height:250px;display:flex;align-items:center;justify-content:center}
+.orbital-loader{position:relative;width:140px;height:140px;margin:auto;display:flex;align-items:center;justify-content:center;perspective:800px;transform-style:preserve-3d;transform:scale(1.7)}
+.orbital-loader *,.orbital-loader *::before,.orbital-loader *::after{box-sizing:border-box;transform-style:preserve-3d}
+.core-system{position:absolute;width:10px;height:10px;display:flex;align-items:center;justify-content:center;animation:coreMasterCycle 22s cubic-bezier(.4,0,.2,1) infinite}
+.core-micro-center{position:absolute;width:3px;height:3px;background-color:rgb(var(--orb));border-radius:50%;box-shadow:0 0 6px 1px rgba(var(--neon-a),.9);animation:corePulse 3.73s ease-in-out infinite alternate}
+.core-inner-glow{position:absolute;width:8px;height:8px;border-radius:50%;background:radial-gradient(circle,rgba(var(--neon-a),.9) 0%,rgba(var(--orb),0) 70%);animation:coreBreathe 2.41s ease-in-out infinite alternate}
+.core-thin-ring{position:absolute;width:14px;height:14px;border:1px solid rgba(var(--orb),.6);border-radius:50%;animation:coreRingRotate 4.12s linear infinite}
+.core-secondary-ring{position:absolute;width:22px;height:22px;border:1px dashed rgba(var(--orb2),.45);border-radius:50%;animation:coreRingRotateReverse 6.28s linear infinite}
+.core-outer-ring{position:absolute;width:32px;height:32px;border:1px solid rgba(var(--orb),.15);border-top-color:rgba(var(--neon-a),.7);border-radius:50%;animation:coreRingRotate 9.14s linear infinite}
+.core-halo{position:absolute;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle,rgba(var(--neon-a),.18) 0%,rgba(var(--orb),0) 75%);animation:coreFluctuate 5.18s ease-in-out infinite alternate}
+.pulse-system{position:absolute;width:100%;height:100%;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.pulse-ring{position:absolute;border-radius:50%;border:1px solid rgba(var(--orb2),.8);opacity:0;width:4px;height:4px}
+.pulse-ring-1{animation:shockwavePulse 22s cubic-bezier(.1,.8,.3,1) infinite}
+.pulse-ring-2{animation:shockwavePulse 22s cubic-bezier(.1,.8,.3,1) infinite .18s}
+.pulse-ring-3{animation:shockwavePulse 22s cubic-bezier(.1,.8,.3,1) infinite .36s}
+.orbit-system{position:absolute;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.orbit-path{position:absolute;width:100%;height:100%;border-radius:50%;pointer-events:none}
+.orbit-object-wrapper{position:absolute;width:100%;height:100%;border-radius:50%}
+.orbit-object{position:absolute;top:50%;left:100%;transform:translate(-50%,-50%)}
+.orbit-1{width:90px;height:90px;transform:rotateX(68deg) rotateY(12deg) rotateZ(0deg);animation:orbitMaster1 22s ease-in-out infinite}
+.orbit-1 .orbit-path{border:1px solid rgba(var(--orb),.22);background:radial-gradient(circle,transparent 60%,rgba(var(--orb),.03) 100%)}
+.orbit-1 .orbit-object-wrapper{animation:spinClockwise 3.73s linear infinite}
+.orbit-1 .obj-circle{width:4px;height:4px;background-color:rgb(var(--orb));border-radius:50%;box-shadow:0 0 5px rgb(var(--orb))}
+.orbit-1 .object-trail{position:absolute;top:50%;left:100%;width:18px;height:1px;background:linear-gradient(90deg,rgba(var(--orb),.4),transparent);transform-origin:left center;transform:translateY(-50%) rotate(180deg)}
+.orbit-2{width:114px;height:114px;transform:rotateX(58deg) rotateY(-28deg) rotateZ(25deg);animation:orbitMaster2 22s ease-in-out infinite}
+.orbit-2 .orbit-path{border:1px solid rgba(var(--orb2),.18);-webkit-mask:conic-gradient(from 45deg,rgba(0,0,0,.8) 0deg,transparent 180deg,rgba(0,0,0,.8) 360deg);mask:conic-gradient(from 45deg,rgba(0,0,0,.8) 0deg,transparent 180deg,rgba(0,0,0,.8) 360deg)}
+.orbit-2 .orbit-object-wrapper{animation:spinCounterClockwise 5.18s linear infinite}
+.orbit-2 .obj-ring{width:5px;height:5px;border:1px solid rgba(var(--orb),.9);border-radius:50%;animation:keepUpright2 5.18s linear infinite}
+.orbit-3{width:54px;height:54px;transform:rotateX(76deg) rotateY(38deg) rotateZ(-15deg);animation:orbitMaster3 22s ease-in-out infinite}
+.orbit-3 .orbit-path{border:1px dashed rgba(var(--orb),.28)}
+.orbit-3 .orbit-object-wrapper{animation:spinClockwise 2.31s linear infinite}
+.orbit-3 .obj-bright-point{width:3px;height:3px;background-color:rgb(var(--neon-a));border-radius:50%;box-shadow:0 0 6px 1px rgba(var(--neon-a),.9)}
+.orbit-4{width:132px;height:132px;transform:rotateX(42deg) rotateY(-52deg) rotateZ(40deg);animation:orbitMaster4 22s ease-in-out infinite}
+.orbit-4 .orbit-path{border:1px solid rgba(var(--orb),.08)}
+.orbit-4 .orbit-object-wrapper{animation:spinCounterClockwise 9.26s linear infinite}
+.orbit-4 .obj-diamond{width:4px;height:4px;background-color:rgba(var(--orb2),.85);transform:translate(-50%,-50%) rotate(45deg);box-shadow:0 0 3px rgba(var(--orb),.5)}
+.orbit-5{width:102px;height:102px;transform:rotateX(62deg) rotateY(65deg) rotateZ(-45deg);animation:orbitMaster5 22s ease-in-out infinite}
+.orbit-5 .orbit-path{border:1px solid rgba(var(--orb),.12);border-left-color:rgba(var(--orb),.35)}
+.orbit-5 .orbit-object-wrapper{animation:spinCounterClockwise 7.87s linear infinite}
+.orbit-5 .obj-line{width:6px;height:1px;background-color:rgb(var(--orb));box-shadow:0 0 4px rgba(var(--orb),.8);animation:selfRotate 3.1s linear infinite}
+.orbit-6{width:122px;height:122px;transform:rotateX(84deg) rotateY(-78deg) rotateZ(10deg);animation:orbitMaster6 22s ease-in-out infinite}
+.orbit-6 .orbit-path{border:1px solid rgba(var(--orb2),.06);border-top:1px solid rgba(var(--orb),.25)}
+.orbit-6 .orbit-object-wrapper{animation:spinClockwise 11.13s linear infinite}
+.orbit-6 .obj-square{width:3px;height:3px;background-color:rgba(var(--neon-b),.9);animation:keepUpright6 11.13s linear infinite}
+.orbit-7{width:138px;height:120px;transform:rotateX(48deg) rotateY(22deg) rotateZ(-65deg) skewX(8deg);animation:orbitMaster7 22s ease-in-out infinite}
+.orbit-7 .orbit-path{border:1px double rgba(var(--orb),.1)}
+.orbit-7 .orbit-object-wrapper{animation:spinCounterClockwise 13.62s linear infinite}
+.orbit-7 .obj-fragment{width:5px;height:4px;background-color:rgba(var(--orb2),.85);clip-path:polygon(0% 0%,100% 20%,80% 100%,10% 70%);animation:selfRotate 4.5s linear infinite reverse}
+.particle-system{position:absolute;width:100%;height:100%;pointer-events:none}
+.particle{position:absolute;background-color:rgba(var(--orb),.7);border-radius:50%;animation:particleFloat 6s ease-in-out infinite alternate}
+.p1{width:1.5px;height:1.5px;top:22%;left:30%;animation-delay:.2s;opacity:.4}
+.p2{width:2px;height:2px;top:75%;left:20%;animation-delay:1.1s;opacity:.6}
+.p3{width:1px;height:1px;top:15%;left:70%;animation-delay:.7s;opacity:.3}
+.p4{width:2px;height:2px;top:80%;left:75%;animation-delay:2.3s;opacity:.5}
+.p5{width:1.5px;height:1.5px;top:45%;left:12%;animation-delay:1.8s;opacity:.6}
+.p6{width:1px;height:1px;top:50%;left:88%;animation-delay:3.1s;opacity:.4}
+.p7{width:2.5px;height:2.5px;top:32%;left:82%;animation-delay:.4s;opacity:.7;box-shadow:0 0 3px rgb(var(--orb))}
+.p8{width:1px;height:1px;top:68%;left:35%;animation-delay:2.9s;opacity:.3}
+.p9{width:1.5px;height:1.5px;top:88%;left:45%;animation-delay:1.4s;opacity:.5}
+.p10{width:2px;height:2px;top:10%;left:48%;animation-delay:3.5s;opacity:.6}
+.p11{width:1px;height:1px;top:38%;left:25%;animation-delay:.9s;opacity:.4}
+.p12{width:1.5px;height:1.5px;top:62%;left:78%;animation-delay:2.1s;opacity:.5}
+.energy-fragments{position:absolute;width:100%;height:100%;pointer-events:none}
+.energy-fragment{position:absolute;top:50%;left:50%;width:3px;height:3px;background-color:rgba(var(--neon-a),.9);border-radius:50%;box-shadow:0 0 5px rgba(var(--neon-a),.8)}
+.ef1{animation:energyFragmentMotion1 22s ease-in-out infinite}
+.ef2{animation:energyFragmentMotion2 22s ease-in-out infinite}
+.ef3{animation:energyFragmentMotion3 22s ease-in-out infinite}
+@keyframes spinClockwise{to{transform:rotate(360deg)}}
+@keyframes spinCounterClockwise{to{transform:rotate(-360deg)}}
+@keyframes selfRotate{0%{transform:translate(-50%,-50%) rotate(0)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes keepUpright2{0%{transform:translate(-50%,-50%) rotate(0)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes keepUpright6{0%{transform:translate(-50%,-50%) rotate(0)}100%{transform:translate(-50%,-50%) rotate(-360deg)}}
+@keyframes corePulse{0%{transform:scale(.85);opacity:.7}100%{transform:scale(1.25);opacity:1;box-shadow:0 0 9px 2px rgba(var(--neon-a),1)}}
+@keyframes coreBreathe{0%{transform:scale(.9);opacity:.4}100%{transform:scale(1.4);opacity:.9}}
+@keyframes coreFluctuate{0%{transform:scale(.8) rotate(0);opacity:.2}50%{opacity:.6}100%{transform:scale(1.2) rotate(180deg);opacity:.3}}
+@keyframes coreRingRotate{to{transform:rotate(360deg)}}
+@keyframes coreRingRotateReverse{to{transform:rotate(-360deg)}}
+@keyframes particleFloat{0%{transform:translate(0,0) scale(.8)}50%{transform:translate(3px,-4px) scale(1.2)}100%{transform:translate(-2px,3px) scale(.9)}}
+@keyframes shockwavePulse{0%{width:4px;height:4px;opacity:0;border-width:2px}85%{opacity:0}86%{width:6px;height:6px;opacity:1;border-width:2px}92%{width:130px;height:130px;opacity:.4;border-width:1px}96%{width:170px;height:170px;opacity:0;border-width:.5px}100%{width:4px;height:4px;opacity:0}}
+@keyframes coreMasterCycle{0%{transform:scale(.3);opacity:.2}6%{transform:scale(1);opacity:1}58%{transform:scale(1);filter:brightness(1)}64%{transform:scale(1.15);filter:brightness(1.4)}68%{transform:scale(.95);filter:brightness(1.1)}74%{transform:scale(1.3);filter:brightness(1.8)}80%{transform:scale(.15);filter:brightness(.5);opacity:.9}84%{transform:scale(.05);filter:brightness(.2);opacity:.3}85.5%{transform:scale(0);opacity:0}86%{transform:scale(2.2);filter:brightness(2.5);opacity:1}90%{transform:scale(.9);filter:brightness(1.2);opacity:.9}95%{transform:scale(1);filter:brightness(1);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes orbitMaster1{0%{transform:rotateX(68deg) rotateY(12deg) rotateZ(0deg) scale(.2);opacity:0}8%,58%{transform:rotateX(68deg) rotateY(12deg) rotateZ(0deg) scale(1);opacity:1}64%{transform:rotateX(68deg) rotateY(12deg) rotateZ(0deg) scale(1.05)}68%{transform:rotateX(0) rotateY(0) rotateZ(0) scale(1)}74%{transform:rotateX(30deg) rotateY(40deg) rotateZ(90deg) scale(1.1);opacity:.9}81%{transform:rotateX(68deg) rotateY(12deg) rotateZ(180deg) scale(.15);opacity:.3}85%{transform:scale(0);opacity:0}88%{transform:rotateX(68deg) rotateY(12deg) rotateZ(0deg) scale(1.3);opacity:.6}94%{transform:rotateX(68deg) rotateY(12deg) rotateZ(0deg) scale(.98);opacity:1}100%{transform:rotateX(68deg) rotateY(12deg) rotateZ(0deg) scale(1);opacity:1}}
+@keyframes orbitMaster2{0%{transform:rotateX(58deg) rotateY(-28deg) rotateZ(25deg) scale(0);opacity:0}11%,58%{transform:rotateX(58deg) rotateY(-28deg) rotateZ(25deg) scale(1);opacity:.85}64%{transform:rotateX(58deg) rotateY(-28deg) rotateZ(25deg) scale(1.08)}68%{transform:rotateX(0) rotateY(0) rotateZ(0) scale(1)}75%{transform:rotateX(-50deg) rotateY(20deg) rotateZ(-45deg) scale(.8);opacity:1}82%{transform:rotateX(58deg) rotateY(-28deg) rotateZ(90deg) scale(.1);opacity:.2}85%{transform:scale(0);opacity:0}89%{transform:rotateX(58deg) rotateY(-28deg) rotateZ(25deg) scale(1.25);opacity:.5}95%,100%{transform:rotateX(58deg) rotateY(-28deg) rotateZ(25deg) scale(1);opacity:.85}}
+@keyframes orbitMaster3{0%{transform:rotateX(76deg) rotateY(38deg) rotateZ(-15deg) scale(0);opacity:0}6%,58%{transform:rotateX(76deg) rotateY(38deg) rotateZ(-15deg) scale(1);opacity:1}64%{transform:rotateX(76deg) rotateY(38deg) rotateZ(-15deg) scale(1.1)}68%{transform:rotateX(0) rotateY(0) rotateZ(0) scale(1)}73%{transform:rotateX(80deg) rotateY(-10deg) rotateZ(30deg) scale(1.2)}80%{transform:rotateX(76deg) rotateY(38deg) rotateZ(0deg) scale(.08);opacity:.4}85%{transform:scale(0);opacity:0}87%{transform:rotateX(76deg) rotateY(38deg) rotateZ(-15deg) scale(1.4);opacity:.8}92%{transform:rotateX(76deg) rotateY(38deg) rotateZ(-15deg) scale(.95);opacity:1}100%{transform:rotateX(76deg) rotateY(38deg) rotateZ(-15deg) scale(1);opacity:1}}
+@keyframes orbitMaster4{0%{transform:rotateX(42deg) rotateY(-52deg) rotateZ(40deg) scale(0);opacity:0}14%,58%{transform:rotateX(42deg) rotateY(-52deg) rotateZ(40deg) scale(1);opacity:.7}64%{transform:rotateX(42deg) rotateY(-52deg) rotateZ(40deg) scale(1.04)}68%{transform:rotateX(0) rotateY(0) rotateZ(0) scale(1)}76%{transform:rotateX(-20deg) rotateY(-80deg) rotateZ(10deg) scale(.7);opacity:.9}83%{transform:rotateX(42deg) rotateY(-52deg) rotateZ(0deg) scale(.05);opacity:.1}85%{transform:scale(0);opacity:0}90%{transform:rotateX(42deg) rotateY(-52deg) rotateZ(40deg) scale(1.2);opacity:.4}96%,100%{transform:rotateX(42deg) rotateY(-52deg) rotateZ(40deg) scale(1);opacity:.7}}
+@keyframes orbitMaster5{0%{transform:rotateX(62deg) rotateY(65deg) rotateZ(-45deg) scale(0);opacity:0}10%,58%{transform:rotateX(62deg) rotateY(65deg) rotateZ(-45deg) scale(1);opacity:.8}64%{transform:rotateX(62deg) rotateY(65deg) rotateZ(-45deg) scale(1.06)}68%{transform:rotateX(0) rotateY(0) rotateZ(0) scale(1)}74%{transform:rotateX(45deg) rotateY(20deg) rotateZ(-90deg) scale(1.15)}81%{transform:rotateX(62deg) rotateY(65deg) rotateZ(0deg) scale(.12);opacity:.2}85%{transform:scale(0);opacity:0}88.5%{transform:rotateX(62deg) rotateY(65deg) rotateZ(-45deg) scale(1.35);opacity:.6}94.5%,100%{transform:rotateX(62deg) rotateY(65deg) rotateZ(-45deg) scale(1);opacity:.8}}
+@keyframes orbitMaster6{0%{transform:rotateX(84deg) rotateY(-78deg) rotateZ(10deg) scale(0);opacity:0}16%,58%{transform:rotateX(84deg) rotateY(-78deg) rotateZ(10deg) scale(1);opacity:.65}64%{transform:rotateX(84deg) rotateY(-78deg) rotateZ(10deg) scale(1.05)}68%{transform:rotateX(0) rotateY(0) rotateZ(0) scale(1)}77%{transform:rotateX(-70deg) rotateY(40deg) rotateZ(-30deg) scale(.65);opacity:.85}83.5%{transform:rotateX(84deg) rotateY(-78deg) rotateZ(0deg) scale(.04);opacity:.1}85%{transform:scale(0);opacity:0}91%{transform:rotateX(84deg) rotateY(-78deg) rotateZ(10deg) scale(1.18);opacity:.35}97%,100%{transform:rotateX(84deg) rotateY(-78deg) rotateZ(10deg) scale(1);opacity:.65}}
+@keyframes orbitMaster7{0%{transform:rotateX(48deg) rotateY(22deg) rotateZ(-65deg) skewX(8deg) scale(0);opacity:0}18%,58%{transform:rotateX(48deg) rotateY(22deg) rotateZ(-65deg) skewX(8deg) scale(1);opacity:.75}64%{transform:rotateX(48deg) rotateY(22deg) rotateZ(-65deg) skewX(8deg) scale(1.08)}68%{transform:rotateX(0) rotateY(0) rotateZ(0) scale(1)}75%{transform:rotateX(30deg) rotateY(-60deg) rotateZ(45deg) skewX(0) scale(1.1)}82%{transform:rotateX(48deg) rotateY(22deg) rotateZ(0deg) skewX(0) scale(.07);opacity:.2}85%{transform:scale(0);opacity:0}91.5%{transform:rotateX(48deg) rotateY(22deg) rotateZ(-65deg) skewX(8deg) scale(1.22);opacity:.45}97.5%,100%{transform:rotateX(48deg) rotateY(22deg) rotateZ(-65deg) skewX(8deg) scale(1);opacity:.75}}
+@keyframes energyFragmentMotion1{0%{transform:translate(-50%,-50%) translate(-35px,-20px) scale(.8);opacity:.3}30%{transform:translate(-50%,-50%) translate(-45px,25px) scale(1.1);opacity:.8}58%{transform:translate(-50%,-50%) translate(-25px,-38px) scale(.9);opacity:.6}68%{transform:translate(-50%,-50%) translate(-15px,-10px) scale(1.3);opacity:1}80%{transform:translate(-50%,-50%) translate(-2px,-2px) scale(.3);opacity:.9}85%{transform:translate(-50%,-50%) scale(0);opacity:0}87%{transform:translate(-50%,-50%) translate(-65px,-45px) scale(1.6);opacity:1}95%{transform:translate(-50%,-50%) translate(-38px,-22px) scale(.9);opacity:.5}100%{transform:translate(-50%,-50%) translate(-35px,-20px) scale(.8);opacity:.3}}
+@keyframes energyFragmentMotion2{0%{transform:translate(-50%,-50%) translate(40px,15px) scale(1);opacity:.5}35%{transform:translate(-50%,-50%) translate(20px,-40px) scale(.7);opacity:.4}58%{transform:translate(-50%,-50%) translate(48px,10px) scale(1.2);opacity:.9}68%{transform:translate(-50%,-50%) translate(12px,8px) scale(1.4);opacity:1}81%{transform:translate(-50%,-50%) translate(1px,1px) scale(.2);opacity:.8}85%{transform:translate(-50%,-50%) scale(0);opacity:0}87.5%{transform:translate(-50%,-50%) translate(55px,50px) scale(1.5);opacity:1}96%{transform:translate(-50%,-50%) translate(42px,18px) scale(1);opacity:.6}100%{transform:translate(-50%,-50%) translate(40px,15px) scale(1);opacity:.5}}
+@keyframes energyFragmentMotion3{0%{transform:translate(-50%,-50%) translate(10px,-45px) scale(.6);opacity:.4}25%{transform:translate(-50%,-50%) translate(-30px,35px) scale(1);opacity:.7}58%{transform:translate(-50%,-50%) translate(15px,42px) scale(.8);opacity:.5}68%{transform:translate(-50%,-50%) translate(8px,-12px) scale(1.2);opacity:.95}82%{transform:translate(-50%,-50%) translate(0,-1px) scale(.4);opacity:.7}85%{transform:translate(-50%,-50%) scale(0);opacity:0}88%{transform:translate(-50%,-50%) translate(10px,-65px) scale(1.7);opacity:1}94%{transform:translate(-50%,-50%) translate(12px,-48px) scale(.7);opacity:.5}100%{transform:translate(-50%,-50%) translate(10px,-45px) scale(.6);opacity:.4}}
+
+/* ── uiverse: R5Program/fast-mule-73 — wave bars, used as a live "signal" meter ── */
+.wave{display:flex;align-items:flex-end;justify-content:center;gap:4px;height:54px;position:relative;z-index:2}
+.wave div{
+    width:8px;height:10%;border-radius:4px 4px 0 0;transform-origin:bottom;
+    background-color:rgba(var(--neon-a),.85);box-shadow:0 0 10px rgba(var(--neon-a),.55);
+    animation:wave 3.2s cubic-bezier(.5,.2,.3,1) infinite;animation-delay:var(--d,0s);
+}
+.wave div:nth-child(3n){background-color:rgba(var(--neon-b),.85);box-shadow:0 0 10px rgba(var(--neon-b),.5)}
+@keyframes wave{0%,100%{height:10%}25%{height:100%}50%{height:50%}75%{height:75%}}
+
+/* ── uiverse: reglobby/rude-walrus-96 — holographic launch button (CTA) ── */
+.cta-zone{
+    position:relative;margin-top:2rem;padding:2.6rem 1rem 3rem;overflow:hidden;
+    display:flex;justify-content:center;align-items:center;border:1px solid var(--border);
+    background:var(--panel);
+}
+.nebula{position:absolute;width:120%;height:120%;top:-10%;left:-10%;
+    background:radial-gradient(ellipse at 30% 30%,rgba(var(--neon-a),.3) 0%,rgba(var(--neon-a),0) 70%),
+               radial-gradient(ellipse at 70% 60%,rgba(var(--neon-b),.25) 0%,rgba(var(--neon-b),0) 70%),
+               radial-gradient(ellipse at 50% 50%,rgba(var(--neon-c),.18) 0%,rgba(var(--neon-c),0) 70%);
+    filter:blur(30px);opacity:.5;animation:nebula-shift 30s infinite alternate ease-in-out}
+@keyframes nebula-shift{0%{transform:scale(1) rotate(0);opacity:.3}50%{opacity:.5}100%{transform:scale(1.2) rotate(5deg);opacity:.4}}
+.grid-plane{position:absolute;width:200%;height:200%;top:-50%;left:-50%;
+    background-image:linear-gradient(rgba(var(--neon-a),.15) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--neon-a),.15) 1px,transparent 1px);
+    background-size:40px 40px;transform:perspective(500px) rotateX(60deg);animation:grid-move 20s linear infinite;opacity:.3}
+@keyframes grid-move{0%{transform:perspective(500px) rotateX(60deg) translateY(0)}100%{transform:perspective(500px) rotateX(60deg) translateY(40px)}}
+.button-container{position:relative;perspective:1000px;transform-style:preserve-3d;z-index:10}
+.holo-button{
+    position:relative;display:flex;align-items:center;justify-content:center;width:300px;height:80px;
+    background:rgba(10,10,14,.6);border:none;color:rgba(var(--neon-a),.95);
+    font-family:"Orbitron",var(--font-mono);font-size:17px;font-weight:700;letter-spacing:3px;
+    text-shadow:0 0 10px rgba(var(--neon-a),.5);cursor:pointer;overflow:hidden;transform-style:preserve-3d;
+    transition:all .3s ease;text-decoration:none;border-radius:2px;
+}
+html.theme-light .holo-button{background:rgba(255,255,255,.7)}
+.holo-button::before{content:"";position:absolute;inset:2px;background:linear-gradient(45deg,rgba(20,4,6,.85) 0%,rgba(30,8,10,.85) 50%,rgba(8,12,9,.85) 100%);z-index:-1;border-radius:1px}
+html.theme-light .holo-button::before{background:linear-gradient(45deg,rgba(255,250,248,.92),rgba(246,238,236,.92) 50%,rgba(240,244,238,.92))}
+.button-border{position:absolute;inset:0;pointer-events:none;z-index:2}
+.button-border::before,.button-border::after{content:"";position:absolute;inset:0;border:2px solid transparent;box-shadow:0 0 10px rgba(var(--neon-a),.55);animation:border-flow 3s infinite}
+.button-border::before{border-top-color:rgba(var(--neon-a),.85);border-left-color:rgba(var(--neon-a),.85)}
+.button-border::after{border-bottom-color:rgba(var(--neon-b),.85);border-right-color:rgba(var(--neon-b),.85)}
+@keyframes border-flow{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.03);opacity:.8}}
+.holo-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;background:radial-gradient(ellipse at center,rgba(var(--neon-a),.22) 0%,rgba(0,0,0,0) 70%);pointer-events:none;z-index:1;filter:blur(10px);animation:glow-pulse 3s infinite alternate}
+@keyframes glow-pulse{0%{opacity:.4;filter:blur(10px) brightness(.8)}100%{opacity:.7;filter:blur(15px) brightness(1.2)}}
+.holo-lines{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:2}
+.holo-line{position:absolute;background:rgba(var(--neon-a),.5);filter:blur(1px)}
+.holo-line:nth-child(1){top:0;left:30px;width:1.5px;height:100%;animation:line-pulse 2s infinite alternate -.5s}
+.holo-line:nth-child(2){top:0;right:30px;width:1.5px;height:100%;animation:line-pulse 2s infinite alternate -1s}
+.holo-line:nth-child(3){top:15px;left:0;width:100%;height:1.5px;animation:line-pulse 2s infinite alternate -1.5s}
+.holo-line:nth-child(4){bottom:15px;left:0;width:100%;height:1.5px;animation:line-pulse 2s infinite alternate -2s}
+@keyframes line-pulse{0%{opacity:.3;background:rgba(var(--neon-a),.5)}100%{opacity:.7;background:rgba(var(--neon-b),.5)}}
+.scan-line{position:absolute;width:100%;height:3px;top:0;left:0;background:linear-gradient(90deg,transparent 0%,rgba(var(--neon-a),.5) 20%,rgba(255,255,255,.8) 50%,rgba(var(--neon-b),.5) 80%,transparent 100%);filter:blur(1px);opacity:0;z-index:2;pointer-events:none;animation:scan 2s infinite}
+@keyframes scan{0%{top:-5px;opacity:0}15%,85%{opacity:.7}100%{top:85px;opacity:0}}
+.holo-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+.holo-particle{position:absolute;background:white;box-shadow:0 0 10px rgba(var(--neon-a),.7);border-radius:50%;filter:blur(1px);opacity:0;animation:particle-float 3s infinite ease-out}
+.holo-particle:nth-child(1){width:3px;height:3px;top:70%;left:30%;animation-delay:.2s}
+.holo-particle:nth-child(2){width:2px;height:2px;top:60%;left:40%;animation-delay:.5s}
+.holo-particle:nth-child(3){width:4px;height:4px;top:80%;left:60%;animation-delay:.8s}
+.holo-particle:nth-child(4){width:2px;height:2px;top:70%;left:70%;animation-delay:1.1s}
+.holo-particle:nth-child(5){width:3px;height:3px;top:75%;left:50%;animation-delay:1.4s}
+.holo-particle:nth-child(6){width:2px;height:2px;top:65%;left:65%;animation-delay:1.7s}
+@keyframes particle-float{0%{transform:translateY(0) rotate(0);opacity:0}10%{opacity:.8}100%{transform:translateY(-40px) rotate(360deg);opacity:0}}
+.button-hexagons{position:absolute;width:400px;height:180px;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:1}
+.hexagon{position:absolute;width:30px;height:17.32px;border:1.5px solid rgba(var(--neon-a),.3);transform:rotate(30deg);opacity:0;animation:hexagon-pulse 3s infinite}
+.hexagon::before,.hexagon::after{content:"";position:absolute;inset:0;border:1.5px solid rgba(var(--neon-a),.3)}
+.hexagon::before{transform:rotate(60deg)}.hexagon::after{transform:rotate(-60deg)}
+.hexagon:nth-child(1){top:20px;left:20px;animation-delay:.1s}
+.hexagon:nth-child(2){top:20px;right:20px;animation-delay:.3s}
+.hexagon:nth-child(3){bottom:20px;left:20px;animation-delay:.5s}
+.hexagon:nth-child(4){bottom:20px;right:20px;animation-delay:.7s}
+.hexagon:nth-child(5){top:50%;left:0;animation-delay:.9s}
+.hexagon:nth-child(6){top:50%;right:0;animation-delay:1.1s}
+@keyframes hexagon-pulse{0%{opacity:0;transform:rotate(30deg) scale(.8)}20%,80%{opacity:.5;transform:rotate(30deg) scale(1)}100%{opacity:0;transform:rotate(30deg) scale(1.2)}}
+.digital-glyphs{position:absolute;width:420px;height:200px;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:1}
+.digital-glyph{position:absolute;color:rgba(var(--neon-a),.6);font-size:10px;font-family:var(--font-mono);white-space:nowrap;opacity:0;animation:glyph-fade 4s infinite}
+.digital-glyph:nth-child(1){top:-26px;left:50px;animation-delay:.2s}
+.digital-glyph:nth-child(2){top:-16px;right:30px;animation-delay:.6s}
+.digital-glyph:nth-child(3){bottom:-26px;left:60px;animation-delay:1s}
+.digital-glyph:nth-child(4){bottom:-16px;right:50px;animation-delay:1.4s}
+@keyframes glyph-fade{0%{opacity:0;transform:translateY(0)}10%,90%{opacity:.75}100%{opacity:0;transform:translateY(-10px)}}
+.corner-accents{position:absolute;inset:0;pointer-events:none}
+.corner-accent{position:absolute;width:15px;height:15px;border:2px solid rgba(var(--neon-a),.75)}
+.corner-accent:nth-child(1){top:0;left:0;border-right:none;border-bottom:none}
+.corner-accent:nth-child(2){top:0;right:0;border-left:none;border-bottom:none}
+.corner-accent:nth-child(3){bottom:0;left:0;border-right:none;border-top:none}
+.corner-accent:nth-child(4){bottom:0;right:0;border-left:none;border-top:none}
+.button-glitch{position:absolute;inset:0;pointer-events:none;z-index:3;opacity:0;animation:button-glitch 8s infinite}
+@keyframes button-glitch{0%,94%,96%,100%{opacity:0}94.5%{opacity:.8;transform:translate(5px,-2px) skew(-5deg,2deg);background:rgba(var(--neon-b),.2)}95%{opacity:.8;transform:translate(-5px,2px) skew(5deg,-2deg);background:rgba(var(--neon-a),.2)}95.5%{opacity:.8;transform:translate(2px,0) skew(-2deg,0);background:rgba(255,255,255,.2)}}
+.sound-wave{position:absolute;bottom:-30px;left:0;width:100%;height:20px;display:flex;justify-content:center;align-items:center;pointer-events:none}
+.wave-bar{width:2px;height:5px;background:rgba(var(--neon-a),.5);margin:0 2px;border-radius:1px;animation:wave-animation 1.5s infinite;animation-delay:var(--d,0s)}
+@keyframes wave-animation{0%,100%{height:5px}50%{height:15px}}
+.holo-button:hover{color:var(--ink-bright);text-shadow:0 0 15px rgba(var(--neon-a),.8);transform:scale(1.02)}
+.holo-button:active{transform:scale(.98)}
+.button-text{position:relative;z-index:5;text-transform:uppercase}
+.cta-secondary{position:absolute;right:1rem;bottom:.8rem;z-index:11;color:var(--ink-dim);font-size:var(--fs-3xs);letter-spacing:.14em;text-decoration:none}
+.cta-secondary:hover{color:var(--danger-bright)}
+
+/* ═══════════════════════ SECTIONS ═══════════════════════ */
+.section{margin-top:4.5rem}
+.section-head{display:flex;align-items:center;gap:1.4rem;margin-bottom:1.6rem;padding-bottom:1rem;border-bottom:1px solid var(--border-strong)}
+.section-head h2{color:var(--ink-bright);font-family:var(--font-display);font-size:clamp(1.8rem,4vw,3.2rem);font-weight:900;line-height:1;text-transform:uppercase;letter-spacing:-.01em}
+.section-head h2 .ja{font-size:.72em;letter-spacing:.04em}
+.section-kicker{display:block;margin-bottom:.4rem;color:var(--danger-bright);font-size:var(--fs-2xs);letter-spacing:.2em}
+.lead{max-width:78ch;color:var(--ink);font-size:var(--fs-md);line-height:1.85}
+.lead + .lead{margin-top:.9rem}
+.lead strong{color:var(--ink-bright)}
+
+/* ── uiverse: Thomas-Cabrit/weak-owl-45 — 3D holographic layered numerals (section index) ── */
+.holo-num{flex-shrink:0;width:104px;height:96px;display:flex;align-items:center;justify-content:center;perspective:900px}
+.holo-num__holo{position:relative;width:100px;height:92px;border-radius:20px;transform-style:preserve-3d;display:flex;align-items:center;justify-content:center;pointer-events:none;animation:holo-wobble 6.2s ease-in-out infinite}
+@keyframes holo-wobble{0%,100%{transform:rotateX(16deg) rotateY(-18deg)}50%{transform:rotateX(18deg) rotateY(18deg)}}
+.holo-num__layer{
+    position:absolute;font-family:var(--font-display);font-weight:900;font-size:76px;letter-spacing:-4px;line-height:1;
+    -webkit-text-stroke:1px rgba(var(--neon-a),.7);
+    background:linear-gradient(90deg,rgba(var(--neon-a),.18) 0%,rgba(var(--neon-a),.92) 35%,rgba(var(--neon-c),.75) 60%,rgba(var(--neon-a),.22) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 10px 22px rgba(0,0,0,.45));opacity:.95;transform-style:preserve-3d;
+}
+html.theme-light .holo-num__layer{filter:drop-shadow(0 8px 14px rgba(0,0,0,.12))}
+.holo-num__layer--back{opacity:.18;filter:blur(1px);transform:translateZ(-60px);-webkit-text-stroke:1px rgba(var(--neon-a),.45)}
+.holo-num__layer--mid{opacity:.42;filter:blur(.4px);transform:translateZ(-30px);-webkit-text-stroke:1px rgba(var(--neon-a),.55)}
+.holo-num__layer--front{opacity:.98;transform:translateZ(0);-webkit-text-stroke:1px rgba(var(--neon-a),.8)}
+.holo-num__holo::before{content:"";position:absolute;inset:0;border-radius:20px;background:radial-gradient(circle at 40% 35%,rgba(var(--neon-a),.16),transparent 62%);filter:blur(8px);transform:translateZ(-70px)}
+.holo-num__holo::after{content:"";position:absolute;inset:0;border-radius:20px;border:1px solid rgba(var(--neon-a),.18);background:linear-gradient(120deg,rgba(255,255,255,.05),rgba(255,255,255,.01) 45%,transparent);opacity:.55;transform:translateZ(-40px)}
+
+/* feature grid */
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-top:1.6rem}
+.feature{
+    position:relative;padding:1.2rem 1.2rem 1.1rem;border:1px solid var(--border);
+    background:linear-gradient(135deg,rgba(255,255,255,.018),transparent 45%),var(--surface);
+    transition:border-color .22s,transform .22s;overflow:hidden;
+}
+html.theme-light .feature{background:var(--surface)}
+.feature::before{content:"";position:absolute;inset:0 auto 0 0;width:2px;background:var(--danger-bright);transform:scaleY(0);transform-origin:bottom;transition:transform .28s}
+.feature:hover{border-color:var(--border-strong);transform:translateY(-3px)}
+.feature:hover::before{transform:scaleY(1)}
+.feature .f-id{color:var(--ink-faint);font-size:var(--fs-3xs);letter-spacing:.16em}
+.feature h3{margin:.45rem 0 .5rem;color:var(--ink-bright);font-family:var(--font-display);font-size:var(--fs-lg);font-weight:800;line-height:1.25}
+.feature p{color:var(--ink-dim);font-size:var(--fs-xs);line-height:1.8}
+
+/* modes */
+.modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}
+.mode{display:flex;flex-direction:column;padding:1.3rem;border:1px solid var(--border);background:var(--surface);min-width:0}
+.mode .m-cmd{color:var(--danger-bright);font-size:var(--fs-xl);font-family:var(--font-display);font-weight:900;letter-spacing:.04em}
+.mode .m-kind{display:inline-block;margin:.35rem 0 .8rem;padding:.12rem .45rem;border:1px solid var(--border-strong);color:var(--signal);font-size:var(--fs-3xs);letter-spacing:.12em;align-self:flex-start}
+.mode .m-kind.gated{color:var(--amber);border-color:var(--amber)}
+.mode p{color:var(--ink-dim);font-size:var(--fs-xs);line-height:1.8;flex:1}
+.mode .m-plat{display:flex;gap:.35rem;margin-top:1rem;flex-wrap:wrap}
+.mode .m-plat span{font-size:var(--fs-3xs);letter-spacing:.08em;padding:.12rem .4rem;border:1px solid var(--border)}
+.mode .ok{color:var(--signal-bright)}.mode .part{color:var(--amber)}.mode .no{color:var(--ink-faint);text-decoration:line-through}
+
+/* pipeline + lava lamp */
+.pipeline-wrap{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:1.5rem;align-items:stretch}
+.pipeline{list-style:none;counter-reset:step;border-left:1px solid var(--border-strong);padding-left:0}
+.pipeline li{position:relative;padding:.85rem 0 .85rem 2.4rem;counter-increment:step}
+.pipeline li::before{
+    content:counter(step,decimal-leading-zero);position:absolute;left:-1px;top:.9rem;transform:translateX(-50%);
+    width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;
+    background:var(--bg);border:1px solid var(--danger-bright);color:var(--danger-bright);font-size:var(--fs-3xs);letter-spacing:.04em;
+}
+.pipeline li b{display:block;color:var(--ink-bright);font-size:var(--fs-sm);font-weight:600}
+.pipeline li span{color:var(--ink-dim);font-size:var(--fs-xs)}
+.lava-panel{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;border:1px solid var(--border);background:var(--panel);overflow:hidden;min-height:340px}
+.lava-panel .io{color:var(--ink-dim);font-size:var(--fs-3xs);letter-spacing:.16em;text-align:center;position:relative;z-index:3}
+.lava-panel .io b{color:var(--danger-bright);font-weight:500}
+
+/* ── uiverse: jaykdoe/bad-dragonfly-20 — lava lamp, the "capture in → findings out" processor ── */
+.lava-wrap{position:relative;width:20em;height:18.75em;font-size:13px}
+.lamp{position:absolute;height:18.75em;width:20em;inset:0;margin:auto}
+.lamp>*{overflow:hidden;position:absolute;margin:auto;right:0;left:0}
+.lamp>*>*{margin:0 auto}
+.lamp .base-butt,.lamp .base-one,.lamp .hat-thingy{background-color:#2a2f2a;background-image:linear-gradient(90deg,transparent 66%,#151b16 66%)}
+.lamp .hat-thingy{transform:perspective(.25em) rotateX(1.625deg);width:3em;height:2.625em;border:.25em solid #151b16;border-top:.375em solid #151b16;border-radius:1em 1em 0 0}
+.lamp .glass{transform:perspective(1em) rotateX(5deg) scale(.5);height:16.00625em;overflow:hidden;border-left:.625em solid #151b16;border-right:.625em solid #151b16;width:9.375em;top:-2.25em;background-color:#b8292f;background-image:linear-gradient(90.25deg,transparent 65%,rgba(21,27,22,.5) 66%)}
+.lamp .glass .glass-inside{background-color:rgba(87,87,87,.4);overflow:hidden;filter:contrast(24);height:16em;opacity:.75}
+.lamp .boop{filter:blur(8px);border-radius:50%;background-color:#f0b450;position:absolute}
+.lamp .boop.blob{width:2em;height:2em}
+.lamp .boop.blob:nth-child(1){height:1em;width:.75em;bottom:-3em;left:15%;animation:lava-up-1 9s linear .75s infinite}
+.lamp .boop.blob:nth-child(2){height:.125em;width:.25em;bottom:-5em;left:45%;animation:lava-up-2 9s linear 1.5s infinite}
+.lamp .boop.blob:nth-child(3){height:.125em;width:.125em;bottom:-5em;left:40%;animation:lava-up-3 9s linear 4s infinite}
+.lamp .boop.blob:nth-child(4){height:.25em;width:.25em;bottom:-5em;left:60%;animation:lava-up-4 9s linear 5.5s infinite}
+.lamp .boop.blob:nth-child(5){height:3em;width:3em;top:-3em;left:45%;animation:lava-down-1 9s linear 0s infinite}
+.lamp .boop.blob:nth-child(6){height:6em;width:4em;top:-8em;left:40%;animation:lava-down-2 9s linear 3s infinite}
+.lamp .boop.blob:nth-child(7){height:3em;width:4em;bottom:-3em;left:50%;animation:lava-deform 9s linear 2.5s infinite}
+.lamp .boop.blob-top{width:100%;height:5em;top:-2em}
+.lamp .boop.blob-bottom{width:100%;height:3em;bottom:-2em}
+.lamp .base-one{transform:perspective(1em) rotateX(-5deg);bottom:3.125em;border:.375em solid #151b16;border-top:.1875em solid #151b16;border-radius:0 0 .75em .75em;height:3.5em;width:6.125em}
+.lamp .base-butt{transform:perspective(1em) rotateX(5deg);bottom:1.625em;height:2em;width:5.5em;border-radius:.125em .125em 20% 20%;border:.375em solid #151b16;border-top:.25em solid #151b16;border-bottom:.3125em solid #151b16;z-index:-99}
+.lamp .shadow{height:1.5em;width:15em;border-radius:50%;bottom:1em;z-index:-999;background:radial-gradient(ellipse at center,#7a1a1f 30%,rgba(240,180,80,.7) 40%,rgba(240,180,80,.1) 70%,transparent 100%);animation:lava-glow 5s linear infinite}
+.lamp .the-actual-shadow{width:12em;bottom:1.375em;border-radius:50%;z-index:-999;height:1em;background:rgba(21,27,22,.25)}
+@keyframes lava-up-1{0%{height:.5em;width:.25em;bottom:-4em}100%{height:9em;width:8em;bottom:18em}}
+@keyframes lava-up-2{0%{height:.125em;width:.25em;bottom:-4em}100%{height:4em;width:3em;bottom:18em}}
+@keyframes lava-up-3{0%{height:.125em;width:.125em;bottom:-8em}100%{height:7em;width:5em;bottom:18em}}
+@keyframes lava-up-4{0%{height:.25em;width:.25em;bottom:-8em;left:30%}100%{height:4em;width:3em;bottom:18em;left:50%}}
+@keyframes lava-down-1{0%{height:3em;width:3em;top:-4em}100%{height:.25em;width:.25em;top:18em}}
+@keyframes lava-down-2{0%{height:6em;width:4em;top:-8em}100%{height:2em;width:1.75em;top:18em}}
+@keyframes lava-deform{0%,100%{bottom:-3em;left:50%}50%{bottom:-1.5em;left:20%}}
+@keyframes lava-glow{0%,100%{opacity:1}50%{opacity:.7}}
+
+/* ── uiverse: SelfMadeSystem/fluffy-eel-29 — repo card with spinning gradient border (commands) ── */
+.gh-stage{display:flex;justify-content:center;padding:2rem 0 1rem}
+.gh-wrap{position:relative;width:min(760px,100%);border-radius:1em}
+.gh-border{position:absolute;inset:0;background:#0005;border-radius:inherit}
+html.theme-light .gh-border{background:#0001}
+.gh-card{position:relative;margin:.125em;border-radius:.875em;background:#111215;display:flex;flex-direction:column;color:#fff;overflow:hidden;min-height:360px}
+html.theme-light .gh-card{background:#ffffff;color:#1f2328}
+.gh-header{background:#0b0d10;display:flex;flex-direction:column;gap:4px;border-bottom:1px solid #1d1f23}
+html.theme-light .gh-header{background:#f6f8fa;border-bottom-color:#d0d7de}
+.gh-top{display:flex;align-items:center;gap:8px;padding:10px 12px 0}
+.gh-icon{display:flex;height:1.9em;width:1.9em}
+.gh-icon svg{height:100%;width:100%;fill:currentColor}
+.gh-repo{display:flex;align-items:center;gap:8px;font-size:14px}
+.gh-repo a{position:relative;text-decoration:none;color:#bebebe;font-weight:300}
+html.theme-light .gh-repo a{color:#59636e}
+.gh-repo a.gh-name{color:inherit;font-weight:500}
+.gh-repo a::before{content:"";position:absolute;inset:-2px -4px;border-radius:6px;background:hsl(0 0% 50% / 14%);opacity:0;transition:.3s}
+.gh-repo a:hover::before{opacity:1}
+.gh-slash{font-size:10px;color:#797d86}
+.gh-space{flex-grow:1}
+.gh-badge{font-size:11px;padding:1px 8px;border-radius:2em;border:1px solid #303236;color:#9198a1}
+html.theme-light .gh-badge{border-color:#d0d7de;color:#59636e}
+.gh-pfp{display:flex;align-items:center;justify-content:center;width:1.9em;height:1.9em;border-radius:100%;background:rgba(var(--neon-a),.25);color:#fff;font-size:10px;font-weight:700;letter-spacing:.03em}
+html.theme-light .gh-pfp{color:#1f2328}
+.gh-tabs{display:flex;padding:0 10px;gap:8px}
+.gh-tab{position:relative;padding:4px 6px 12px;display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;isolation:isolate;background:none;border:0;color:inherit;font-family:inherit;border-bottom:2px solid transparent}
+.gh-tab svg{width:1em;height:1em;fill:#797d86}
+.gh-tab.active{border-bottom-color:rgb(var(--neon-a))}
+.gh-tab::before{content:"";position:absolute;background:currentColor;border-radius:8px;opacity:0;inset:0 0 8px;z-index:-1;transition:.3s}
+.gh-tab:hover::before{opacity:.07}
+.gh-content{padding:12px}
+.gh-list{display:none;flex-direction:column;border:1px solid #343539;border-radius:6px;overflow:hidden}
+html.theme-light .gh-list{border-color:#d0d7de}
+.gh-list.active{display:flex}
+.gh-row{display:flex;gap:10px;width:100%;padding:10px;border-top:1px solid #343539;align-items:flex-start}
+html.theme-light .gh-row{border-top-color:#d0d7de}
+.gh-row:first-child{border-top:0}
+.gh-row label{display:flex;padding-top:3px}
+.gh-row input{display:none}
+.gh-check{position:relative;width:1em;height:1em;border-radius:2px;outline:1px solid #343539;transition:.3s;cursor:pointer}
+html.theme-light .gh-check{outline-color:#d0d7de}
+.gh-row input:checked ~ .gh-check{outline-color:#797d86}
+.gh-row input:checked ~ .gh-check::before{content:"";position:absolute;width:4px;height:8px;border-bottom:2px solid;border-right:2px solid;border-color:currentColor;transform:translate(5.5px,2.5px) rotate(45deg)}
+.gh-ricon{display:flex;width:1em;height:1em;margin-top:3px;flex-shrink:0}
+.gh-ricon svg{width:1em;height:1em;fill:#63d188}
+.gh-ricon.warn svg{fill:#e3b341}
+.gh-rtext{display:flex;flex-direction:column;gap:2px;min-width:0}
+.gh-rtitle{font-size:13px;font-weight:600;font-family:var(--font-mono);overflow-wrap:anywhere}
+.gh-rtitle:hover{color:#4493f8}
+.gh-rdesc{font-size:12px;color:#9198a1;line-height:1.55}
+html.theme-light .gh-rdesc{color:#59636e}
+.gh-backdrop{position:absolute;inset:-100%;background:radial-gradient(circle at 50% 50%,#0000 0,#0000 20%,#111111aa 50%);background-size:3px 3px;z-index:-1}
+html.theme-light .gh-backdrop{background:radial-gradient(circle at 50% 50%,#0000 0,#0000 20%,#00000014 50%);background-size:3px 3px}
+.gh-spin{position:absolute;inset:0;z-index:-2;overflow:hidden}
+.gh-spin-blur{filter:blur(3em) url(#unopaq)}
+.gh-spin-intense{inset:-.125em;filter:blur(.5em) url(#unopaq2);border-radius:.75em}
+.gh-spin-inside{inset:-2px;border-radius:inherit;filter:blur(2px) url(#unopaq3);z-index:0}
+.gh-spin::before{content:"";position:absolute;inset:-30%;animation:speen 8s cubic-bezier(.56,.15,.28,.86) infinite}
+.gh-spin-blur::before{background:linear-gradient(-45deg,rgb(var(--neon-a)),#0000 46% 54%,rgb(var(--neon-b)))}
+.gh-spin-intense::before{background:linear-gradient(-45deg,rgba(var(--neon-a),.9),#0000 35% 65%,rgba(var(--neon-b),.9))}
+.gh-spin-inside::before{background:linear-gradient(-45deg,#f6b3b6,#0000 35% 65%,#cfe8c6)}
+@keyframes speen{0%{rotate:10deg}50%{rotate:190deg}to{rotate:370deg}}
+
+/* terminal snippet */
+.term{margin-top:1.4rem;border:1px solid var(--border-strong);background:var(--surface);font-size:var(--fs-xs)}
+html.theme-light .term{background:#f5f3ee}
+.term-head{display:flex;align-items:center;justify-content:space-between;padding:.4rem .8rem;border-bottom:1px solid var(--border);background:var(--surface-raised);color:var(--signal);font-size:var(--fs-3xs);letter-spacing:.12em}
+.term pre{padding:1rem 1.1rem;overflow-x:auto;line-height:1.75;color:var(--ink);white-space:pre}
+.term .t-dim{color:var(--ink-faint)}.term .t-red{color:var(--danger-bright)}.term .t-ok{color:var(--signal-bright)}.term .t-amb{color:var(--amber)}
+.caret{display:inline-block;width:.55em;height:1em;vertical-align:-2px;background:var(--danger-bright);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* findings model */
+.two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.state-card{padding:1.3rem;border:1px solid var(--border);background:var(--surface)}
+.state-card h3{display:flex;align-items:center;gap:.6rem;color:var(--ink-bright);font-family:var(--font-display);font-size:var(--fs-xl);font-weight:900;text-transform:uppercase}
+.state-card h3 i{width:10px;height:10px;border-radius:50%;background:var(--danger-bright);box-shadow:0 0 0 4px rgba(var(--neon-a),.15)}
+.state-card.potential h3 i{background:var(--amber);box-shadow:0 0 0 4px rgba(var(--neon-c),.15)}
+.state-card p{margin-top:.7rem;color:var(--ink-dim);font-size:var(--fs-sm)}
+.state-card ul{margin-top:.8rem;padding-left:1.1rem;color:var(--ink);font-size:var(--fs-xs);line-height:1.9}
+
+/* safety */
+.gate{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border:1px solid var(--border-strong)}
+.gate-step{padding:1.2rem;border-right:1px solid var(--border);position:relative}
+.gate-step:last-child{border-right:0}
+.gate-step .g-n{color:var(--danger-bright);font-size:var(--fs-3xs);letter-spacing:.16em}
+.gate-step h3{margin:.4rem 0 .5rem;color:var(--ink-bright);font-size:var(--fs-sm);font-weight:600}
+.gate-step p{color:var(--ink-dim);font-size:var(--fs-xs);line-height:1.8}
+.nope{margin-top:1.4rem;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}
+.nope div{padding:1.1rem;border:1px dashed var(--danger);background:rgba(var(--neon-a),.04)}
+.nope b{display:block;color:var(--danger-bright);font-size:var(--fs-sm);letter-spacing:.04em;margin-bottom:.35rem}
+.nope div > span{color:var(--ink-dim);font-size:var(--fs-xs);line-height:1.75}
+
+.legal{padding:1.4rem 1.5rem;border:1px solid var(--danger-dark);background:rgba(var(--neon-a),.05);color:var(--ink-dim);font-size:var(--fs-xs);line-height:1.9}
+.legal strong{color:var(--ink-bright)}
+
+/* reveal on scroll */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* ═══════════════════════ FOOTER (same as the archive) ═══════════════════════ */
+.site-footer{margin-top:5rem;padding-top:1.5rem}
+.footer-divider{height:1px;margin-bottom:1.5rem;background:linear-gradient(90deg,var(--danger),var(--border) 35%,transparent)}
+.footer-grid{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:2rem}
+.footer-identity{display:flex;flex-direction:column;gap:.3rem}
+.footer-mark{color:var(--ink-bright);font-family:var(--font-display);font-size:var(--fs-lg);font-weight:900;letter-spacing:.13em;text-decoration:none}
+.footer-tagline{color:var(--ink-faint);font-size:var(--fs-2xs);letter-spacing:.12em;text-transform:uppercase}
+.footer-links{display:flex;align-items:center;justify-content:center;gap:1.1rem;flex-wrap:wrap}
+.footer-link{display:flex;align-items:center;gap:.55rem;color:var(--ink-dim);font-size:var(--fs-xs);letter-spacing:.1em;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:var(--ink-bright)}
+.footer-system{display:flex;align-items:center;justify-content:flex-end;gap:.5rem;color:var(--signal);font-size:var(--fs-xs);letter-spacing:.12em}
+.status-light{width:7px;height:7px;border-radius:50%;background:var(--signal);box-shadow:0 0 0 3px rgba(141,162,125,8%);animation:status-pulse 2.6s ease-in-out infinite}
+@keyframes status-pulse{0%,100%{opacity:.55;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+.footer-icon-fx{position:relative;width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-strong);background:rgba(255,255,255,.02);overflow:hidden;transition:border-color .22s,transform .22s,box-shadow .22s}
+html.theme-light .footer-icon-fx{background:rgba(0,0,0,.03)}
+.footer-icon-fx::before{content:"";position:absolute;width:200%;height:200%;background:radial-gradient(var(--clr,var(--signal)),transparent 68%);animation:sx-fx-move 1.8s linear infinite;opacity:.75;transition:opacity .26s}
+.footer-icon-fx::after{content:"";position:absolute;inset:2px;background:var(--surface-raised)}
+html.theme-light .footer-icon-fx::after{background:var(--surface)}
+.footer-icon-fx svg{position:relative;z-index:2;width:14px;height:14px;color:var(--ink-dim);transition:color .22s,filter .22s}
+.footer-link:hover .footer-icon-fx{border-color:var(--clr,var(--danger-bright));transform:translateY(-2px) scale(1.06);box-shadow:0 0 14px -2px var(--clr,var(--danger-bright))}
+.footer-link:hover .footer-icon-fx::before{opacity:1}
+.footer-link:hover .footer-icon-fx svg{color:var(--ink-bright);filter:drop-shadow(0 0 4px var(--clr,var(--danger-bright)))}
+@keyframes sx-fx-move{0%{transform:translate(-50%,-50%)}25%{transform:translate(0%,-50%)}50%{transform:translate(0%,0%)}75%{transform:translate(-50%,0%)}100%{transform:translate(-50%,-50%)}}
+
+/* ═══════════════════════ RESPONSIVE ═══════════════════════ */
+@media(max-width:1100px){
+    .modes{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .nope{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .footer-grid{grid-template-columns:1fr auto}
+    .footer-system{display:none}
+}
+@media(max-width:900px){
+    .hero{grid-template-columns:1fr;padding-top:2rem}
+    .pipeline-wrap{grid-template-columns:1fr}
+    .gate{grid-template-columns:1fr}
+    .gate-step{border-right:0;border-bottom:1px solid var(--border)}
+    .gate-step:last-child{border-bottom:0}
+    .brand-code{display:none}
+}
+@media(max-width:640px){
+    .two-col,.modes,.nope{grid-template-columns:1fr}
+    .section-head{gap:.6rem}
+    .holo-num{width:76px;height:76px}
+    .holo-num__holo{width:72px;height:70px}
+    .holo-num__layer{font-size:56px;letter-spacing:-3px}
+    .holo-button{width:250px}
+    .footer-grid{grid-template-columns:1fr}
+    .footer-links{justify-content:flex-start}
+    .site-header{flex-direction:column;align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+    .reveal{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="ambient-grid" aria-hidden="true"></div>
+<div class="noise" aria-hidden="true"></div>
+<div class="scanlines" aria-hidden="true"></div>
+
+<!-- SVG filters used by the repo-card glow (uiverse SelfMadeSystem/fluffy-eel-29) -->
+<svg style="position:absolute;width:0;height:0" aria-hidden="true">
+    <filter id="unopaq" y="-100%" height="300%" x="-100%" width="300%"><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 5 0"></feColorMatrix></filter>
+    <filter id="unopaq2" y="-100%" height="300%" x="-100%" width="300%"><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 10 0"></feColorMatrix></filter>
+    <filter id="unopaq3" y="-100%" height="300%" x="-100%" width="300%"><feColorMatrix values="1 0 0 1 0  0 1 0 1 0  0 0 1 1 0  0 0 0 2 0"></feColorMatrix></filter>
+</svg>
+
+<div class="container">
+
+    <!-- ═══════════ HEADER ═══════════ -->
+    <header class="site-header">
+        <div class="brand-lockup">
+            <a href="../../" class="logo" aria-label="sudoxs home"><span class="logo-bracket">[</span>SUDOXS<span class="logo-bracket">]</span></a>
+            <span class="brand-code">PROJECTS / AIRWARDEN</span>
+        </div>
+        <div class="header-controls">
+            <a class="hdr-link" href="../../#featured-projects"><span class="en">← Projects</span><span class="ja">← プロジェクト</span></a>
+            <a class="hdr-link" href="https://github.com/sudoxs/AirWarden" target="_blank" rel="noopener">GitHub ↗</a>
+            <div class="lang-switch" role="group" aria-label="Language">
+                <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+                <button type="button" data-set-lang="ja" aria-pressed="false">日本語</button>
+            </div>
+            <div class="tsw-holder" title="Light / Dark">
+                <label class="tsw" aria-label="Toggle light / dark theme">
+                    <input type="checkbox" id="theme-checkbox">
+                    <span class="tsw-slider">
+                        <span class="tsw-moons"><span class="tsw-hole"></span><span class="tsw-hole"></span><span class="tsw-hole"></span></span>
+                        <span class="tsw-bclouds"><span class="tsw-bcloud"></span><span class="tsw-bcloud"></span><span class="tsw-bcloud"></span></span>
+                        <span class="tsw-clouds"><span class="tsw-cloud"></span><span class="tsw-cloud"></span><span class="tsw-cloud"></span><span class="tsw-cloud"></span><span class="tsw-cloud"></span><span class="tsw-cloud"></span><span class="tsw-cloud"></span></span>
+                        <span class="tsw-stars">
+                            <svg class="tsw-star" viewBox="0 0 20 20"><path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path></svg>
+                            <svg class="tsw-star" viewBox="0 0 20 20"><path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path></svg>
+                            <svg class="tsw-star" viewBox="0 0 20 20"><path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path></svg>
+                            <svg class="tsw-star" viewBox="0 0 20 20"><path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path></svg>
+                            <svg class="tsw-star" viewBox="0 0 20 20"><path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path></svg>
+                        </span>
+                    </span>
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ═══════════ HERO ═══════════ -->
+        <section class="hero">
+            <div>
+                <div class="eyebrow"><span><b>PROJECT // 004</b> · WI-FI SECURITY</span><span>PASSIVE-FIRST · PYTHON 3.11+</span></div>
+                <h1 class="glitch" aria-label="AirWarden">AIRWARDEN<span aria-hidden="true">AIRWARDEN</span><span aria-hidden="true">AIRWARDEN</span></h1>
+                <p class="hero-tagline">
+                    <span class="en">A passive-first Wi-Fi vulnerability auditor for <strong>authorized</strong> engagements.</span>
+                    <span class="ja"><strong>正式に許可された</strong>診断のための、パッシブ優先の Wi-Fi 脆弱性監査ツール。</span>
+                </p>
+                <p class="hero-sub">
+                    <span class="en">It reads a pcap (or sniffs live), inventories every access point, and reports what is vulnerable now, what could become vulnerable, and what has leaked — without transmitting a single frame by default.</span>
+                    <span class="ja">pcap を読み込む（またはライブで受信する）だけで、周囲のすべてのアクセスポイントを棚卸しし、「今すぐ脆弱なもの」「条件次第で脆弱になり得るもの」「すでに漏えいしているもの」をレポートします。デフォルトでは 1 フレームも送信しません。</span>
+                </p>
+                <div class="tag-row"><span>PYTHON</span><span>SCAPY</span><span>TSHARK</span><span>BETTERCAP</span><span>802.11</span><span>JSON · CSV · HTML</span></div>
+            </div>
+
+            <div class="hero-visual" aria-hidden="true">
+                <span class="hv-corner tl">RX ONLY</span>
+                <span class="hv-corner tr">● MONITOR</span>
+                <span class="hv-corner bl">2.4 / 5 GHz</span>
+                <span class="hv-corner br">TX: 0</span>
+                <div class="orbital-wrap">
+                    <div class="orbital-loader">
+                        <div class="core-system"><div class="core-halo"></div><div class="core-outer-ring"></div><div class="core-secondary-ring"></div><div class="core-thin-ring"></div><div class="core-inner-glow"></div><div class="core-micro-center"></div></div>
+                        <div class="pulse-system"><div class="pulse-ring pulse-ring-1"></div><div class="pulse-ring pulse-ring-2"></div><div class="pulse-ring pulse-ring-3"></div></div>
+                        <div class="orbit-system orbit-1"><div class="orbit-path"></div><div class="orbit-object-wrapper"><div class="orbit-object obj-circle"></div><div class="object-trail"></div></div></div>
+                        <div class="orbit-system orbit-2"><div class="orbit-path"></div><div class="orbit-object-wrapper"><div class="orbit-object obj-ring"></div></div></div>
+                        <div class="orbit-system orbit-3"><div class="orbit-path"></div><div class="orbit-object-wrapper"><div class="orbit-object obj-bright-point"></div></div></div>
+                        <div class="orbit-system orbit-4"><div class="orbit-path"></div><div class="orbit-object-wrapper"><div class="orbit-object obj-diamond"></div></div></div>
+                        <div class="orbit-system orbit-5"><div class="orbit-path"></div><div class="orbit-object-wrapper"><div class="orbit-object obj-line"></div></div></div>
+                        <div class="orbit-system orbit-6"><div class="orbit-path"></div><div class="orbit-object-wrapper"><div class="orbit-object obj-square"></div></div></div>
+                        <div class="orbit-system orbit-7"><div class="orbit-path"></div><div class="orbit-object-wrapper"><div class="orbit-object obj-fragment"></div></div></div>
+                        <div class="particle-system"><div class="particle p1"></div><div class="particle p2"></div><div class="particle p3"></div><div class="particle p4"></div><div class="particle p5"></div><div class="particle p6"></div><div class="particle p7"></div><div class="particle p8"></div><div class="particle p9"></div><div class="particle p10"></div><div class="particle p11"></div><div class="particle p12"></div></div>
+                        <div class="energy-fragments"><div class="energy-fragment ef1"></div><div class="energy-fragment ef2"></div><div class="energy-fragment ef3"></div></div>
+                    </div>
+                </div>
+                <div class="wave">
+                    <div style="--d:.3s"></div><div style="--d:.25s"></div><div style="--d:.2s"></div><div style="--d:.15s"></div><div style="--d:.1s"></div><div style="--d:.05s"></div><div style="--d:.01s"></div><div style="--d:.05s"></div><div style="--d:.1s"></div><div style="--d:.15s"></div><div style="--d:.2s"></div><div style="--d:.25s"></div><div style="--d:.3s"></div>
+                </div>
+                <span class="hv-label"><span class="en">LISTENING · NOTHING IS TRANSMITTED</span><span class="ja">受信のみ · 送信は一切なし</span></span>
+            </div>
+        </section>
+
+        <!-- CTA: holographic button -->
+        <div class="cta-zone">
+            <div class="nebula"></div>
+            <div class="grid-plane"></div>
+            <div class="button-container">
+                <div class="button-hexagons"><div class="hexagon"></div><div class="hexagon"></div><div class="hexagon"></div><div class="hexagon"></div><div class="hexagon"></div><div class="hexagon"></div></div>
+                <div class="digital-glyphs" aria-hidden="true">
+                    <div class="digital-glyph">AIRWARDEN.ANALYZE(capture.pcap)</div>
+                    <div class="digital-glyph">SCOPE.GATE // LOCKED</div>
+                    <div class="digital-glyph">EAPOL 1/4 · 2/4 · 3/4 · 4/4</div>
+                    <div class="digital-glyph">TX=0 · RX=∞</div>
+                </div>
+                <a class="holo-button" href="https://github.com/sudoxs/AirWarden" target="_blank" rel="noopener">
+                    <span class="button-text"><span class="en">View source</span><span class="ja">ソースを見る</span></span>
+                    <span class="holo-glow"></span>
+                    <span class="button-glitch"></span>
+                    <span class="button-border"></span>
+                    <span class="corner-accents"><span class="corner-accent"></span><span class="corner-accent"></span><span class="corner-accent"></span><span class="corner-accent"></span></span>
+                    <span class="holo-lines"><span class="holo-line"></span><span class="holo-line"></span><span class="holo-line"></span><span class="holo-line"></span></span>
+                    <span class="scan-line"></span>
+                    <span class="holo-particles"><span class="holo-particle"></span><span class="holo-particle"></span><span class="holo-particle"></span><span class="holo-particle"></span><span class="holo-particle"></span><span class="holo-particle"></span></span>
+                </a>
+                <div class="sound-wave" aria-hidden="true">
+                    <div class="wave-bar" style="--d:.1s"></div><div class="wave-bar" style="--d:.2s"></div><div class="wave-bar" style="--d:.3s"></div><div class="wave-bar" style="--d:.4s"></div><div class="wave-bar" style="--d:.5s"></div><div class="wave-bar" style="--d:.6s"></div><div class="wave-bar" style="--d:.7s"></div><div class="wave-bar" style="--d:.8s"></div><div class="wave-bar" style="--d:.9s"></div><div class="wave-bar" style="--d:1s"></div><div class="wave-bar" style="--d:.9s"></div><div class="wave-bar" style="--d:.8s"></div><div class="wave-bar" style="--d:.7s"></div><div class="wave-bar" style="--d:.6s"></div><div class="wave-bar" style="--d:.5s"></div>
+                </div>
+            </div>
+            <a class="cta-secondary" href="https://github.com/sudoxs/AirWarden#readme" target="_blank" rel="noopener">README ↗</a>
+        </div>
+
+        <!-- ═══════════ 01 · OVERVIEW ═══════════ -->
+        <section class="section reveal" id="overview">
+            <div class="section-head">
+                <div class="holo-num" aria-hidden="true"><div class="holo-num__holo"><div class="holo-num__layer holo-num__layer--back">01</div><div class="holo-num__layer holo-num__layer--mid">01</div><div class="holo-num__layer holo-num__layer--front">01</div></div></div>
+                <div>
+                    <span class="section-kicker"><span class="en">OVERVIEW</span><span class="ja">概要</span></span>
+                    <h2><span class="en">What it does</span><span class="ja">何をするツールか</span></h2>
+                </div>
+            </div>
+            <p class="lead en">
+                AirWarden is a <strong>defensive</strong> Wi-Fi audit tool for authorized penetration tests. Hand it a capture and it rebuilds the radio
+                picture: which networks exist, how they are protected, which clients talk to them, what key material is already sitting in the air,
+                and which data is leaking in cleartext. Every finding is classified, scored and written to <code>JSON</code>, <code>CSV</code> and <code>HTML</code>.
+            </p>
+            <p class="lead ja">
+                AirWarden は、正式に許可されたペネトレーションテストのための<strong>防御側</strong>の Wi-Fi 監査ツールです。キャプチャを渡すだけで、
+                どのネットワークが存在し、どう保護されているか、どのクライアントが接続しているか、どんな鍵情報がすでに電波上に流れているか、
+                そしてどのデータが平文で漏えいしているかを再構成します。すべての検出結果は分類・スコアリングされ、<code>JSON</code>・<code>CSV</code>・<code>HTML</code> に出力されます。
+            </p>
+
+            <div class="feature-grid">
+                <article class="feature">
+                    <span class="f-id">DETECT // 01</span>
+                    <h3><span class="en">Scan-type classification</span><span class="ja">スキャン種別の判定</span></h3>
+                    <p><span class="en">Tells you what kind of capture you are looking at: general, targeted, passive-only or unknown.</span><span class="ja">キャプチャの性質を判定します：一般スキャン・ターゲット型・パッシブのみ・不明。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">DETECT // 02</span>
+                    <h3><span class="en">Access-point inventory</span><span class="ja">アクセスポイントの棚卸し</span></h3>
+                    <p><span class="en">Encryption, WPS, PMF (802.11w) and associated clients for every BSSID seen in the air.</span><span class="ja">観測されたすべての BSSID について、暗号方式・WPS・PMF（802.11w）・接続クライアントを一覧化。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">DETECT // 03</span>
+                    <h3><span class="en">Key material</span><span class="ja">鍵情報の検出</span></h3>
+                    <p><span class="en">Flags captured 4-way handshakes and PMKIDs. It records that they exist — it never cracks them.</span><span class="ja">取得済みの 4-way ハンドシェイクと PMKID を検出。存在を記録するだけで、解読は一切行いません。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">DETECT // 04</span>
+                    <h3><span class="en">Deauth / disassoc floods</span><span class="ja">Deauth / Disassoc フラッド</span></h3>
+                    <p><span class="en">Spots bursts of deauthentication and disassociation frames — a sign someone is attacking the network.</span><span class="ja">認証解除・接続解除フレームの集中を検出。ネットワークが攻撃を受けている兆候です。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">DETECT // 05</span>
+                    <h3><span class="en">Enterprise &amp; EAP leaks</span><span class="ja">Enterprise と EAP の漏えい</span></h3>
+                    <p><span class="en">Identifies EAP methods and cleartext identity leaks on WPA-Enterprise networks.</span><span class="ja">WPA-Enterprise 環境の EAP 方式と、平文で流れる ID（アイデンティティ）の漏えいを特定。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">DETECT // 06</span>
+                    <h3><span class="en">WPA3 downgrade &amp; OWE</span><span class="ja">WPA3 ダウングレードと OWE</span></h3>
+                    <p><span class="en">Flags WPA3/WPA2 transition mode (downgrade risk) and recognises OWE "enhanced open" networks.</span><span class="ja">WPA3/WPA2 トランジションモード（ダウングレードの危険）を指摘し、OWE（Enhanced Open）も識別します。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">DETECT // 07</span>
+                    <h3><span class="en">Evil-twin bait</span><span class="ja">Evil Twin の「餌」</span></h3>
+                    <p><span class="en">SSIDs that clients keep probing for but no AP is beaconing — exactly what a rogue AP would impersonate.</span><span class="ja">クライアントがプローブし続けているのに、どの AP もビーコンを出していない SSID。偽 AP が狙う標的そのものです。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">DETECT // 08</span>
+                    <h3><span class="en">Cleartext layer-7 exposure</span><span class="ja">L7 の平文データ露出</span></h3>
+                    <p><span class="en">On open or decrypted captures: HTTP credential POSTs, session cookies and Basic-auth — reported by host and field name, never the secret values.</span><span class="ja">オープン／復号済みキャプチャ上の HTTP 認証 POST・セッション Cookie・Basic 認証を、ホスト名とフィールド名で報告。秘密の値そのものは決して出力しません。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">REPORT // 09</span>
+                    <h3><span class="en">Risk score &amp; reports</span><span class="ja">リスクスコアとレポート</span></h3>
+                    <p><span class="en">Per-AP risk scores, an exposure &amp; data-leak summary, and a sortable console table — all mirrored in JSON for tooling.</span><span class="ja">AP ごとのリスクスコア、露出・データ漏えいのサマリー、ソート済みのコンソール表。すべて JSON にも出力され、他ツールと連携できます。</span></p>
+                </article>
+            </div>
+        </section>
+
+        <!-- ═══════════ 02 · MODES ═══════════ -->
+        <section class="section reveal" id="modes">
+            <div class="section-head">
+                <div class="holo-num" aria-hidden="true"><div class="holo-num__holo"><div class="holo-num__layer holo-num__layer--back">02</div><div class="holo-num__layer holo-num__layer--mid">02</div><div class="holo-num__layer holo-num__layer--front">02</div></div></div>
+                <div>
+                    <span class="section-kicker"><span class="en">OPERATING MODES</span><span class="ja">動作モード</span></span>
+                    <h2><span class="en">Four commands, one engine</span><span class="ja">4 つのコマンド、1 つのエンジン</span></h2>
+                </div>
+            </div>
+            <div class="modes">
+                <article class="mode">
+                    <span class="m-cmd">analyze</span>
+                    <span class="m-kind"><span class="en">PASSIVE · DEFAULT</span><span class="ja">パッシブ · 既定</span></span>
+                    <p><span class="en">Reads an existing <code>.pcap</code>/<code>.pcapng</code> and runs the full audit. No radio, no root, nothing sent — triage on any machine.</span><span class="ja">既存の <code>.pcap</code>/<code>.pcapng</code> を読み込み、監査をフル実行。無線機も root も不要で、何も送信しません。どのマシンでも解析できます。</span></p>
+                    <div class="m-plat"><span class="ok">Linux</span><span class="ok">macOS</span><span class="ok">Windows</span></div>
+                </article>
+                <article class="mode">
+                    <span class="m-cmd">live</span>
+                    <span class="m-kind"><span class="en">PASSIVE · REAL-TIME</span><span class="ja">パッシブ · リアルタイム</span></span>
+                    <p><span class="en">Sniffs a monitor-mode interface and refreshes the AP table as frames arrive. Channel lock or 2.4 GHz hopping; can save the frames to a pcap.</span><span class="ja">モニターモードのインターフェースで受信し、フレーム到着に合わせて AP 表を更新。チャネル固定や 2.4 GHz ホッピングに対応し、pcap への保存も可能。</span></p>
+                    <div class="m-plat"><span class="ok">Linux</span><span class="part">macOS</span><span class="no">Windows</span></div>
+                </article>
+                <article class="mode">
+                    <span class="m-cmd">survey</span>
+                    <span class="m-kind"><span class="en">PASSIVE · ADVISORY</span><span class="ja">パッシブ · 助言</span></span>
+                    <p><span class="en">Ingests airodump-ng CSV and <code>iw</code> scans, enriches them with pcap evidence (frame numbers + Wireshark filters) and builds an applicability matrix. <code>--follow</code> streams deduplicated live findings.</span><span class="ja">airodump-ng の CSV と <code>iw</code> スキャンを取り込み、pcap の証拠（フレーム番号と Wireshark フィルタ）で補強して適用可能性マトリクスを作成。<code>--follow</code> で重複排除済みの検出結果をライブ表示。</span></p>
+                    <div class="m-plat"><span class="ok">Linux</span><span class="ok">macOS</span><span class="ok">Windows</span></div>
+                </article>
+                <article class="mode">
+                    <span class="m-cmd">active</span>
+                    <span class="m-kind gated"><span class="en">GATED · AUTHORIZED ONLY</span><span class="ja">ゲート付き · 許可時のみ</span></span>
+                    <p><span class="en">Bettercap-driven recon plus a tiny set of single-target actions (e.g. a PMKID request) — only for in-scope BSSIDs listed in a signed scope file.</span><span class="ja">Bettercap による偵察と、ごく限られた単一ターゲット操作（PMKID 要求など）。署名済みスコープファイルに記載された BSSID に対してのみ実行されます。</span></p>
+                    <div class="m-plat"><span class="ok">Linux</span><span class="part">macOS</span><span class="no">Windows</span></div>
+                </article>
+            </div>
+        </section>
+
+        <!-- ═══════════ 03 · PIPELINE ═══════════ -->
+        <section class="section reveal" id="pipeline">
+            <div class="section-head">
+                <div class="holo-num" aria-hidden="true"><div class="holo-num__holo"><div class="holo-num__layer holo-num__layer--back">03</div><div class="holo-num__layer holo-num__layer--mid">03</div><div class="holo-num__layer holo-num__layer--front">03</div></div></div>
+                <div>
+                    <span class="section-kicker"><span class="en">HOW IT WORKS</span><span class="ja">仕組み</span></span>
+                    <h2><span class="en">From frames to findings</span><span class="ja">フレームから検出結果へ</span></h2>
+                </div>
+            </div>
+            <div class="pipeline-wrap">
+                <ol class="pipeline">
+                    <li><b><span class="en">Ingest</span><span class="ja">取り込み</span></b><span><span class="en">pcap / pcapng, a live monitor-mode interface, or airodump-ng / iw scan dumps.</span><span class="ja">pcap / pcapng、ライブのモニターモード、または airodump-ng / iw のスキャン結果。</span></span></li>
+                    <li><b><span class="en">Classify the scan</span><span class="ja">スキャンの分類</span></b><span><span class="en">General, targeted, passive-only or unknown.</span><span class="ja">一般・ターゲット型・パッシブのみ・不明。</span></span></li>
+                    <li><b><span class="en">Inventory &amp; detect</span><span class="ja">棚卸しと検出</span></b><span><span class="en">APs, clients, probes, handshakes, PMKIDs, floods, EAP, downgrade, evil-twin bait, L7 leaks.</span><span class="ja">AP・クライアント・プローブ・ハンドシェイク・PMKID・フラッド・EAP・ダウングレード・Evil Twin の餌・L7 漏えい。</span></span></li>
+                    <li><b><span class="en">Classify exposures</span><span class="ja">露出の分類</span></b><span><span class="en">What leaked, from where, and how abusable it is — confirmed or potential.</span><span class="ja">何が・どこから漏れ、どれほど悪用し得るか。「確定」か「潜在」かも判定。</span></span></li>
+                    <li><b><span class="en">Score &amp; advise</span><span class="ja">スコア化と助言</span></b><span><span class="en">Per-AP risk, plus the single authorized follow-up that would reveal the most — described, never sent.</span><span class="ja">AP ごとのリスクと、最も多くを明らかにできる許可済みの次の一手を「説明」。実際の送信は行いません。</span></span></li>
+                    <li><b><span class="en">Report</span><span class="ja">レポート出力</span></b><span><span class="en">Console table, <code>report.json</code>, <code>report.csv</code> and a readable <code>report.html</code>. MACs redacted by default.</span><span class="ja">コンソール表、<code>report.json</code>・<code>report.csv</code>、読みやすい <code>report.html</code>。MAC アドレスは既定で伏せ字化。</span></span></li>
+                </ol>
+                <div class="lava-panel" aria-hidden="true">
+                    <span class="io"><b>IN</b> · capture.pcap</span>
+                    <div class="lava-wrap">
+                        <div class="lamp">
+                            <div class="hat-thingy"></div>
+                            <div class="glass"><div class="glass-inside">
+                                <div class="boop blob"></div><div class="boop blob"></div><div class="boop blob"></div><div class="boop blob"></div><div class="boop blob"></div><div class="boop blob"></div><div class="boop blob"></div>
+                                <div class="boop blob-top"></div><div class="boop blob-bottom"></div>
+                            </div></div>
+                            <div class="base-one"></div>
+                            <div class="base-butt"></div>
+                            <div class="shadow"></div>
+                            <div class="the-actual-shadow"></div>
+                        </div>
+                    </div>
+                    <span class="io"><b>OUT</b> · report.{json,csv,html}</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════ 04 · COMMANDS ═══════════ -->
+        <section class="section reveal" id="commands">
+            <div class="section-head">
+                <div class="holo-num" aria-hidden="true"><div class="holo-num__holo"><div class="holo-num__layer holo-num__layer--back">04</div><div class="holo-num__layer holo-num__layer--mid">04</div><div class="holo-num__layer holo-num__layer--front">04</div></div></div>
+                <div>
+                    <span class="section-kicker"><span class="en">USAGE</span><span class="ja">使い方</span></span>
+                    <h2><span class="en">In the terminal</span><span class="ja">ターミナルで</span></h2>
+                </div>
+            </div>
+            <p class="lead en">Install with <code>pipx install .</code> (Python 3.11+). No capture handy? <code>python make_sample.py</code> generates a tiny one so you can try the whole passive workflow on any OS.</p>
+            <p class="lead ja"><code>pipx install .</code> でインストール（Python 3.11 以上）。手元にキャプチャがなくても、<code>python make_sample.py</code> で小さなサンプルを生成でき、どの OS でもパッシブな一連の流れを試せます。</p>
+
+            <div class="gh-stage">
+                <div class="gh-wrap">
+                    <div class="gh-spin gh-spin-blur"></div>
+                    <div class="gh-spin gh-spin-intense"></div>
+                    <div class="gh-backdrop"></div>
+                    <div class="gh-border"><div class="gh-spin gh-spin-inside"></div></div>
+                    <div class="gh-card">
+                        <div class="gh-header">
+                            <div class="gh-top">
+                                <a class="gh-icon" href="https://github.com/sudoxs/AirWarden" target="_blank" rel="noopener" aria-label="GitHub">
+                                    <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"></path></svg>
+                                </a>
+                                <div class="gh-repo">
+                                    <a href="https://github.com/sudoxs" target="_blank" rel="noopener">sudoxs</a>
+                                    <span class="gh-slash">/</span>
+                                    <a class="gh-name" href="https://github.com/sudoxs/AirWarden" target="_blank" rel="noopener">AirWarden</a>
+                                </div>
+                                <div class="gh-space"></div>
+                                <span class="gh-badge">Python</span>
+                                <span class="gh-pfp" aria-hidden="true">XS</span>
+                            </div>
+                            <div class="gh-tabs" role="tablist">
+                                <button type="button" class="gh-tab active" role="tab" data-gh="cmd" aria-selected="true">
+                                    <svg viewBox="0 0 16 16"><path d="m4.72 3.22 4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L7.44 8 3.66 4.28a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215ZM8.5 12.5h5a.75.75 0 0 1 0 1.5h-5a.75.75 0 0 1 0-1.5Z"></path></svg>
+                                    <span class="en">Commands</span><span class="ja">コマンド</span>
+                                </button>
+                                <button type="button" class="gh-tab" role="tab" data-gh="out" aria-selected="false">
+                                    <svg viewBox="0 0 16 16"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                                    <span class="en">Outputs</span><span class="ja">出力</span>
+                                </button>
+                                <button type="button" class="gh-tab" role="tab" data-gh="scope" aria-selected="false">
+                                    <svg viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm4.879-2.773 4.264 2.559a.25.25 0 0 1 0 .428l-4.264 2.559A.25.25 0 0 1 6 10.559V5.442a.25.25 0 0 1 .379-.215Z"></path></svg>
+                                    <span class="en">Scope file</span><span class="ja">スコープ</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="gh-content">
+                            <!-- commands -->
+                            <div class="gh-list active" data-gh-panel="cmd">
+                                <div class="gh-row"><label><input type="checkbox"><span class="gh-check"></span></label><span class="gh-ricon"><svg viewBox="0 0 16 16"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">airwarden analyze capture.pcap --output-prefix report</span><span class="gh-rdesc"><span class="en">Passive audit of an existing capture → report.json / report.html + a risk-sorted table.</span><span class="ja">既存キャプチャのパッシブ監査 → report.json / report.html とリスク順の表。</span></span></div></div>
+                                <div class="gh-row"><label><input type="checkbox"><span class="gh-check"></span></label><span class="gh-ricon"><svg viewBox="0 0 16 16"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">sudo airwarden live --interface wlan0mon --hop</span><span class="gh-rdesc"><span class="en">Real-time passive capture, sweeping 2.4 GHz channels 1–13. Add --write-pcap to keep the frames.</span><span class="ja">2.4 GHz のチャネル 1〜13 を巡回するリアルタイム・パッシブ受信。--write-pcap でフレームも保存。</span></span></div></div>
+                                <div class="gh-row"><label><input type="checkbox"><span class="gh-check"></span></label><span class="gh-ricon"><svg viewBox="0 0 16 16"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">airwarden survey --csv scan-01.csv --iw iw-scan.txt --pcap capture.pcap -o survey.json</span><span class="gh-rdesc"><span class="en">Passive enumeration with an advisory applicability matrix (OPN / WEP / WPA2-PSK / WPA3-SAE / MGT / OWE / WPS).</span><span class="ja">適用可能性マトリクス（OPN / WEP / WPA2-PSK / WPA3-SAE / MGT / OWE / WPS）付きのパッシブ列挙。</span></span></div></div>
+                                <div class="gh-row"><label><input type="checkbox"><span class="gh-check"></span></label><span class="gh-ricon"><svg viewBox="0 0 16 16"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">airwarden survey --csv ~/wifi/live-01.csv --follow</span><span class="gh-rdesc"><span class="en">Follow mode: polls a growing airodump CSV and prints each new finding once, duplicates suppressed.</span><span class="ja">フォローモード：増え続ける airodump の CSV を監視し、新しい検出結果を 1 回だけ表示（重複は抑制）。</span></span></div></div>
+                                <div class="gh-row"><label><input type="checkbox"><span class="gh-check"></span></label><span class="gh-ricon warn"><svg viewBox="0 0 16 16"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">AIRWARDEN_AUTHORIZED=1 airwarden active --interface wlan0mon --pmkid &lt;BSSID&gt;</span><span class="gh-rdesc"><span class="en">Gated. Refuses to run (exit 2) unless the flag is set, the BSSID is in targets and the action is in active_actions.</span><span class="ja">ゲート付き。フラグ未設定、BSSID が targets にない、または操作が active_actions にない場合は実行を拒否（終了コード 2）。</span></span></div></div>
+                            </div>
+                            <!-- outputs -->
+                            <div class="gh-list" data-gh-panel="out">
+                                <div class="gh-row"><span class="gh-ricon"><svg viewBox="0 0 16 16"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">report.html</span><span class="gh-rdesc"><span class="en">Exposure &amp; data-leak summary, per-AP table with risk scores, confirmed vs. potential vulnerabilities, evil-twin opportunities, active follow-up recommendations.</span><span class="ja">露出・データ漏えいサマリー、リスクスコア付き AP 表、確定／潜在の脆弱性、Evil Twin の機会、次の一手の推奨。</span></span></div></div>
+                                <div class="gh-row"><span class="gh-ricon"><svg viewBox="0 0 16 16"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">report.json · report.csv</span><span class="gh-rdesc"><span class="en">The same data, machine-readable, for your own tooling and deliverables.</span><span class="ja">同じ内容を機械可読な形式で。独自ツールや納品物にそのまま利用可能。</span></span></div></div>
+                                <div class="gh-row"><span class="gh-ricon"><svg viewBox="0 0 16 16"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">survey.json</span><span class="gh-rdesc"><span class="en">Per-AP inventory, clients and probes, artifacts with frame numbers and exact Wireshark display filters, and the advisory matrix.</span><span class="ja">AP ごとの棚卸し、クライアントとプローブ、フレーム番号と正確な Wireshark 表示フィルタ付きの証拠、助言マトリクス。</span></span></div></div>
+                                <div class="gh-row"><span class="gh-ricon"><svg viewBox="0 0 16 16"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">exit codes 0 · 1 · 2 · 3</span><span class="gh-rdesc"><span class="en">Success · capture unreadable · not authorized · required module unavailable.</span><span class="ja">成功 · キャプチャ読込不可 · 未許可 · 必須モジュールが利用不可。</span></span></div></div>
+                            </div>
+                            <!-- scope -->
+                            <div class="gh-list" data-gh-panel="scope">
+                                <div class="gh-row"><span class="gh-ricon warn"><svg viewBox="0 0 16 16"><path d="M4 4a4 4 0 0 1 8 0v2h.25c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25v-5.5C2 6.784 2.784 6 3.75 6H4Zm8.25 3.5h-8.5a.25.25 0 0 0-.25.25v5.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25ZM10.5 6V4a2.5 2.5 0 1 0-5 0v2Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">engagement_id · authorized_by</span><span class="gh-rdesc"><span class="en">Your engagement reference and the person who signed the authorization.</span><span class="ja">案件の参照番号と、許可に署名した担当者。</span></span></div></div>
+                                <div class="gh-row"><span class="gh-ricon warn"><svg viewBox="0 0 16 16"><path d="M4 4a4 4 0 0 1 8 0v2h.25c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25v-5.5C2 6.784 2.784 6 3.75 6H4Zm8.25 3.5h-8.5a.25.25 0 0 0-.25.25v5.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25ZM10.5 6V4a2.5 2.5 0 1 0-5 0v2Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">valid_from · valid_until</span><span class="gh-rdesc"><span class="en">The ISO-8601 time window the authorization covers.</span><span class="ja">許可が有効な期間（ISO-8601 形式）。</span></span></div></div>
+                                <div class="gh-row"><span class="gh-ricon warn"><svg viewBox="0 0 16 16"><path d="M4 4a4 4 0 0 1 8 0v2h.25c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25v-5.5C2 6.784 2.784 6 3.75 6H4Zm8.25 3.5h-8.5a.25.25 0 0 0-.25.25v5.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25ZM10.5 6V4a2.5 2.5 0 1 0-5 0v2Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">targets</span><span class="gh-rdesc"><span class="en">The explicit list of in-scope BSSIDs. Anything else is refused.</span><span class="ja">対象となる BSSID の明示的なリスト。それ以外はすべて拒否されます。</span></span></div></div>
+                                <div class="gh-row"><span class="gh-ricon warn"><svg viewBox="0 0 16 16"><path d="M4 4a4 4 0 0 1 8 0v2h.25c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25v-5.5C2 6.784 2.784 6 3.75 6H4Zm8.25 3.5h-8.5a.25.25 0 0 0-.25.25v5.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25ZM10.5 6V4a2.5 2.5 0 1 0-5 0v2Z"></path></svg></span>
+                                    <div class="gh-rtext"><span class="gh-rtitle">active_actions</span><span class="gh-rdesc"><span class="en">Permitted actions, e.g. pmkid_capture; a single-client targeted deauth only if the authorization letter names it.</span><span class="ja">許可された操作（例：pmkid_capture）。単一クライアントへの限定的な deauth は、許可書に明記されている場合のみ。</span></span></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term">
+                <div class="term-head"><span>airwarden survey --follow</span><span><span class="en">EXAMPLE OUTPUT</span><span class="ja">出力例</span></span></div>
+<pre><span class="t-dim">$</span> airwarden survey --csv ~/wifi/live-01.csv --follow
+<span class="t-dim">[12:34:56]</span> <span class="t-red">[wifi-mobile]</span> open network wifi-mobile — client traffic is unencrypted
+<span class="t-dim">[i]</span> <span class="t-ok">+3 new findings</span>, <span class="t-amb">7 duplicates suppressed</span> <span class="caret"></span></pre>
+            </div>
+        </section>
+
+        <!-- ═══════════ 05 · FINDINGS MODEL ═══════════ -->
+        <section class="section reveal" id="findings">
+            <div class="section-head">
+                <div class="holo-num" aria-hidden="true"><div class="holo-num__holo"><div class="holo-num__layer holo-num__layer--back">05</div><div class="holo-num__layer holo-num__layer--mid">05</div><div class="holo-num__layer holo-num__layer--front">05</div></div></div>
+                <div>
+                    <span class="section-kicker"><span class="en">FINDINGS MODEL</span><span class="ja">検出結果のモデル</span></span>
+                    <h2><span class="en">Confirmed vs. potential</span><span class="ja">「確定」と「潜在」</span></h2>
+                </div>
+            </div>
+            <p class="lead en">Not every weakness is exploitable right now. AirWarden labels each finding with its state and, for potential ones, spells out the exact condition under which it becomes real.</p>
+            <p class="lead ja">すべての弱点が今すぐ悪用できるわけではありません。AirWarden は各検出結果に状態を付け、「潜在」の場合はそれが現実の脅威になる具体的な条件を明記します。</p>
+            <div class="two-col" style="margin-top:1.4rem">
+                <div class="state-card">
+                    <h3><i></i><span class="en">Confirmed</span><span class="ja">確定</span></h3>
+                    <p><span class="en">Vulnerable now — the evidence is already in the capture.</span><span class="ja">今まさに脆弱 — 証拠がすでにキャプチャ内にある状態。</span></p>
+                    <ul>
+                        <li><span class="en">A 4-way handshake or PMKID was captured</span><span class="ja">4-way ハンドシェイクまたは PMKID を取得済み</span></li>
+                        <li><span class="en">Open network or weak crypto (WEP / TKIP)</span><span class="ja">オープンネットワーク、または弱い暗号（WEP / TKIP）</span></li>
+                        <li><span class="en">HTTP credentials, cookies or Basic-auth in cleartext</span><span class="ja">平文の HTTP 認証情報・Cookie・Basic 認証</span></li>
+                        <li><span class="en">EAP identity leak or weak EAP method</span><span class="ja">EAP の ID 漏えい、または弱い EAP 方式</span></li>
+                        <li><span class="en">An active deauth / disassoc flood</span><span class="ja">進行中の deauth / disassoc フラッド</span></li>
+                    </ul>
+                </div>
+                <div class="state-card potential">
+                    <h3><i></i><span class="en">Potential</span><span class="ja">潜在</span></h3>
+                    <p><span class="en">Vulnerable only if a condition or attack is met — and the report says which.</span><span class="ja">特定の条件や攻撃が成立した場合にのみ脆弱 — その条件もレポートに記載。</span></p>
+                    <ul>
+                        <li><span class="en">WPA/WPA2-PSK — crackable offline <em>if</em> a handshake or PMKID is captured</span><span class="ja">WPA/WPA2-PSK — ハンドシェイクか PMKID を取得<em>できれば</em>オフライン解読が可能</span></li>
+                        <li><span class="en">WPS enabled — <em>if</em> not locked, a PIN / Pixie-Dust attack recovers the PSK</span><span class="ja">WPS 有効 — ロックされて<em>いなければ</em> PIN / Pixie-Dust 攻撃で PSK が復元可能</span></li>
+                        <li><span class="en">No PMF — <em>if</em> a client is associated, forged deauth can disconnect it</span><span class="ja">PMF なし — クライアント接続中<em>なら</em>偽装 deauth で切断が可能</span></li>
+                        <li><span class="en">WPA3/WPA2 transition — downgrade to a crackable WPA2 handshake</span><span class="ja">WPA3/WPA2 トランジション — 解読可能な WPA2 ハンドシェイクへのダウングレード</span></li>
+                        <li><span class="en">WPA3-SAE (online guessing only) · OWE (evil-twin MitM)</span><span class="ja">WPA3-SAE（オンライン推測のみ）· OWE（Evil Twin による中間者）</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════ 06 · SAFETY ═══════════ -->
+        <section class="section reveal" id="safety">
+            <div class="section-head">
+                <div class="holo-num" aria-hidden="true"><div class="holo-num__holo"><div class="holo-num__layer holo-num__layer--back">06</div><div class="holo-num__layer holo-num__layer--mid">06</div><div class="holo-num__layer holo-num__layer--front">06</div></div></div>
+                <div>
+                    <span class="section-kicker"><span class="en">SAFETY BY DESIGN</span><span class="ja">設計による安全性</span></span>
+                    <h2><span class="en">The authorization gate</span><span class="ja">認可ゲート</span></h2>
+                </div>
+            </div>
+            <p class="lead en">The default mode is passive. Every active action goes through an <code>AuthorizationGate</code> that must pass three independent checks before anything is transmitted.</p>
+            <p class="lead ja">既定のモードはパッシブです。すべてのアクティブ操作は <code>AuthorizationGate</code> を通過する必要があり、何かを送信する前に 3 つの独立したチェックをすべて満たさなければなりません。</p>
+            <div class="gate" style="margin-top:1.4rem">
+                <div class="gate-step">
+                    <span class="g-n">CHECK // 01</span>
+                    <h3><span class="en">Written authorization</span><span class="ja">書面による許可</span></h3>
+                    <p><span class="en">From the owner of every network in scope: engagement, signer, time window, BSSIDs and permitted actions.</span><span class="ja">対象となる全ネットワークの所有者から：案件名・署名者・期間・BSSID・許可された操作。</span></p>
+                </div>
+                <div class="gate-step">
+                    <span class="g-n">CHECK // 02</span>
+                    <h3><span class="en">Signed scope file</span><span class="ja">署名済みスコープファイル</span></h3>
+                    <p><span class="en"><code>scope.json</code> (never committed) lists the targets and actions. Off-scope BSSIDs are refused.</span><span class="ja"><code>scope.json</code>（リポジトリには含めない）に対象と操作を列挙。範囲外の BSSID は拒否されます。</span></p>
+                </div>
+                <div class="gate-step">
+                    <span class="g-n">CHECK // 03</span>
+                    <h3><span class="en">Deliberate opt-in</span><span class="ja">意図的なオプトイン</span></h3>
+                    <p><span class="en"><code>AIRWARDEN_AUTHORIZED=1</code> must be set for the session — otherwise <code>active</code> exits with code 2.</span><span class="ja">セッションごとに <code>AIRWARDEN_AUTHORIZED=1</code> の設定が必須。未設定なら <code>active</code> は終了コード 2 で停止します。</span></p>
+                </div>
+            </div>
+
+            <div class="nope">
+                <div><b><span class="en">No broadcast deauth</span><span class="ja">ブロードキャスト deauth なし</span></b><span><span class="en">No "all clients", multi-target or range deauthentication of any kind.</span><span class="ja">「全クライアント」・複数対象・範囲指定の deauth は一切ありません。</span></span></div>
+                <div><b><span class="en">No cracking</span><span class="ja">解読なし</span></b><span><span class="en">It records that key material was observed; it never tries to recover keys.</span><span class="ja">鍵情報を観測した事実を記録するのみで、鍵の復元は試みません。</span></span></div>
+                <div><b><span class="en">No evasion</span><span class="ja">回避機能なし</span></b><span><span class="en">No MAC spoofing helpers, no IDS/WIDS evasion, no stealth modes.</span><span class="ja">MAC 偽装の補助も、IDS/WIDS の回避も、ステルスモードもありません。</span></span></div>
+                <div><b><span class="en">No mass targeting</span><span class="ja">大量標的化なし</span></b><span><span class="en">One explicit, in-scope BSSID at a time — no "attack everything in range".</span><span class="ja">明示された範囲内の BSSID を 1 つずつ。「範囲内すべてを攻撃」は存在しません。</span></span></div>
+            </div>
+
+            <p class="lead en" style="margin-top:1.4rem">Captures and reports contain identifying data, so MAC addresses are <strong>redacted by default</strong> (first three octets kept, the rest zeroed).</p>
+            <p class="lead ja" style="margin-top:1.4rem">キャプチャやレポートには個人を特定し得る情報が含まれるため、MAC アドレスは<strong>既定で伏せ字化</strong>されます（先頭 3 オクテットのみ保持し、残りはゼロ化）。</p>
+        </section>
+
+        <!-- ═══════════ 07 · LICENSE ═══════════ -->
+        <section class="section reveal" id="license">
+            <div class="section-head">
+                <div class="holo-num" aria-hidden="true"><div class="holo-num__holo"><div class="holo-num__layer holo-num__layer--back">07</div><div class="holo-num__layer holo-num__layer--mid">07</div><div class="holo-num__layer holo-num__layer--front">07</div></div></div>
+                <div>
+                    <span class="section-kicker"><span class="en">LEGAL</span><span class="ja">法的事項</span></span>
+                    <h2><span class="en">License &amp; use</span><span class="ja">ライセンスと利用</span></h2>
+                </div>
+            </div>
+            <div class="legal">
+                <p class="en"><strong>Proprietary — personal and authorized use only.</strong> AirWarden is not open source. You may use it for lawful, authorized security testing and for private study and research. Copying, redistributing, modifying-and-sharing or commercial use requires prior written permission. Intercepting or interfering with wireless networks you do not own or have explicit written permission to test is illegal in most jurisdictions — you are solely responsible for obtaining authorization. © 2026 sudoxs.</p>
+                <p class="ja"><strong>プロプライエタリ — 個人利用および許可された用途に限ります。</strong>AirWarden はオープンソースではありません。合法かつ許可されたセキュリティテスト、ならびに個人的な学習・研究の目的で利用できます。複製・再配布・改変しての共有・商用利用には、事前の書面による許可が必要です。所有していない、または明示的な書面の許可を得ていない無線ネットワークの傍受や妨害は、ほとんどの国・地域で違法です。許可の取得は利用者自身の責任です。© 2026 sudoxs.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- ═══════════ FOOTER ═══════════ -->
+    <footer class="site-footer">
+        <div class="footer-divider"></div>
+        <div class="footer-grid">
+            <div class="footer-identity">
+                <a href="../../" class="footer-mark">SUDOXS</a>
+                <span class="footer-tagline">break · learn · document · repeat</span>
+            </div>
+            <div class="footer-links">
+                <a href="https://app.hackthebox.com/public/users/2277802" target="_blank" rel="noopener" class="footer-link" aria-label="Hack The Box" style="--clr:#3adb5a">
+                    <span class="footer-icon-fx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg></span> HTB
+                </a>
+                <a href="https://standoff365.com/en-US/profile/sudoxs/" target="_blank" rel="noopener" class="footer-link" aria-label="Standoff365" style="--clr:#e6394a">
+                    <span class="footer-icon-fx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg></span> S365
+                </a>
+                <a href="https://github.com/sudoxs" target="_blank" rel="noopener" class="footer-link" aria-label="GitHub" style="--clr:#c9d1d9">
+                    <span class="footer-icon-fx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></span> GitHub
+                </a>
+            </div>
+            <div class="footer-system">
+                <span class="status-light"></span>
+                <span>PROJECT // 004</span>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<script>
+(function(){
+    var root = document.documentElement;
+
+    /* ── theme (shared "sx-theme" key with the archive) ── */
+    var cb = document.getElementById("theme-checkbox");
+    cb.checked = root.classList.contains("theme-light");
+    cb.addEventListener("change", function(){
+        root.classList.toggle("theme-light", cb.checked);
+        try{ localStorage.setItem("sx-theme", cb.checked ? "light" : "dark"); }catch(e){}
+    });
+
+    /* ── language ── */
+    var langBtns = document.querySelectorAll("[data-set-lang]");
+    function setLang(l){
+        root.setAttribute("data-lang", l);
+        root.lang = l;
+        langBtns.forEach(function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-set-lang") === l ? "true" : "false"); });
+        try{ localStorage.setItem("sx-lang", l); }catch(e){}
+    }
+    langBtns.forEach(function(b){ b.addEventListener("click", function(){ setLang(b.getAttribute("data-set-lang")); }); });
+    setLang(root.getAttribute("data-lang") === "ja" ? "ja" : "en");
+
+    /* ── repo-card tabs ── */
+    var tabs = document.querySelectorAll(".gh-tab");
+    tabs.forEach(function(t){
+        t.addEventListener("click", function(){
+            tabs.forEach(function(x){ x.classList.toggle("active", x === t); x.setAttribute("aria-selected", x === t ? "true" : "false"); });
+            document.querySelectorAll("[data-gh-panel]").forEach(function(p){ p.classList.toggle("active", p.getAttribute("data-gh-panel") === t.getAttribute("data-gh")); });
+        });
+    });
+
+    /* ── reveal on scroll ── */
+    var els = document.querySelectorAll(".reveal");
+    if("IntersectionObserver" in window){
+        var io = new IntersectionObserver(function(entries){
+            entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
+        }, { rootMargin: "0px 0px -8% 0px" });
+        els.forEach(function(el){ io.observe(el); });
+    } else {
+        els.forEach(function(el){ el.classList.add("in"); });
+    }
+})();
+</script>
+</body>
+</html>

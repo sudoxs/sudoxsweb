@@ -27,4 +27,8 @@ window.SX_MD_LAYOUT = {
 
     // Extra CSS classes added to <body> when viewing an MD file
     bodyClass: "viewing-md",
+
+    // Top-level folders that are never treated as .md archive folders.
+    // "projects" holds standalone HTML project pages (projects/<name>/index.html).
+    excludeFolders: ["projects"],
 };

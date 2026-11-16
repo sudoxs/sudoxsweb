@@ -16,7 +16,11 @@ import sys
 IGNORE = {
     '.git', 'node_modules', '.github', '__pycache__', '.venv', 'venv',
     'tree.json', 'generate_tree.py', '.gitignore', '.nojekyll',
-    '.sx_config.json'
+    '.sx_config.json',
+    # Standalone HTML project pages (e.g. projects/airwarden/index.html).
+    # They are full pages of their own, not .md archive entries, so they are
+    # never offered as a folder and never written into tree.json.
+    'projects',
 }
 
 def get_folders(path="."):
