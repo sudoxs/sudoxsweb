@@ -199,6 +199,25 @@
         ]
       },
       {
+        "name": "The Illusion of Liquid Wealth",
+        "type": "dir",
+        "path": "Security-Society/The Illusion of Liquid Wealth",
+        "children": [
+          {
+            "name": "The Illusion of Liquid Wealth.md",
+            "type": "file",
+            "path": "Security-Society/The Illusion of Liquid Wealth/The Illusion of Liquid Wealth.md",
+            "download_url": "Security-Society/The Illusion of Liquid Wealth/The Illusion of Liquid Wealth.md"
+          },
+          {
+            "name": "流動的富の幻想.md",
+            "type": "file",
+            "path": "Security-Society/The Illusion of Liquid Wealth/流動的富の幻想.md",
+            "download_url": "Security-Society/The Illusion of Liquid Wealth/流動的富の幻想.md"
+          }
+        ]
+      },
+      {
         "name": "Video Game Cracking - From DRM to the Fall of EMPRESS",
         "type": "dir",
         "path": "Security-Society/Video Game Cracking - From DRM to the Fall of EMPRESS",
