@@ -1474,6 +1474,7 @@
     <script src="md-layout.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 
     <script>
     const SX = (function(){
@@ -2402,6 +2403,15 @@
         // Wrap tables so wide ones can scroll horizontally
         wrapTables(tempDiv);
 
+        // Convert mermaid code blocks into <div class="mermaid"> for rendering
+        tempDiv.querySelectorAll('pre code.language-mermaid').forEach(code => {
+            const pre = code.parentElement;
+            const mDiv = document.createElement('div');
+            mDiv.className = 'mermaid';
+            mDiv.textContent = code.textContent;
+            pre.parentNode.replaceChild(mDiv, pre);
+        });
+
         // Enhance code blocks (language label + copy button + syntax highlight)
         enhanceCodeBlocks(tempDiv);
 
@@ -2572,6 +2582,13 @@
             ${altF}`;
 
         initTOCInteractions();
+        // Render mermaid diagrams after content is in the DOM
+        if(window.mermaid){
+            try{
+                mermaid.initialize({startOnLoad:false, theme: document.documentElement.classList.contains('theme-light') ? 'default' : 'dark', securityLevel:'loose'});
+                mermaid.run({nodes: main.querySelectorAll('.mermaid')});
+            }catch(e){ console.warn('SX: Mermaid render error', e); }
+        }
         // header height may have changed while re-rendering
         setTimeout(updateHeaderVar, 0);
     }
