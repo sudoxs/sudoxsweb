@@ -36,13 +36,13 @@ Musk and many other ultra-high-net-worth individuals utilize a legal financial s
 
 ```mermaid
 flowchart TD
-    A[Buy Appreciating Assets<br/>e.g., Tesla & SpaceX Stock] --> B[Hold & Let Value Grow]
-    B --> C{Need Cash for Living<br/>or Spending?}
-    C -->|Sell Stock| D[Pay ~40% Tax<br/>Capital Gains + NIIT + State]
-    C -->|Borrow Against Stock| E[Get Cash as Loan<br/>Pay Only 2-3% Interest]
-    E --> F[Keep Ownership<br/>Stock Continues to Grow]
-    F --> G[Pass Assets to Heirs<br/>Stepped-Up Basis = Zero Capital Gains Tax]
-    D --> H[Lose ~40% of Value<br/>Lose Control of Company]
+    A["Buy Appreciating Assets<br/>e.g., Tesla & SpaceX Stock"] --> B["Hold & Let Value Grow"]
+    B --> C{"Need Cash for Living<br/>or Spending?"}
+    C -->|"Sell Stock"| D["Pay ~40% Tax<br/>Capital Gains + NIIT + State"]
+    C -->|"Borrow Against Stock"| E["Get Cash as Loan<br/>Pay Only 2-3% Interest"]
+    E --> F["Keep Ownership<br/>Stock Continues to Grow"]
+    F --> G["Pass Assets to Heirs<br/>Stepped-Up Basis = Zero Capital Gains Tax"]
+    D --> H["Lose ~40% of Value<br/>Lose Control of Company"]
     
     style A fill:#4CAF50,color:#fff
     style E fill:#2196F3,color:#fff
@@ -72,17 +72,17 @@ LTV = (Loan Amount ÷ Collateral Value) × 100
 
 ```mermaid
 flowchart TD
-    A[Pledge Stock as Collateral<br/>e.g., $100M Tesla Stock] --> B[Borrow $20M<br/>LTV = 20%]
-    B --> C{Stock Price Changes?}
-    C -->|Stock Rises to $120M| D[LTV Drops to 16.7%<br/>✅ Safe — Can Borrow More]
-    C -->|Stock Stays at $100M| E[LTV Stays at 20%<br/>✅ Safe — Renew Loan]
-    C -->|Stock Falls to $70M| F[LTV Rises to 28.6%<br/>⚠️ Caution — Still Below 35% Limit]
-    C -->|Stock Falls to $50M| G[LTV Rises to 40%<br/>🚨 Margin Call!]
+    A["Pledge Stock as Collateral<br/>e.g., $100M Tesla Stock"] --> B["Borrow $20M<br/>LTV = 20%"]
+    B --> C{"Stock Price Changes?"}
+    C -->|"Stock Rises to $120M"| D["LTV Drops to 16.7%<br/>✅ Safe — Can Borrow More"]
+    C -->|"Stock Stays at $100M"| E["LTV Stays at 20%<br/>✅ Safe — Renew Loan"]
+    C -->|"Stock Falls to $70M"| F["LTV Rises to 28.6%<br/>⚠️ Caution — Still Below 35% Limit"]
+    C -->|"Stock Falls to $50M"| G["LTV Rises to 40%<br/>🚨 Margin Call!"]
     
-    G --> H{Bank Demands Action}
-    H -->|Option 1| I[Inject Cash<br/>Pay Down Part of Loan]
-    H -->|Option 2| J[Pledge More Stock<br/>Increase Collateral]
-    H -->|Option 3| K[Bank Sells Collateral<br/>Forced Liquidation]
+    G --> H{"Bank Demands Action"}
+    H -->|"Option 1"| I["Inject Cash<br/>Pay Down Part of Loan"]
+    H -->|"Option 2"| J["Pledge More Stock<br/>Increase Collateral"]
+    H -->|"Option 3"| K["Bank Sells Collateral<br/>Forced Liquidation"]
     
     style D fill:#4CAF50,color:#fff
     style E fill:#4CAF50,color:#fff
@@ -137,16 +137,16 @@ Let's trace a realistic 10-year scenario with a hypothetical billionaire (let's 
 
 ```mermaid
 flowchart TD
-    A[Stock Stays Flat at $100M] --> B[Loan = $20M, LTV = 20%]
-    B --> C{Can He Renew?}
-    C -->|Yes| D[Renew Loan Annually<br/>Pay 3% Interest = $600K/Year]
-    D --> E[No New Cash for Spending<br/>Just Maintains Debt]
-    E --> F[He Must Fund Lifestyle from<br/>Other Income Sources]
+    A["Stock Stays Flat at $100M"] --> B["Loan = $20M, LTV = 20%"]
+    B --> C{"Can He Renew?"}
+    C -->|"Yes"| D["Renew Loan Annually<br/>Pay 3% Interest = $600K/Year"]
+    D --> E["No New Cash for Spending<br/>Just Maintains Debt"]
+    E --> F["He Must Fund Lifestyle from<br/>Other Income Sources"]
     
-    A2[Stock Falls to $60M] --> B2[Loan = $20M, LTV = 33.3%]
-    B2 --> C2{Below 35% Threshold?}
-    C2 -->|Yes, Barely| D2[Renew Loan<br/>But No New Borrowing]
-    C2 -->|If Falls Further| E2[Margin Call<br/>Must Inject Cash or Pledge More Stock]
+    A2["Stock Falls to $60M"] --> B2["Loan = $20M, LTV = 33.3%"]
+    B2 --> C2{"Below 35% Threshold?"}
+    C2 -->|"Yes, Barely"| D2["Renew Loan<br/>But No New Borrowing"]
+    C2 -->|"If Falls Further"| E2["Margin Call<br/>Must Inject Cash or Pledge More Stock"]
     
     style D fill:#4CAF50,color:#fff
     style E fill:#FF9800,color:#fff
@@ -172,17 +172,17 @@ Even in this extreme scenario, he would retain hundreds of billions. But the **o
 
 ```mermaid
 flowchart LR
-    A[Sell Everything] --> B[Pay ~40% Tax]
-    B --> C[Lose Control of Companies]
-    C --> D[Lose Future Growth]
-    D --> E[Net Cash: ~$500-600B]
-    E --> F[No More Leverage<br/>No More Asset Growth]
+    A["Sell Everything"] --> B["Pay ~40% Tax"]
+    B --> C["Lose Control of Companies"]
+    C --> D["Lose Future Growth"]
+    D --> E["Net Cash: ~$500-600B"]
+    E --> F["No More Leverage<br/>No More Asset Growth"]
     
-    A2[Keep Assets & Borrow] --> B2[Pay 2-3% Interest]
-    B2 --> C2[Retain Control]
-    C2 --> D2[Assets Continue Growing]
-    D2 --> E2[Access to Ever-Growing<br/>Credit Line]
-    E2 --> F2[Pass Assets to Heirs<br/>Tax-Free Stepped-Up Basis]
+    A2["Keep Assets & Borrow"] --> B2["Pay 2-3% Interest"]
+    B2 --> C2["Retain Control"]
+    C2 --> D2["Assets Continue Growing"]
+    D2 --> E2["Access to Ever-Growing<br/>Credit Line"]
+    E2 --> F2["Pass Assets to Heirs<br/>Tax-Free Stepped-Up Basis"]
     
     style A fill:#F44336,color:#fff
     style F fill:#F44336,color:#fff
@@ -212,17 +212,17 @@ After taxes and fees, a $5 million gross salary might net the player **$2 to $2.
 
 ```mermaid
 flowchart TD
-    A[Footballer Signs $5M/Year Contract] --> B[Gross Salary: $5M]
-    B --> C[Taxes: ~45-50% = $2.25-2.5M]
-    C --> D[Agent Fees: 5-10% = $250-500K]
-    D --> E[Net Income: ~$2-2.25M/Year]
-    E --> F[Lifestyle Expenses: Homes, Cars, Family Support, Security]
-    F --> G[Savings Potential: $500K-1M/Year]
-    G --> H[Career Duration: 6-15 Years]
-    H --> I[Total Career Savings: $5-15M]
-    I --> J{What Happens After Retirement?}
-    J -->|No Planning| K[Financial Difficulties Within 5 Years<br/>~52% of Players (UK PPF Survey)]
-    J -->|Good Planning| L[Invest, Start Business,<br/>Live Modestly]
+    A["Footballer Signs $5M/Year Contract"] --> B["Gross Salary: $5M"]
+    B --> C["Taxes: ~45-50% = $2.25-2.5M"]
+    C --> D["Agent Fees: 5-10% = $250-500K"]
+    D --> E["Net Income: ~$2-2.25M/Year"]
+    E --> F["Lifestyle Expenses: Homes, Cars, Family Support, Security"]
+    F --> G["Savings Potential: $500K-1M/Year"]
+    G --> H["Career Duration: 6-15 Years"]
+    H --> I["Total Career Savings: $5-15M"]
+    I --> J{"What Happens After Retirement?"}
+    J -->|"No Planning"| K["Financial Difficulties Within 5 Years<br/>~52% of Players (UK PPF Survey)"]
+    J -->|"Good Planning"| L["Invest, Start Business,<br/>Live Modestly"]
     
     style K fill:#F44336,color:#fff
     style L fill:#4CAF50,color:#fff
@@ -479,22 +479,22 @@ Musk's wealth is illiquid, his freedom constrained by stock prices and public sc
 
 ```mermaid
 flowchart TD
-    A[The Four Financial Archetypes] --> B[The Billionaire<br/>Elon Musk]
-    A --> C[The Athlete<br/>Top Footballer]
-    A --> D[The Empire<br/>Corporations & Systems]
-    A --> E[The Master Professional]
+    A["The Four Financial Archetypes"] --> B["The Billionaire<br/>Elon Musk"]
+    A --> C["The Athlete<br/>Top Footballer"]
+    A --> D["The Empire<br/>Corporations & Systems"]
+    A --> E["The Master Professional"]
     
-    B --> B1[Wealth: Massive<br/>Cash: Near Zero<br/>Freedom: Constrained]
-    B --> B2[Risk: Margin Call,<br/>Market Crash,<br/>Image is Performance]
+    B --> B1["Wealth: Massive<br/>Cash: Near Zero<br/>Freedom: Constrained"]
+    B --> B2["Risk: Margin Call,<br/>Market Crash,<br/>Image is Performance"]
     
-    C --> C1[Wealth: Temporary<br/>Cash: High During Career<br/>Freedom: Ends at Retirement]
-    C --> C2[Risk: Injury,<br/>Short Career,<br/>Bankruptcy]
+    C --> C1["Wealth: Temporary<br/>Cash: High During Career<br/>Freedom: Ends at Retirement"]
+    C --> C2["Risk: Injury,<br/>Short Career,<br/>Bankruptcy"]
     
-    D --> D1[Wealth: Enormous<br/>Scale: Global<br/>History: Decades or Centuries]
-    D --> D2[Risk: One Weak Link,<br/>One Outsider,<br/>Total Collapse]
+    D --> D1["Wealth: Enormous<br/>Scale: Global<br/>History: Decades or Centuries"]
+    D --> D2["Risk: One Weak Link,<br/>One Outsider,<br/>Total Collapse"]
     
-    E --> E1[Wealth: Moderate but Growing<br/>Cash: Steady<br/>Freedom: Increases with Mastery]
-    E --> E2[Risk: Low<br/>Portable<br/>Unhackable]
+    E --> E1["Wealth: Moderate but Growing<br/>Cash: Steady<br/>Freedom: Increases with Mastery"]
+    E --> E2["Risk: Low<br/>Portable<br/>Unhackable"]
     
     style B2 fill:#FF9800,color:#fff
     style C2 fill:#F44336,color:#fff
