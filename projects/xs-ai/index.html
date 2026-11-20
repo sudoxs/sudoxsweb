@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="xs-ai — AI-Assisted Pentest Orchestrator">
+    <meta name="author" content="sudoxs">
+    <title>xs-ai // AI Pentest Orchestrator</title>
+
+    <script>
+        (function(){
+            try{
+                var saved = localStorage.getItem("sx-theme");
+                if(saved === "light") document.documentElement.classList.add("theme-light");
+            }catch(e){}
+        })();
+    </script>
+
+    <style>
+        /* ═══ DESIGN TOKENS — DARK ═══ */
+        :root {
+            --bg:          #070a08;
+            --bg-deep:     #040605;
+            --surface:     #0c100d;
+            --surface-raised: #111611;
+            --surface-active: #151b16;
+            --ink:         #c2c8c1;
+            --ink-dim:     #7a837a;
+            --ink-faint:   #4a534b;
+            --ink-bright:  #e8ebe5;
+            --danger:      #a9252b;
+            --danger-bright: #cf4a50;
+            --danger-dark: #4d1518;
+            --signal:      #93a886;
+            --signal-bright: #b8c9ab;
+            --amber:       #a88747;
+            --border:      #232a23;
+            --border-strong: #3a423b;
+            --ambient-1:   rgba(74,91,65,.11);
+            --ambient-2:   rgba(126,23,29,.08);
+            --ambient-3:   #090d0a;
+            --scan-line:   rgba(0,0,0,.18);
+            --scan-beam:   rgba(210,40,48,.12);
+            --selection-bg: #4d1518;
+            --selection-fg: #e8ebe5;
+            --font-mono:   "IBM Plex Mono","Cascadia Code",Consolas,"Liberation Mono",monospace;
+            --font-display:"Franklin Gothic Condensed","Liberation Sans Narrow","Nimbus Sans Narrow",sans-serif;
+            --page-gap:    clamp(1rem, 3vw, 2.5rem);
+            --content-max: 960px;
+        }
+
+        /* ═══ LIGHT THEME ═══ */
+        html.theme-light {
+            --bg:          #f3f1ec;
+            --bg-deep:     #e8e5dd;
+            --surface:     #ffffff;
+            --surface-raised: #f7f5f0;
+            --surface-active: #ece9e2;
+            --ink:         #2a2f2a;
+            --ink-dim:     #5a635a;
+            --ink-faint:   #8b938b;
+            --ink-bright:  #0d100d;
+            --danger:      #b8292f;
+            --danger-bright: #c9363c;
+            --danger-dark: #f0d5d6;
+            --signal:      #4f7040;
+            --signal-bright: #38542c;
+            --amber:       #8a6d2c;
+            --border:      #d6d2c8;
+            --border-strong: #b8b3a6;
+            --ambient-1:   rgba(74,91,65,.06);
+            --ambient-2:   rgba(126,23,29,.04);
+            --ambient-3:   #ebe8e0;
+            --scan-line:   rgba(0,0,0,.05);
+            --scan-beam:   rgba(210,40,48,.05);
+            --selection-bg: #c9363c;
+            --selection-fg: #ffffff;
+        }
+
+        /* ═══ RESET ═══ */
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        html{font-size:16px;scroll-behavior:smooth;background:var(--bg-deep);overflow-x:clip}
+        body{
+            min-height:100vh;
+            background:radial-gradient(circle at 78% 12%,var(--ambient-1),transparent 27rem),
+                       radial-gradient(circle at 13% 76%,var(--ambient-2),transparent 30rem),
+                       linear-gradient(135deg,var(--bg-deep),var(--bg) 46%,var(--ambient-3));
+            color:var(--ink);font-family:var(--font-mono);line-height:1.7;
+            -webkit-font-smoothing:antialiased;
+            transition:background-color .3s ease,color .3s ease;
+        }
+        a{color:inherit}
+        ::selection{background:var(--selection-bg);color:var(--selection-fg)}
+
+        /* ═══ AMBIENT FX ═══ */
+        .ambient-grid,.noise,.scanlines{position:fixed;inset:0;pointer-events:none;z-index:0}
+        .ambient-grid{
+            opacity:.24;
+            background-image:linear-gradient(rgba(132,150,122,.035) 1px,transparent 1px),
+                             linear-gradient(90deg,rgba(132,150,122,.035) 1px,transparent 1px);
+            background-size:48px 48px;
+        }
+        .scanlines{
+            opacity:.06;
+            background:repeating-linear-gradient(0deg,var(--scan-line),var(--scan-line) 1px,transparent 1px,transparent 2px);
+            background-size:100% 2px;
+        }
+        .noise{
+            opacity:.03;
+            background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+        html.theme-light .noise{opacity:.012}
+        html.theme-light .scanlines{opacity:.02}
+        html.theme-light .ambient-grid{opacity:.18}
+
+        /* ═══ LAYOUT ═══ */
+        .page{position:relative;z-index:1;max-width:var(--content-max);margin:0 auto;padding:var(--page-gap)}
+
+        /* ═══ TOP BAR ═══ */
+        .top-bar{
+            display:flex;align-items:center;justify-content:space-between;
+            padding:1rem 0;border-bottom:1px solid var(--border);margin-bottom:3rem;
+        }
+        .top-bar a{text-decoration:none;font-size:.78rem;letter-spacing:.08em;color:var(--ink-dim);transition:color .2s}
+        .top-bar a:hover{color:var(--danger-bright)}
+        .theme-toggle{
+            background:none;border:1px solid var(--border);color:var(--ink-dim);
+            padding:.3rem .6rem;font-family:inherit;font-size:.72rem;cursor:pointer;
+            letter-spacing:.08em;transition:all .2s;
+        }
+        .theme-toggle:hover{border-color:var(--danger-bright);color:var(--ink-bright)}
+
+        /* ═══ HERO ═══ */
+        .hero{margin-bottom:4rem;padding:2rem 0}
+        .hero-index{
+            display:block;font-family:var(--font-display);font-size:.85rem;
+            letter-spacing:.2em;color:var(--danger);margin-bottom:1rem;
+        }
+        .hero h1{
+            font-family:var(--font-display);font-size:clamp(2.2rem,4vw,3.4rem);
+            font-weight:400;letter-spacing:.04em;color:var(--ink-bright);line-height:1.1;
+        }
+        .hero h1 span{color:var(--danger-bright)}
+        .hero-sub{
+            margin-top:1rem;font-size:.88rem;color:var(--ink-dim);max-width:600px;line-height:1.8;
+        }
+        .hero-tags{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.5rem}
+        .hero-tags span{
+            font-size:.68rem;letter-spacing:.1em;padding:.25rem .7rem;
+            border:1px solid var(--border);color:var(--ink-dim);
+        }
+        .hero-actions{display:flex;gap:1rem;margin-top:2rem;flex-wrap:wrap}
+        .hero-actions a{
+            display:inline-block;padding:.6rem 1.4rem;font-size:.78rem;
+            letter-spacing:.08em;text-decoration:none;border:1px solid var(--border);
+            color:var(--ink-dim);transition:all .25s;
+        }
+        .hero-actions a:hover{border-color:var(--danger-bright);color:var(--ink-bright)}
+        .hero-actions a.primary{
+            background:var(--danger);border-color:var(--danger);color:#fff;
+        }
+        .hero-actions a.primary:hover{background:var(--danger-bright);border-color:var(--danger-bright)}
+
+        /* ═══ ASCII BANNER ═══ */
+        .ascii-block{
+            margin:2.5rem 0;padding:1.5rem;
+            background:var(--surface);border:1px solid var(--border);
+            overflow-x:auto;font-size:clamp(.6rem,.7rem + .2vw,.82rem);
+            line-height:1.4;color:var(--signal);white-space:pre;
+        }
+
+        /* ═══ SECTION ═══ */
+        .section{margin-bottom:4rem}
+        .section-header{
+            display:flex;align-items:baseline;justify-content:space-between;
+            border-bottom:1px solid var(--border);padding-bottom:.6rem;margin-bottom:2rem;
+        }
+        .section-header h2{
+            font-family:var(--font-display);font-size:clamp(1.1rem,2vw,1.5rem);
+            font-weight:400;letter-spacing:.08em;color:var(--ink-bright);
+        }
+        .section-label{font-size:.68rem;letter-spacing:.12em;color:var(--ink-faint)}
+
+        /* ═══ ARCHITECTURE DIAGRAM ═══ */
+        .arch-diagram{
+            padding:2rem;background:var(--surface);border:1px solid var(--border);
+            overflow-x:auto;margin-bottom:2rem;
+        }
+        .arch-diagram pre{
+            font-size:clamp(.62rem,.68rem + .15vw,.78rem);
+            line-height:1.5;color:var(--ink);white-space:pre;margin:0;
+        }
+        .arch-diagram .node-label{color:var(--signal-bright)}
+        .arch-diagram .conn-label{color:var(--danger-bright)}
+
+        /* ═══ FEATURE GRID ═══ */
+        .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+        .feature-card{
+            padding:1.5rem;background:var(--surface);border:1px solid var(--border);
+            transition:border-color .25s;
+        }
+        .feature-card:hover{border-color:var(--border-strong)}
+        .feature-card .feat-idx{
+            display:block;font-size:.65rem;letter-spacing:.15em;
+            color:var(--danger);margin-bottom:.6rem;
+        }
+        .feature-card h3{
+            font-family:var(--font-display);font-size:1rem;font-weight:400;
+            letter-spacing:.06em;color:var(--ink-bright);margin-bottom:.5rem;
+        }
+        .feature-card p{font-size:.82rem;color:var(--ink-dim);line-height:1.6}
+
+        /* ═══ PHASE LIST ═══ */
+        .phase-list{display:flex;flex-direction:column;gap:1px}
+        .phase-item{
+            display:grid;grid-template-columns:auto 1fr auto;gap:1.5rem;align-items:start;
+            padding:1.2rem 1.5rem;background:var(--surface);border:1px solid var(--border);
+            transition:border-color .25s;
+        }
+        .phase-item:hover{border-color:var(--border-strong)}
+        .phase-num{
+            font-family:var(--font-display);font-size:1.6rem;color:var(--danger);
+            line-height:1;min-width:2.5rem;
+        }
+        .phase-info h3{
+            font-family:var(--font-display);font-size:.95rem;font-weight:400;
+            letter-spacing:.06em;color:var(--ink-bright);margin-bottom:.3rem;
+        }
+        .phase-info p{font-size:.8rem;color:var(--ink-dim);line-height:1.6}
+        .phase-badge{
+            font-size:.62rem;letter-spacing:.1em;padding:.2rem .6rem;
+            border:1px solid var(--border);color:var(--ink-faint);white-space:nowrap;
+            align-self:center;
+        }
+
+        /* ═══ SERVICE TABLE ═══ */
+        .svc-table{width:100%;border-collapse:collapse;font-size:.8rem}
+        .svc-table th{
+            text-align:left;padding:.6rem 1rem;font-weight:400;font-size:.68rem;
+            letter-spacing:.12em;color:var(--ink-faint);
+            border-bottom:1px solid var(--border-strong);background:var(--surface);
+        }
+        .svc-table td{
+            padding:.5rem 1rem;border-bottom:1px solid var(--border);color:var(--ink-dim);
+        }
+        .svc-table tr:hover td{color:var(--ink);background:var(--surface-active)}
+        .svc-table .port{color:var(--danger-bright);font-weight:600}
+        .svc-table .svc-name{color:var(--ink-bright)}
+
+        /* ═══ CODE BLOCKS ═══ */
+        .code-block{
+            margin:1.5rem 0;padding:1.2rem 1.5rem;background:var(--surface);
+            border:1px solid var(--border);overflow-x:auto;
+            font-size:.78rem;line-height:1.6;color:var(--ink);
+        }
+        .code-block .prompt{color:var(--signal)}
+        .code-block .comment{color:var(--ink-faint)}
+        .code-block .flag{color:var(--amber)}
+        .code-block .cmd{color:var(--ink-bright)}
+
+        /* ═══ TOOL GRID ═══ */
+        .tool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+        .tool-chip{
+            padding:.8rem 1rem;background:var(--surface);border:1px solid var(--border);
+            font-size:.76rem;transition:border-color .25s;
+        }
+        .tool-chip:hover{border-color:var(--border-strong)}
+        .tool-chip .tool-name{color:var(--ink-bright);display:block;margin-bottom:.2rem}
+        .tool-chip .tool-os{color:var(--ink-faint);font-size:.65rem;letter-spacing:.1em}
+
+        /* ═══ INSTALL BLOCK ═══ */
+        .install-steps{counter-reset:step}
+        .install-step{
+            padding:1.5rem;background:var(--surface);border:1px solid var(--border);
+            margin-bottom:1px;counter-increment:step;position:relative;padding-left:4rem;
+        }
+        .install-step::before{
+            content:counter(step,decimal-leading-zero);position:absolute;left:1.5rem;top:1.5rem;
+            font-family:var(--font-display);font-size:1.2rem;color:var(--danger);
+        }
+        .install-step h3{
+            font-family:var(--font-display);font-size:.9rem;font-weight:400;
+            letter-spacing:.06em;color:var(--ink-bright);margin-bottom:.4rem;
+        }
+        .install-step p{font-size:.8rem;color:var(--ink-dim);line-height:1.6}
+        .install-step code{
+            display:block;margin-top:.8rem;padding:.6rem 1rem;
+            background:var(--bg);border:1px solid var(--border);
+            font-size:.76rem;color:var(--signal);overflow-x:auto;
+        }
+
+        /* ═══ FOOTER ═══ */
+        .foot{
+            border-top:1px solid var(--border);padding:2rem 0;margin-top:4rem;
+            display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;
+        }
+        .foot span{font-size:.72rem;color:var(--ink-faint);letter-spacing:.08em}
+        .foot a{font-size:.72rem;color:var(--ink-dim);text-decoration:none;transition:color .2s}
+        .foot a:hover{color:var(--danger-bright)}
+
+        /* ═══ RESPONSIVE ═══ */
+        @media(max-width:640px){
+            .phase-item{grid-template-columns:1fr;gap:.5rem}
+            .phase-num{font-size:1.1rem}
+            .phase-badge{justify-self:start}
+            .feature-grid{grid-template-columns:1fr}
+            .hero-actions{flex-direction:column}
+            .hero-actions a{text-align:center}
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-grid"></div>
+    <div class="noise"></div>
+    <div class="scanlines"></div>
+
+    <div class="page">
+
+        <!-- TOP BAR -->
+        <nav class="top-bar">
+            <a href="../../">&larr; BACK TO COOKBOOK</a>
+            <button class="theme-toggle" id="themeBtn">LIGHT MODE</button>
+        </nav>
+
+        <!-- HERO -->
+        <header class="hero">
+            <span class="hero-index">PROJECT // 005</span>
+            <h1>xs<span>-</span>ai</h1>
+            <p class="hero-sub">
+                AI-assisted pentest orchestrator that connects local Ollama models on your
+                Windows host to an interactive client on Kali Linux. Walk through every
+                phase of an engagement with AI-driven suggestions and human approval at
+                every step.
+            </p>
+            <div class="hero-tags">
+                <span>PYTHON 3</span>
+                <span>OLLAMA</span>
+                <span>OPENAI / ANTHROPIC</span>
+                <span>ZERO DEPENDENCIES</span>
+                <span>PENTEST AUTOMATION</span>
+            </div>
+            <div class="hero-actions">
+                <a href="https://github.com/sudoxs/xs-ai" target="_blank" rel="noopener" class="primary">SOURCE CODE &nearr;</a>
+                <a href="https://github.com/sudoxs/xs-ai#quick-start" target="_blank" rel="noopener">QUICK START &nearr;</a>
+            </div>
+        </header>
+
+        <!-- ASCII BANNER -->
+        <div class="ascii-block"> ___  _____        ___  _____
+ \  \/  /  ___    /   \/  _  \ ___
+  >    <   \_ \  / /\  \  ___// _ \
+ /__/\__\.__) /_/  \_/\__|  /_/ \_\
+  Pentest AI Assistant  v0.4</div>
+
+        <!-- ARCHITECTURE -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Architecture</h2>
+                <span class="section-label">SYSTEM TOPOLOGY</span>
+            </div>
+            <div class="arch-diagram"><pre><span class="node-label">WINDOWS HOST</span>              <span class="node-label">KALI VM</span>                  <span class="node-label">TARGET</span>
+ ┌──────────────┐         ┌──────────────┐         ┌──────────────┐
+ │  <span class="node-label">Ollama</span>      │  <span class="conn-label">HTTP</span>   │  <span class="node-label">client.py</span>   │  <span class="conn-label">SSH</span>    │              │
+ │  :11434      │&lt;───────&gt;│              │&lt;───────&gt;│  10.x.x.x    │
+ │              │         │ - AI plans   │         │              │
+ │  <span class="node-label">WhiteRabbit</span> │         │ - You approve│         │  - Enum      │
+ │  <span class="node-label">Qwen 2.5</span>    │         │ - It runs    │         │  - Privesc   │
+ └──────────────┘         └──────────────┘         └──────────────┘
+                 VMnet1 Host-only        VMnet8 NAT / other</pre></div>
+        </section>
+
+        <!-- FEATURES -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Capabilities</h2>
+                <span class="section-label">FEATURE SET</span>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <span class="feat-idx">01</span>
+                    <h3>Human-in-the-Loop</h3>
+                    <p>Every command requires explicit operator approval. Nothing runs without your say. Edit, skip, or override any suggestion.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feat-idx">02</span>
+                    <h3>Multi-Backend AI</h3>
+                    <p>Local Ollama models by default. Swap to OpenAI or Anthropic Claude with a single flag when you need more power.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feat-idx">03</span>
+                    <h3>14 Service Enumerators</h3>
+                    <p>Port-aware enumeration checks for FTP, SSH, SMTP, DNS, HTTP, SMB, NFS, MSSQL, MySQL, RDP, WinRM, SNMP, Redis, and LDAP.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feat-idx">04</span>
+                    <h3>Tool Intelligence</h3>
+                    <p>Distinguishes between direct-execution tools and suggest-only tools. Missing tools are detected with one-click install.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feat-idx">05</span>
+                    <h3>Project Memory</h3>
+                    <p>Auto-saves engagement state as an AI-readable project.md. Resume any session exactly where you left off.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feat-idx">06</span>
+                    <h3>Cheat Sheet Loader</h3>
+                    <p>Drop your engagement notes in cheatsheets/ and the AI loads them all for context. Add more at runtime with :cheat.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PHASES -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Engagement Phases</h2>
+                <span class="section-label">KILL CHAIN WORKFLOW</span>
+            </div>
+            <div class="phase-list">
+                <div class="phase-item">
+                    <span class="phase-num">01</span>
+                    <div class="phase-info">
+                        <h3>Recon</h3>
+                        <p>Nmap scans, service detection, OS fingerprinting. Quick scan (top 100) or full 65535-port sweep.</p>
+                    </div>
+                    <span class="phase-badge">:scan / :fullscan</span>
+                </div>
+                <div class="phase-item">
+                    <span class="phase-num">02</span>
+                    <div class="phase-info">
+                        <h3>Enumeration</h3>
+                        <p>Service-specific checks triggered by detected ports. 49 checks across 14 services, plus directory busting and vuln scanning.</p>
+                    </div>
+                    <span class="phase-badge">:svc &lt;port&gt;</span>
+                </div>
+                <div class="phase-item">
+                    <span class="phase-num">03</span>
+                    <div class="phase-info">
+                        <h3>Initial Access</h3>
+                        <p>Credential testing, exploit suggestions, SSH/WinRM connections. Chisel and ligolo-ng for pivoting.</p>
+                    </div>
+                    <span class="phase-badge">:ssh / :cred</span>
+                </div>
+                <div class="phase-item">
+                    <span class="phase-num">04</span>
+                    <div class="phase-info">
+                        <h3>Privilege Escalation</h3>
+                        <p>28 Linux checks and 21 Windows checks. linpeas, winPEAS, Potato exploits, kernel CVEs — all suggested with download links.</p>
+                    </div>
+                    <span class="phase-badge">:auto / :tools</span>
+                </div>
+                <div class="phase-item">
+                    <span class="phase-num">05</span>
+                    <div class="phase-info">
+                        <h3>Report</h3>
+                        <p>Auto-generated markdown report with findings, command history, and results. Session state saved as JSON for later review.</p>
+                    </div>
+                    <span class="phase-badge">:report</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SERVICE ENUM TABLE -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Service Enumeration</h2>
+                <span class="section-label">PORT-AWARE CHECKS</span>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="svc-table">
+                    <thead>
+                        <tr><th>PORT</th><th>SERVICE</th><th>CHECKS</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="port">21</td><td class="svc-name">FTP</td><td>Anonymous login, banner grab, bounce scan</td></tr>
+                        <tr><td class="port">22</td><td class="svc-name">SSH</td><td>Banner, algorithms, auth methods</td></tr>
+                        <tr><td class="port">25/587</td><td class="svc-name">SMTP</td><td>Commands, open relay, user enum</td></tr>
+                        <tr><td class="port">53</td><td class="svc-name">DNS</td><td>Version, brute, zone transfer</td></tr>
+                        <tr><td class="port">80/443/8080</td><td class="svc-name">HTTP</td><td>Headers, robots, .git, dirs, nikto, WordPress</td></tr>
+                        <tr><td class="port">111/2049</td><td class="svc-name">NFS</td><td>Exports, mount scripts</td></tr>
+                        <tr><td class="port">139/445</td><td class="svc-name">SMB</td><td>Null session, enum4linux, signing, MS17-010</td></tr>
+                        <tr><td class="port">161</td><td class="svc-name">SNMP</td><td>Community strings, system/process/software</td></tr>
+                        <tr><td class="port">389/636</td><td class="svc-name">LDAP</td><td>Anonymous bind, base search</td></tr>
+                        <tr><td class="port">1433</td><td class="svc-name">MSSQL</td><td>Info, empty password, brute</td></tr>
+                        <tr><td class="port">3306</td><td class="svc-name">MySQL</td><td>Info, empty root, variables</td></tr>
+                        <tr><td class="port">3389</td><td class="svc-name">RDP</td><td>Version, encryption, NLA</td></tr>
+                        <tr><td class="port">5985/5986</td><td class="svc-name">WinRM</td><td>Version check, brute</td></tr>
+                        <tr><td class="port">6379</td><td class="svc-name">Redis</td><td>INFO, CONFIG dump</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SUGGEST-ONLY TOOLS -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Suggest-Only Tools</h2>
+                <span class="section-label">17 DOWNLOADABLE TOOLS</span>
+            </div>
+            <p style="font-size:.82rem;color:var(--ink-dim);margin-bottom:1.5rem">
+                These tools are never auto-executed. xs-ai checks prerequisites, then shows download commands and usage instructions.
+            </p>
+            <div class="tool-grid">
+                <div class="tool-chip"><span class="tool-name">linpeas</span><span class="tool-os">LINUX PRIVESC</span></div>
+                <div class="tool-chip"><span class="tool-name">winPEAS</span><span class="tool-os">WINDOWS PRIVESC</span></div>
+                <div class="tool-chip"><span class="tool-name">pspy</span><span class="tool-os">LINUX PROCESS MONITOR</span></div>
+                <div class="tool-chip"><span class="tool-name">PrintSpoofer</span><span class="tool-os">WIN SEIMPERSONATE</span></div>
+                <div class="tool-chip"><span class="tool-name">GodPotato</span><span class="tool-os">WIN SEIMPERSONATE</span></div>
+                <div class="tool-chip"><span class="tool-name">SigmaPotato</span><span class="tool-os">WIN SEIMPERSONATE</span></div>
+                <div class="tool-chip"><span class="tool-name">JuicyPotato</span><span class="tool-os">WIN SEIMPERSONATE</span></div>
+                <div class="tool-chip"><span class="tool-name">PwnKit</span><span class="tool-os">CVE-2021-4034</span></div>
+                <div class="tool-chip"><span class="tool-name">DirtyPipe</span><span class="tool-os">CVE-2022-0847</span></div>
+                <div class="tool-chip"><span class="tool-name">Baron Samedit</span><span class="tool-os">CVE-2021-3156</span></div>
+                <div class="tool-chip"><span class="tool-name">traitor</span><span class="tool-os">LINUX AUTO PRIVESC</span></div>
+                <div class="tool-chip"><span class="tool-name">Mimikatz</span><span class="tool-os">WIN CREDENTIALS</span></div>
+                <div class="tool-chip"><span class="tool-name">PowerUp</span><span class="tool-os">WIN PS PRIVESC</span></div>
+                <div class="tool-chip"><span class="tool-name">chisel</span><span class="tool-os">TUNNELING / PIVOT</span></div>
+                <div class="tool-chip"><span class="tool-name">ligolo-ng</span><span class="tool-os">ADVANCED PIVOTING</span></div>
+                <div class="tool-chip"><span class="tool-name">php_filter_chain</span><span class="tool-os">LFI TO RCE</span></div>
+                <div class="tool-chip"><span class="tool-name">git-dumper</span><span class="tool-os">EXPOSED .GIT</span></div>
+            </div>
+        </section>
+
+        <!-- QUICK START -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Quick Start</h2>
+                <span class="section-label">SETUP GUIDE</span>
+            </div>
+            <div class="install-steps">
+                <div class="install-step">
+                    <h3>Windows Host</h3>
+                    <p>Clone the repo and run the setup script. It pulls models, configures Ollama to listen on all interfaces, and adds a firewall rule.</p>
+                    <code>git clone https://github.com/sudoxs/xs-ai.git
+cd xs-ai
+.\host_setup.ps1</code>
+                </div>
+                <div class="install-step">
+                    <h3>Kali Client</h3>
+                    <p>No pip dependencies needed — pure Python 3 stdlib. Connect to your Windows host's IP.</p>
+                    <code>git clone https://github.com/sudoxs/xs-ai.git
+cd xs-ai
+python3 client.py --host &lt;WINDOWS_IP&gt;</code>
+                </div>
+                <div class="install-step">
+                    <h3>Cloud API (Optional)</h3>
+                    <p>Swap to OpenAI or Anthropic Claude when you need more capable reasoning.</p>
+                    <code>python3 client.py --host ignored --api openai --api-key sk-...
+python3 client.py --host ignored --api anthropic --api-key sk-ant-...</code>
+                </div>
+            </div>
+        </section>
+
+        <!-- USAGE EXAMPLE -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Usage Example</h2>
+                <span class="section-label">TYPICAL SESSION</span>
+            </div>
+            <div class="code-block"><span class="prompt">$</span> <span class="cmd">python3 client.py</span> <span class="flag">--host</span> 192.168.198.1 <span class="flag">--target</span> 10.10.110.123
+
+<span class="comment"># Phase 1: Recon</span>
+<span class="prompt">[recon]&gt;</span> <span class="cmd">:scan</span>                          <span class="comment"># Quick nmap scan</span>
+<span class="prompt">[recon]&gt;</span> <span class="cmd">:ports</span>                         <span class="comment"># See service checks</span>
+<span class="prompt">[recon]&gt;</span> <span class="cmd">:phase enum</span>
+
+<span class="comment"># Phase 2: Enumeration</span>
+<span class="prompt">[enum]&gt;</span> <span class="cmd">:svc 80</span>                          <span class="comment"># HTTP-specific checks</span>
+<span class="prompt">[enum]&gt;</span> <span class="cmd">:svc 445</span>                         <span class="comment"># SMB-specific checks</span>
+<span class="prompt">[enum]&gt;</span> <span class="cmd">tell me what you found so far</span>
+
+<span class="comment"># Phase 3: Access</span>
+<span class="prompt">[enum]&gt;</span> <span class="cmd">:phase access</span>
+<span class="prompt">[access]&gt;</span> <span class="cmd">:cred admin Password123</span>
+<span class="prompt">[access]&gt;</span> <span class="cmd">:ssh admin@10.10.110.123</span>
+
+<span class="comment"># Phase 4: Privilege Escalation</span>
+<span class="prompt">[access]&gt;</span> <span class="cmd">:phase privesc</span>
+<span class="prompt">[privesc]&gt;</span> <span class="cmd">:os linux</span>
+<span class="prompt">[privesc]&gt;</span> <span class="cmd">:auto</span>                         <span class="comment"># Run all 28 Linux checks</span>
+<span class="prompt">[privesc]&gt;</span> <span class="cmd">:tools</span>                        <span class="comment"># See tool suggestions</span>
+<span class="prompt">[privesc]&gt;</span> <span class="cmd">:report</span>                       <span class="comment"># Generate final report</span></div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="foot">
+            <span>xs-ai v0.4 // sudoxs</span>
+            <div>
+                <a href="https://github.com/sudoxs/xs-ai" target="_blank" rel="noopener">GITHUB</a>
+                &nbsp;&nbsp;
+                <a href="../../">COOKBOOK</a>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        const btn = document.getElementById("themeBtn");
+        function applyTheme(light){
+            document.documentElement.classList.toggle("theme-light", light);
+            btn.textContent = light ? "DARK MODE" : "LIGHT MODE";
+            try{ localStorage.setItem("sx-theme", light ? "light" : "dark"); }catch(e){}
+        }
+        applyTheme(document.documentElement.classList.contains("theme-light"));
+        btn.addEventListener("click", function(){
+            applyTheme(!document.documentElement.classList.contains("theme-light"));
+        });
+    </script>
+</body>
+</html>
