@@ -1850,27 +1850,6 @@
         invDebounceTimer = setTimeout(invRenderTree, 90);
     }
 
-    var quoteRotatorTimer = null;
-    function initQuoteRotator(){
-        if(quoteRotatorTimer){ clearInterval(quoteRotatorTimer); quoteRotatorTimer = null; }
-        var quotes=[
-            {t:"I’m not a hacker. I’m a security professional.",a:"Kevin Mitnick",j:"私はハッカーではない。セキュリティの専門家だ。"},
-            {t:"Information wants to be free.",a:"Stewart Brand",j:"情報は自由になりたがっている。"},
-            {t:"There is no patch for human stupidity.",a:"Kevin Mitnick",j:"人間の愚かさにパッチは当てられない。"},
-            {t:"Give a man a zero-day and he’ll have access for a day. Teach a man to phish and he’ll have access for life.",a:"Infosec proverb",j:"ゼロデイを与えれば一日のアクセス。フィッシングを教えれば一生のアクセス。"},
-            {t:"Companies spend millions on firewalls, encryption and secure access devices, and it’s money wasted because none of these measures address the weakest link in the security chain.",a:"Kevin Mitnick",j:"企業はファイアウォールや暗号化に何百万も費やすが、セキュリティチェーンの最も弱いリンクには対処していない。"},
-            {t:"Most hackers are young because young people tend to be adaptable. As long as you remain adaptable, you can always be a good hacker.",a:"Emmanuel Goldstein",j:"ハッカーに若者が多いのは、若者が適応力に優れているからだ。適応力を保つ限り、いつでも優れたハッカーでいられる。"},
-            {t:"Never trust a computer you can’t throw out a window.",a:"Steve Wozniak",j:"窓から投げ捨てられないコンピューターを信用するな。"},
-            {t:"A hacker does for love what others would not do for money.",a:"Laura Creighton",j:"ハッカーは愛のために、他人が金のためにもやらないことをする。"},
-            {t:"Complexity is the worst enemy of security.",a:"Bruce Schneier",j:"複雑さはセキュリティの最大の敵である。"},
-            {t:"The more complex a system, the less secure it is. Complexity is the enemy of reliability, and reliability is the prerequisite of security.",a:"Dan Geer",j:"システムが複雑になるほど安全性は低下する。複雑さは信頼性の敵であり、信頼性はセキュリティの前提条件である。"}
-        ];
-        var i=0,el=document.getElementById("quoteRotator"),tEl=document.getElementById("quoteText"),aEl=document.getElementById("quoteAttr"),jEl=document.getElementById("quoteJp");
-        if(!el||!tEl) return;
-        function show(){tEl.textContent="“"+quotes[i].t+"”";aEl.textContent="— "+quotes[i].a;jEl.textContent=quotes[i].j;el.classList.remove("fade-out")}
-        function cycle(){el.classList.add("fade-out");setTimeout(function(){i=(i+1)%quotes.length;show()},700)}
-        show();quoteRotatorTimer=setInterval(cycle,8000);
-    }
 
     function initInvExplorer(){
         const nameInput     = document.getElementById("invNameInput");
@@ -2013,17 +1992,14 @@
                 </div>
 
                 <div class="profile-about">
-                    <div class="quote-rotator" id="quoteRotator">
-                        <p class="quote-text" id="quoteText"></p>
-                        <p class="quote-attr" id="quoteAttr"></p>
-                        <p class="quote-jp" id="quoteJp"></p>
+                    <div class="quote-static">
+                        <p class="quote-text">“Never trust a computer you can’t throw out a window.”</p>
+                        <p class="quote-attr">— Steve Wozniak</p>
                     </div>
                     <style>
-                        .quote-rotator{min-height:6rem;display:flex;flex-direction:column;justify-content:center}
-                        .quote-text{font-style:italic;color:var(--ink-bright);line-height:1.6;transition:opacity .6s ease,transform .6s ease;opacity:1;transform:translateY(0)}
-                        .quote-attr{margin-top:.5rem;color:var(--ink-dim);font-size:.85em;transition:opacity .6s ease .1s;opacity:1}
-                        .quote-jp{margin-top:.4rem;color:var(--ink-faint);font-size:.8em;transition:opacity .6s ease .15s;opacity:1}
-                        .quote-rotator.fade-out .quote-text,.quote-rotator.fade-out .quote-attr,.quote-rotator.fade-out .quote-jp{opacity:0;transform:translateY(8px)}
+                        .quote-static{min-height:4rem;display:flex;flex-direction:column;justify-content:center}
+                        .quote-text{font-style:italic;color:var(--ink-bright);line-height:1.6}
+                        .quote-attr{margin-top:.5rem;color:var(--ink-dim);font-size:.85em}
                     </style>
                 </div>
 
@@ -2197,7 +2173,6 @@
             </section>`;
 
         initInvExplorer();
-        initQuoteRotator();
     }
 
     function renderCategory(catPath){
