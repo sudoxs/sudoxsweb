@@ -474,7 +474,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
         <div class="eyebrow">
             <span>PROJECT <b>005</b></span>
             <span>PENTEST ORCHESTRATOR</span>
-            <span>v0.5</span>
+            <span>v0.6</span>
         </div>
 
         <h1 class="glitch" data-text="XS-AI">XS-AI<span aria-hidden="true">XS-AI</span><span aria-hidden="true">XS-AI</span></h1>
@@ -489,6 +489,8 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <span>ANTHROPIC</span>
             <span>ZERO DEPENDENCIES</span>
             <span>ROLE MAPPING</span>
+            <span>RAG CONTEXT</span>
+            <span>STRUCTURED JSON</span>
         </div>
 
         <!-- holographic CTA button -->
@@ -556,7 +558,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
   ██╔██╗ ╚════██║╚════╝██╔══██║██║
  ██╔╝ ██╗███████║      ██║  ██║██║
  ╚═╝  ╚═╝╚══════╝      ╚═╝  ╚═╝╚═╝
-   PENTEST AI ORCHESTRATOR  v0.5
+   PENTEST AI ORCHESTRATOR  v0.6
    <span class="ascii-by">by sudoxs</span></div>
     </section>
 
@@ -631,7 +633,32 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="feature">
                 <span class="f-id">FEAT_08</span>
                 <h3>Auto Reporting</h3>
-                <p>Generate markdown reports with findings, command history, and results. Session state saved as JSON for review.</p>
+                <p>Generate markdown reports with findings, command history, and full command output. Session state auto-saved as JSON for review.</p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_09</span>
+                <h3>Context Retrieval (RAG)</h3>
+                <p>A pure-stdlib TF-IDF retriever feeds the model only the notes and evidence relevant to your current question — large note sets no longer flood a 7B model's context window.</p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_10</span>
+                <h3>Output Distillation</h3>
+                <p>Huge nmap / enum4linux / linpeas output is condensed to signal-dense lines before the model sees it. The full raw output is always kept in the report and session JSON.</p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_11</span>
+                <h3>Structured JSON Output</h3>
+                <p>Schema-constrained JSON responses cut format errors on small models, with a tolerant parser and automatic fallback to the legacy command protocol.</p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_12</span>
+                <h3>Dynamic Discovery</h3>
+                <p>Unknown ports no longer get generic advice — xs-ai banner-grabs the service and asks the AI for tailored, read-only enumeration checks.</p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_13</span>
+                <h3>Parallel Enumeration</h3>
+                <p>Run independent checks concurrently after a single batch approval — slow I/O-bound scans finish faster without breaking per-command approval.</p>
             </div>
         </div>
     </section>
@@ -1042,7 +1069,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             </nav>
             <div class="footer-system">
                 <span class="status-light"></span>
-                v0.5
+                v0.6
             </div>
         </div>
     </footer>
