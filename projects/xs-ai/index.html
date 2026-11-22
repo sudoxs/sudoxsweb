@@ -8,10 +8,15 @@
 <title>XS-AI // sudoxs projects</title>
 
 <script>
+    /* Theme + language are applied before first paint (no flash). Keys shared with the archive. */
     (function(){
         try{
             if(localStorage.getItem("sx-theme") === "light") document.documentElement.classList.add("theme-light");
-        }catch(e){}
+            var l = localStorage.getItem("sx-lang");
+            if(!l) l = (navigator.language || "").toLowerCase().indexOf("ja") === 0 ? "ja" : "en";
+            document.documentElement.setAttribute("data-lang", l === "ja" ? "ja" : "en");
+            document.documentElement.lang = l === "ja" ? "ja" : "en";
+        }catch(e){ document.documentElement.setAttribute("data-lang","en"); }
     })();
 </script>
 
@@ -32,6 +37,7 @@
     --panel:rgba(10,14,11,.72);
     --font-mono:"IBM Plex Mono","Cascadia Code",Consolas,"Liberation Mono",monospace;
     --font-display:"Franklin Gothic Condensed","Liberation Sans Narrow","Nimbus Sans Narrow",sans-serif;
+    --font-ja:"Hiragino Kaku Gothic ProN","Yu Gothic UI","Yu Gothic","Meiryo","Noto Sans JP",sans-serif;
     --content-max:1240px;
     --fs-3xs:clamp(.62rem,.58rem + .2vw,.72rem);
     --fs-2xs:clamp(.68rem,.64rem + .25vw,.78rem);
@@ -67,9 +73,26 @@ body{
     -webkit-font-smoothing:antialiased;
     transition:background-color .3s ease,color .3s ease;
 }
+html[data-lang="ja"] body{font-family:var(--font-mono),var(--font-ja)}
 a{color:inherit}
 a:focus-visible,button:focus-visible{outline:1px solid var(--danger-bright);outline-offset:4px}
 ::selection{background:var(--selection-bg);color:var(--selection-fg)}
+
+/* bilingual switch: every text exists twice, the inactive language is hidden */
+html[data-lang="ja"] .en{display:none!important}
+html:not([data-lang="ja"]) .ja{display:none!important}
+.ja{font-family:var(--font-ja);letter-spacing:.02em}
+
+/* language segmented control */
+.lang-switch{display:inline-flex;border:1px solid var(--border-strong)}
+.lang-switch button{
+    background:transparent;border:0;color:var(--ink-dim);cursor:pointer;
+    font-family:var(--font-mono);font-size:var(--fs-2xs);letter-spacing:.12em;padding:.42rem .7rem;
+    transition:background .18s,color .18s;
+}
+.lang-switch button + button{border-left:1px solid var(--border-strong)}
+.lang-switch button:hover{color:var(--ink-bright)}
+.lang-switch button[aria-pressed="true"]{background:var(--danger-bright);color:#fff}
 code{font-family:var(--font-mono);font-size:.92em;color:var(--signal-bright);background:var(--surface-active);border:1px solid var(--border);padding:.08rem .38rem;border-radius:3px}
 html.theme-light code{color:var(--danger-bright)}
 
@@ -248,6 +271,8 @@ html.theme-light .holo-button::before{background:linear-gradient(45deg,rgba(255,
 .section{margin-top:4.5rem}
 .section-head{display:flex;align-items:center;gap:1.4rem;margin-bottom:1.6rem;padding-bottom:1rem;border-bottom:1px solid var(--border-strong)}
 .section-head h2{color:var(--ink-bright);font-family:var(--font-display);font-size:clamp(1.8rem,4vw,3.2rem);font-weight:900;line-height:1;text-transform:uppercase;letter-spacing:-.01em}
+.section-head h2 .ja{font-size:.66em;letter-spacing:.03em;text-transform:none;font-weight:700}
+.feature h3 .ja,.gate-step h3 .ja,.state-card h3 .ja{text-transform:none}
 .section-kicker{display:block;margin-bottom:.4rem;color:var(--danger-bright);font-size:var(--fs-2xs);letter-spacing:.2em}
 .lead{max-width:78ch;color:var(--ink);font-size:var(--fs-md);line-height:1.85}
 .lead strong{color:var(--ink-bright)}
@@ -448,8 +473,12 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <span class="brand-code">PROJECTS / XS-AI</span>
         </div>
         <div class="header-controls">
-            <a class="hdr-link" href="../../#featured-projects">&larr; Projects</a>
+            <a class="hdr-link" href="../../#featured-projects"><span class="en">&larr; Projects</span><span class="ja">&larr; プロジェクト</span></a>
             <a class="hdr-link" href="https://github.com/sudoxs/xs-ai" target="_blank" rel="noopener">GitHub &nearr;</a>
+            <div class="lang-switch" role="group" aria-label="Language">
+                <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+                <button type="button" data-set-lang="ja" aria-pressed="false">日本語</button>
+            </div>
             <div class="theme-switch">
                 <input type="checkbox" id="theme-checkbox" />
                 <label for="theme-checkbox" aria-label="Toggle light / dark theme">
@@ -472,15 +501,21 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
     <!-- ═══════════ HERO ═══════════ -->
     <section class="hero reveal">
         <div class="eyebrow">
-            <span>PROJECT <b>005</b></span>
-            <span>PENTEST ORCHESTRATOR</span>
+            <span><span class="en">PROJECT <b>005</b></span><span class="ja">プロジェクト <b>005</b></span></span>
+            <span><span class="en">PENTEST ORCHESTRATOR</span><span class="ja">ペンテスト・オーケストレーター</span></span>
             <span>v0.6</span>
         </div>
 
         <h1 class="glitch" data-text="XS-AI">XS-AI<span aria-hidden="true">XS-AI</span><span aria-hidden="true">XS-AI</span></h1>
 
-        <p class="hero-tagline">AI-assisted penetration testing with <strong>human-in-the-loop</strong> approval at every step.</p>
-        <p class="hero-sub">Connect local Ollama models, OpenAI, or Anthropic Claude to an interactive client on Kali Linux. Walk through every phase of an engagement with AI-driven suggestions &mdash; nothing runs without your say.</p>
+        <p class="hero-tagline">
+            <span class="en">AI-assisted penetration testing with <strong>human-in-the-loop</strong> approval at every step.</span>
+            <span class="ja">すべての手順で<strong>人間が承認する</strong>、AI支援型のペネトレーションテスト。</span>
+        </p>
+        <p class="hero-sub">
+            <span class="en">Connect local Ollama models, OpenAI, or Anthropic Claude to an interactive client on Kali Linux. Walk through every phase of an engagement with AI-driven suggestions &mdash; nothing runs without your say.</span>
+            <span class="ja">ローカルの Ollama モデル、OpenAI、または Anthropic Claude を Kali Linux 上の対話型クライアントに接続します。AIの提案を受けながらエンゲージメントの全フェーズを進行 &mdash; あなたの承認なしには何も実行されません。</span>
+        </p>
 
         <div class="tag-row">
             <span>PYTHON 3</span>
@@ -526,7 +561,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                         <div class="corner-accent"></div><div class="corner-accent"></div>
                     </div>
                     <div class="button-glitch" aria-hidden="true"></div>
-                    <span class="button-text">View Source</span>
+                    <span class="button-text"><span class="en">View Source</span><span class="ja">ソースを見る</span></span>
                     <div class="sound-wave" aria-hidden="true">
                         <div class="wave-bar" style="--d:0s"></div><div class="wave-bar" style="--d:.1s"></div>
                         <div class="wave-bar" style="--d:.2s"></div><div class="wave-bar" style="--d:.3s"></div>
@@ -546,11 +581,17 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="sec-num">01</div>
             <div>
                 <span class="section-kicker">OVERVIEW</span>
-                <h2>What Is XS-AI</h2>
+                <h2><span class="en">What Is XS-AI</span><span class="ja">XS-AI とは</span></h2>
             </div>
         </div>
-        <p class="lead"><strong>XS-AI</strong> is a pure-Python pentest orchestrator that pairs AI reasoning with human judgment. It runs on Kali Linux and talks to an Ollama instance on your Windows host &mdash; or directly to OpenAI / Anthropic cloud APIs.</p>
-        <p class="lead">The AI suggests commands. <strong>You approve, edit, or skip every one.</strong> Nothing executes without explicit operator consent. Session state, findings, and command history are saved automatically so you can resume any engagement.</p>
+        <p class="lead">
+            <span class="en"><strong>XS-AI</strong> is a pure-Python pentest orchestrator that pairs AI reasoning with human judgment. It runs on Kali Linux and talks to an Ollama instance on your Windows host &mdash; or directly to OpenAI / Anthropic cloud APIs.</span>
+            <span class="ja"><strong>XS-AI</strong> は、AIの推論と人間の判断を組み合わせた純Python製のペンテスト・オーケストレーターです。Kali Linux 上で動作し、Windows ホストの Ollama &mdash; あるいは OpenAI / Anthropic のクラウドAPIと直接通信します。</span>
+        </p>
+        <p class="lead">
+            <span class="en">The AI suggests commands. <strong>You approve, edit, or skip every one.</strong> Nothing executes without explicit operator consent. Session state, findings, and command history are saved automatically so you can resume any engagement.</span>
+            <span class="ja">AIはコマンドを提案します。<strong>そのすべてを、あなたが承認・編集・スキップします。</strong> オペレーターの明示的な同意なしには何も実行されません。セッション状態・発見事項・コマンド履歴は自動保存され、いつでもエンゲージメントを再開できます。</span>
+        </p>
 
         <div class="ascii-block"> ██╗  ██╗███████╗       █████╗ ██╗
  ╚██╗██╔╝██╔════╝      ██╔══██╗██║
@@ -568,10 +609,13 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="sec-num">02</div>
             <div>
                 <span class="section-kicker">SYSTEM TOPOLOGY</span>
-                <h2>Architecture</h2>
+                <h2><span class="en">Architecture</span><span class="ja">アーキテクチャ</span></h2>
             </div>
         </div>
-        <p class="lead">A two-machine setup over VMware host-only networking. The AI backend stays on Windows; the attack surface stays on Kali.</p>
+        <p class="lead">
+            <span class="en">A two-machine setup over VMware host-only networking. The AI backend stays on Windows; the attack surface stays on Kali.</span>
+            <span class="ja">VMware のホストオンリー・ネットワークを介した2台構成。AIバックエンドは Windows に、攻撃面は Kali に置かれます。</span>
+        </p>
         <div class="arch-box">
 <pre><span class="nd">WINDOWS HOST</span>              <span class="nd">KALI VM</span>                  <span class="nd">TARGET</span>
  ┌──────────────┐         ┌──────────────┐         ┌──────────────┐
@@ -591,74 +635,74 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="sec-num">03</div>
             <div>
                 <span class="section-kicker">CAPABILITIES</span>
-                <h2>Features</h2>
+                <h2><span class="en">Features</span><span class="ja">機能</span></h2>
             </div>
         </div>
         <div class="feature-grid">
             <div class="feature">
                 <span class="f-id">FEAT_01</span>
-                <h3>Human-in-the-Loop</h3>
-                <p>Every command requires explicit operator approval. Edit, skip, or override any AI suggestion before it touches the target.</p>
+                <h3><span class="en">Human-in-the-Loop</span><span class="ja">ヒューマン・イン・ザ・ループ</span></h3>
+                <p><span class="en">Every command requires explicit operator approval. Edit, skip, or override any AI suggestion before it touches the target.</span><span class="ja">すべてのコマンドにオペレーターの明示的な承認が必要です。ターゲットに触れる前に、AIの提案を編集・スキップ・上書きできます。</span></p>
             </div>
             <div class="feature">
                 <span class="f-id">FEAT_02</span>
-                <h3>Multi-Backend AI</h3>
-                <p>Local Ollama models by default. Swap to OpenAI or Anthropic Claude with a single flag for more capable reasoning.</p>
+                <h3><span class="en">Multi-Backend AI</span><span class="ja">マルチバックエンドAI</span></h3>
+                <p><span class="en">Local Ollama models by default. Swap to OpenAI or Anthropic Claude with a single flag for more capable reasoning.</span><span class="ja">デフォルトはローカルの Ollama モデル。フラグひとつで OpenAI や Anthropic Claude に切り替え、より高度な推論が可能です。</span></p>
             </div>
             <div class="feature">
                 <span class="f-id">FEAT_03</span>
-                <h3>14 Service Enumerators</h3>
-                <p>Port-aware enumeration for FTP, SSH, SMTP, DNS, HTTP, SMB, NFS, MSSQL, MySQL, RDP, WinRM, SNMP, Redis, and LDAP.</p>
+                <h3><span class="en">14 Service Enumerators</span><span class="ja">14種のサービス列挙</span></h3>
+                <p><span class="en">Port-aware enumeration for FTP, SSH, SMTP, DNS, HTTP, SMB, NFS, MSSQL, MySQL, RDP, WinRM, SNMP, Redis, and LDAP.</span><span class="ja">FTP・SSH・SMTP・DNS・HTTP・SMB・NFS・MSSQL・MySQL・RDP・WinRM・SNMP・Redis・LDAP に対応したポート認識型の列挙。</span></p>
             </div>
             <div class="feature">
                 <span class="f-id">FEAT_04</span>
-                <h3>Role Mapping</h3>
-                <p>Assign different AI models to different phases. Route recon to a planner, access to an analyzer &mdash; full control over your model chain.</p>
+                <h3><span class="en">Role Mapping</span><span class="ja">ロール・マッピング</span></h3>
+                <p><span class="en">Assign different AI models to different phases. Route recon to a planner, access to an analyzer &mdash; full control over your model chain.</span><span class="ja">フェーズごとに異なるAIモデルを割り当て。偵察はプランナーへ、アクセスはアナライザーへ &mdash; モデルチェーンを完全に制御できます。</span></p>
             </div>
             <div class="feature">
                 <span class="f-id">FEAT_05</span>
-                <h3>Tool Intelligence</h3>
-                <p>Distinguishes direct-execution from suggest-only tools. Missing tools detected with one-click install commands.</p>
+                <h3><span class="en">Tool Intelligence</span><span class="ja">ツール・インテリジェンス</span></h3>
+                <p><span class="en">Distinguishes direct-execution from suggest-only tools. Missing tools detected with one-click install commands.</span><span class="ja">直接実行ツールと提案のみのツールを区別。未インストールのツールを検出し、ワンクリックのインストールコマンドを提示します。</span></p>
             </div>
             <div class="feature">
                 <span class="f-id">FEAT_06</span>
-                <h3>Project Memory</h3>
-                <p>Auto-saves engagement state as an AI-readable project.md. Resume any session exactly where you left off.</p>
+                <h3><span class="en">Project Memory</span><span class="ja">プロジェクト・メモリ</span></h3>
+                <p><span class="en">Auto-saves engagement state as an AI-readable project.md. Resume any session exactly where you left off.</span><span class="ja">エンゲージメント状態を、AIが読める project.md として自動保存。中断した地点からセッションを正確に再開できます。</span></p>
             </div>
             <div class="feature">
                 <span class="f-id">FEAT_07</span>
-                <h3>Cheat Sheet Loader</h3>
-                <p>Drop engagement notes in cheatsheets/ and the AI loads them for context. Add more at runtime with <code>:cheat</code>.</p>
+                <h3><span class="en">Cheat Sheet Loader</span><span class="ja">チートシート読み込み</span></h3>
+                <p><span class="en">Drop engagement notes in cheatsheets/ and the AI loads them for context. Add more at runtime with <code>:cheat</code>.</span><span class="ja">cheatsheets/ にメモを置くと、AIがコンテキストとして読み込みます。実行中も <code>:cheat</code> で追加できます。</span></p>
             </div>
             <div class="feature">
                 <span class="f-id">FEAT_08</span>
-                <h3>Auto Reporting</h3>
-                <p>Generate markdown reports with findings, command history, and full command output. Session state auto-saved as JSON for review.</p>
+                <h3><span class="en">Auto Reporting</span><span class="ja">自動レポート</span></h3>
+                <p><span class="en">Generate markdown reports with findings, command history, and full command output. Session state auto-saved as JSON for review.</span><span class="ja">発見事項・コマンド履歴・コマンドの全出力を含む Markdown レポートを生成。セッション状態は JSON として自動保存されます。</span></p>
             </div>
             <div class="feature">
                 <span class="f-id">FEAT_09</span>
-                <h3>Context Retrieval (RAG)</h3>
-                <p>A pure-stdlib TF-IDF retriever feeds the model only the notes and evidence relevant to your current question — large note sets no longer flood a 7B model's context window.</p>
+                <h3><span class="en">Context Retrieval (RAG)</span><span class="ja">コンテキスト検索 (RAG)</span></h3>
+                <p><span class="en">A pure-stdlib TF-IDF retriever feeds the model only the notes and evidence relevant to your current question — large note sets no longer flood a 7B model's context window.</span><span class="ja">純標準ライブラリの TF-IDF リトリーバーが、現在の質問に関連するメモと証拠だけをモデルに渡します &mdash; 大量のメモでも 7B モデルのコンテキスト窓を溢れさせません。</span></p>
             </div>
             <div class="feature">
                 <span class="f-id">FEAT_10</span>
-                <h3>Output Distillation</h3>
-                <p>Huge nmap / enum4linux / linpeas output is condensed to signal-dense lines before the model sees it. The full raw output is always kept in the report and session JSON.</p>
+                <h3><span class="en">Output Distillation</span><span class="ja">出力の蒸留</span></h3>
+                <p><span class="en">Huge nmap / enum4linux / linpeas output is condensed to signal-dense lines before the model sees it. The full raw output is always kept in the report and session JSON.</span><span class="ja">巨大な nmap / enum4linux / linpeas の出力を、モデルに渡す前に重要な行へ凝縮。生の全出力は常にレポートとセッション JSON に保存されます。</span></p>
             </div>
             <div class="feature">
                 <span class="f-id">FEAT_11</span>
-                <h3>Structured JSON Output</h3>
-                <p>Schema-constrained JSON responses cut format errors on small models, with a tolerant parser and automatic fallback to the legacy command protocol.</p>
+                <h3><span class="en">Structured JSON Output</span><span class="ja">構造化JSON出力</span></h3>
+                <p><span class="en">Schema-constrained JSON responses cut format errors on small models, with a tolerant parser and automatic fallback to the legacy command protocol.</span><span class="ja">スキーマ制約付きの JSON 応答で小型モデルの書式エラーを削減。寛容なパーサーと、従来のコマンドプロトコルへの自動フォールバックを備えます。</span></p>
             </div>
             <div class="feature">
                 <span class="f-id">FEAT_12</span>
-                <h3>Dynamic Discovery</h3>
-                <p>Unknown ports no longer get generic advice — xs-ai banner-grabs the service and asks the AI for tailored, read-only enumeration checks.</p>
+                <h3><span class="en">Dynamic Discovery</span><span class="ja">動的ディスカバリ</span></h3>
+                <p><span class="en">Unknown ports no longer get generic advice — xs-ai banner-grabs the service and asks the AI for tailored, read-only enumeration checks.</span><span class="ja">未知のポートにもう汎用的な助言はしません &mdash; xs-ai がサービスのバナーを取得し、そのサービスに合わせた読み取り専用の列挙チェックをAIに尋ねます。</span></p>
             </div>
             <div class="feature">
                 <span class="f-id">FEAT_13</span>
-                <h3>Parallel Enumeration</h3>
-                <p>Run independent checks concurrently after a single batch approval — slow I/O-bound scans finish faster without breaking per-command approval.</p>
+                <h3><span class="en">Parallel Enumeration</span><span class="ja">並列列挙</span></h3>
+                <p><span class="en">Run independent checks concurrently after a single batch approval — slow I/O-bound scans finish faster without breaking per-command approval.</span><span class="ja">一括承認のあと、独立したチェックを同時実行 &mdash; コマンドごとの承認を崩さずに、遅いI/O待ちのスキャンを高速化します。</span></p>
             </div>
         </div>
     </section>
@@ -669,29 +713,29 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="sec-num">04</div>
             <div>
                 <span class="section-kicker">KILL CHAIN WORKFLOW</span>
-                <h2>Engagement Phases</h2>
+                <h2><span class="en">Engagement Phases</span><span class="ja">エンゲージメントの各フェーズ</span></h2>
             </div>
         </div>
         <ol class="pipeline">
             <li>
-                <b>Recon</b>
-                <span>Nmap scans, service detection, OS fingerprinting. Quick scan (top 100) or full 65535-port sweep. Commands: <code>:scan</code> <code>:fullscan</code></span>
+                <b><span class="en">Recon</span><span class="ja">偵察</span></b>
+                <span><span class="en">Nmap scans, service detection, OS fingerprinting. Quick scan (top 100) or full 65535-port sweep. Commands: <code>:scan</code> <code>:fullscan</code></span><span class="ja">Nmap スキャン、サービス検出、OS フィンガープリント。クイックスキャン（上位100）または全65535ポートの走査。コマンド: <code>:scan</code> <code>:fullscan</code></span></span>
             </li>
             <li>
-                <b>Enumeration</b>
-                <span>Service-specific checks triggered by detected ports. 49 checks across 14 services, plus directory busting and vuln scanning. Command: <code>:svc &lt;port&gt;</code></span>
+                <b><span class="en">Enumeration</span><span class="ja">列挙</span></b>
+                <span><span class="en">Service-specific checks triggered by detected ports. 49 checks across 14 services, plus directory busting and vuln scanning. Command: <code>:svc &lt;port&gt;</code></span><span class="ja">検出ポートに応じたサービス別チェック。14サービスにわたる49のチェックに加え、ディレクトリ探索と脆弱性スキャン。コマンド: <code>:svc &lt;port&gt;</code></span></span>
             </li>
             <li>
-                <b>Initial Access</b>
-                <span>Credential testing, exploit suggestions, SSH/WinRM connections. Chisel and ligolo-ng for pivoting. Commands: <code>:ssh</code> <code>:cred</code></span>
+                <b><span class="en">Initial Access</span><span class="ja">初期アクセス</span></b>
+                <span><span class="en">Credential testing, exploit suggestions, SSH/WinRM connections. Chisel and ligolo-ng for pivoting. Commands: <code>:ssh</code> <code>:cred</code></span><span class="ja">資格情報のテスト、エクスプロイト提案、SSH/WinRM 接続。ピボットには chisel と ligolo-ng。コマンド: <code>:ssh</code> <code>:cred</code></span></span>
             </li>
             <li>
-                <b>Privilege Escalation</b>
-                <span>28 Linux checks and 21 Windows checks. linpeas, winPEAS, Potato exploits, kernel CVEs &mdash; all suggested with download links. Commands: <code>:auto</code> <code>:tools</code></span>
+                <b><span class="en">Privilege Escalation</span><span class="ja">権限昇格</span></b>
+                <span><span class="en">28 Linux checks and 21 Windows checks. linpeas, winPEAS, Potato exploits, kernel CVEs &mdash; all suggested with download links. Commands: <code>:auto</code> <code>:tools</code></span><span class="ja">Linux 28項目・Windows 21項目のチェック。linpeas・winPEAS・Potato系・カーネルCVE &mdash; すべてダウンロードリンク付きで提案。コマンド: <code>:auto</code> <code>:tools</code></span></span>
             </li>
             <li>
-                <b>Report</b>
-                <span>Auto-generated markdown report with findings, command history, and results. Command: <code>:report</code></span>
+                <b><span class="en">Report</span><span class="ja">レポート</span></b>
+                <span><span class="en">Auto-generated markdown report with findings, command history, and results. Command: <code>:report</code></span><span class="ja">発見事項・コマンド履歴・結果を含む Markdown レポートを自動生成。コマンド: <code>:report</code></span></span>
             </li>
         </ol>
     </section>
@@ -702,29 +746,29 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="sec-num">05</div>
             <div>
                 <span class="section-kicker">PORT-AWARE CHECKS</span>
-                <h2>Service Enumeration</h2>
+                <h2><span class="en">Service Enumeration</span><span class="ja">サービス列挙</span></h2>
             </div>
         </div>
         <div style="overflow-x:auto">
             <table class="svc-table">
                 <thead>
-                    <tr><th>PORT</th><th>SERVICE</th><th>CHECKS</th></tr>
+                    <tr><th><span class="en">PORT</span><span class="ja">ポート</span></th><th><span class="en">SERVICE</span><span class="ja">サービス</span></th><th><span class="en">CHECKS</span><span class="ja">チェック内容</span></th></tr>
                 </thead>
                 <tbody>
-                    <tr><td class="port">21</td><td class="svc-name">FTP</td><td>Anonymous login, banner grab, bounce scan</td></tr>
-                    <tr><td class="port">22</td><td class="svc-name">SSH</td><td>Banner, algorithms, auth methods</td></tr>
-                    <tr><td class="port">25/587</td><td class="svc-name">SMTP</td><td>Commands, open relay, user enum</td></tr>
-                    <tr><td class="port">53</td><td class="svc-name">DNS</td><td>Version, brute, zone transfer</td></tr>
-                    <tr><td class="port">80/443/8080</td><td class="svc-name">HTTP</td><td>Headers, robots, .git, dirs, nikto, WordPress</td></tr>
-                    <tr><td class="port">111/2049</td><td class="svc-name">NFS</td><td>Exports, mount scripts</td></tr>
-                    <tr><td class="port">139/445</td><td class="svc-name">SMB</td><td>Null session, enum4linux, signing, MS17-010</td></tr>
-                    <tr><td class="port">161</td><td class="svc-name">SNMP</td><td>Community strings, system/process/software</td></tr>
-                    <tr><td class="port">389/636</td><td class="svc-name">LDAP</td><td>Anonymous bind, base search</td></tr>
-                    <tr><td class="port">1433</td><td class="svc-name">MSSQL</td><td>Info, empty password, brute</td></tr>
-                    <tr><td class="port">3306</td><td class="svc-name">MySQL</td><td>Info, empty root, variables</td></tr>
-                    <tr><td class="port">3389</td><td class="svc-name">RDP</td><td>Version, encryption, NLA</td></tr>
-                    <tr><td class="port">5985/5986</td><td class="svc-name">WinRM</td><td>Version check, brute</td></tr>
-                    <tr><td class="port">6379</td><td class="svc-name">Redis</td><td>INFO, CONFIG dump</td></tr>
+                    <tr><td class="port">21</td><td class="svc-name">FTP</td><td><span class="en">Anonymous login, banner grab, bounce scan</span><span class="ja">匿名ログイン、バナー取得、バウンススキャン</span></td></tr>
+                    <tr><td class="port">22</td><td class="svc-name">SSH</td><td><span class="en">Banner, algorithms, auth methods</span><span class="ja">バナー、アルゴリズム、認証方式</span></td></tr>
+                    <tr><td class="port">25/587</td><td class="svc-name">SMTP</td><td><span class="en">Commands, open relay, user enum</span><span class="ja">コマンド、オープンリレー、ユーザー列挙</span></td></tr>
+                    <tr><td class="port">53</td><td class="svc-name">DNS</td><td><span class="en">Version, brute, zone transfer</span><span class="ja">バージョン、総当たり、ゾーン転送</span></td></tr>
+                    <tr><td class="port">80/443/8080</td><td class="svc-name">HTTP</td><td><span class="en">Headers, robots, .git, dirs, nikto, WordPress</span><span class="ja">ヘッダー、robots、.git、ディレクトリ、nikto、WordPress</span></td></tr>
+                    <tr><td class="port">111/2049</td><td class="svc-name">NFS</td><td><span class="en">Exports, mount scripts</span><span class="ja">エクスポート、マウントスクリプト</span></td></tr>
+                    <tr><td class="port">139/445</td><td class="svc-name">SMB</td><td><span class="en">Null session, enum4linux, signing, MS17-010</span><span class="ja">ヌルセッション、enum4linux、署名、MS17-010</span></td></tr>
+                    <tr><td class="port">161</td><td class="svc-name">SNMP</td><td><span class="en">Community strings, system/process/software</span><span class="ja">コミュニティ文字列、システム/プロセス/ソフトウェア</span></td></tr>
+                    <tr><td class="port">389/636</td><td class="svc-name">LDAP</td><td><span class="en">Anonymous bind, base search</span><span class="ja">匿名バインド、ベース検索</span></td></tr>
+                    <tr><td class="port">1433</td><td class="svc-name">MSSQL</td><td><span class="en">Info, empty password, brute</span><span class="ja">情報取得、空パスワード、総当たり</span></td></tr>
+                    <tr><td class="port">3306</td><td class="svc-name">MySQL</td><td><span class="en">Info, empty root, variables</span><span class="ja">情報取得、空 root、変数</span></td></tr>
+                    <tr><td class="port">3389</td><td class="svc-name">RDP</td><td><span class="en">Version, encryption, NLA</span><span class="ja">バージョン、暗号化、NLA</span></td></tr>
+                    <tr><td class="port">5985/5986</td><td class="svc-name">WinRM</td><td><span class="en">Version check, brute</span><span class="ja">バージョン確認、総当たり</span></td></tr>
+                    <tr><td class="port">6379</td><td class="svc-name">Redis</td><td><span class="en">INFO, CONFIG dump</span><span class="ja">INFO、CONFIG ダンプ</span></td></tr>
                 </tbody>
             </table>
         </div>
@@ -736,50 +780,53 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="sec-num">06</div>
             <div>
                 <span class="section-kicker">MODEL ROUTING</span>
-                <h2>Role Mapping</h2>
+                <h2><span class="en">Role Mapping</span><span class="ja">ロール・マッピング</span></h2>
             </div>
         </div>
-        <p class="lead">Assign different AI models to different engagement phases. Use a heavyweight planner for recon and a fast coder for exploitation &mdash; or any combination you want.</p>
+        <p class="lead">
+            <span class="en">Assign different AI models to different engagement phases. Use a heavyweight planner for recon and a fast coder for exploitation &mdash; or any combination you want.</span>
+            <span class="ja">エンゲージメントのフェーズごとに異なるAIモデルを割り当てます。偵察には重量級のプランナー、攻略には高速なコーダー &mdash; 好きな組み合わせが可能です。</span>
+        </p>
 
         <div class="role-chain">
-            <div class="role-chain-head">Default Role Chain</div>
-            <div class="role-row header"><span>PHASE</span><span>ABSTRACT ROLE</span><span>DESCRIPTION</span></div>
-            <div class="role-row"><span class="phase">recon</span><span class="role">planner</span><span class="desc">Strategic reconnaissance planning</span></div>
-            <div class="role-row"><span class="phase">enum</span><span class="role">planner</span><span class="desc">Service enumeration strategy</span></div>
-            <div class="role-row"><span class="phase">access</span><span class="role">analyzer</span><span class="desc">Attack vector analysis</span></div>
-            <div class="role-row"><span class="phase">privesc</span><span class="role">analyzer</span><span class="desc">Privilege escalation analysis</span></div>
-            <div class="role-row"><span class="phase">report</span><span class="role">reporter</span><span class="desc">Findings documentation</span></div>
+            <div class="role-chain-head"><span class="en">Default Role Chain</span><span class="ja">デフォルトのロールチェーン</span></div>
+            <div class="role-row header"><span><span class="en">PHASE</span><span class="ja">フェーズ</span></span><span><span class="en">ABSTRACT ROLE</span><span class="ja">抽象ロール</span></span><span><span class="en">DESCRIPTION</span><span class="ja">説明</span></span></div>
+            <div class="role-row"><span class="phase">recon</span><span class="role">planner</span><span class="desc"><span class="en">Strategic reconnaissance planning</span><span class="ja">偵察の戦略立案</span></span></div>
+            <div class="role-row"><span class="phase">enum</span><span class="role">planner</span><span class="desc"><span class="en">Service enumeration strategy</span><span class="ja">サービス列挙の戦略</span></span></div>
+            <div class="role-row"><span class="phase">access</span><span class="role">analyzer</span><span class="desc"><span class="en">Attack vector analysis</span><span class="ja">攻撃経路の分析</span></span></div>
+            <div class="role-row"><span class="phase">privesc</span><span class="role">analyzer</span><span class="desc"><span class="en">Privilege escalation analysis</span><span class="ja">権限昇格の分析</span></span></div>
+            <div class="role-row"><span class="phase">report</span><span class="role">reporter</span><span class="desc"><span class="en">Findings documentation</span><span class="ja">発見事項の文書化</span></span></div>
         </div>
 
         <div class="cheat" style="margin-top:1.4rem">
             <div class="cheat-group">
-                <div class="cheat-group-head">CLI Usage <span class="cg-tag">STARTUP</span></div>
+                <div class="cheat-group-head"><span class="en">CLI Usage</span><span class="ja">CLI の使い方</span> <span class="cg-tag">STARTUP</span></div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>--role planner=mistral:latest</code><button class="copy-btn" data-cmd="--role planner=mistral:latest">COPY</button></div>
-                    <div class="cheat-desc">Assign a model to the planner role at launch</div>
+                    <div class="cheat-desc"><span class="en">Assign a model to the planner role at launch</span><span class="ja">起動時に planner ロールへモデルを割り当て</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>--role recon=llama3:70b --role privesc=qwen2.5-coder:7b</code><button class="copy-btn" data-cmd="--role recon=llama3:70b --role privesc=qwen2.5-coder:7b">COPY</button></div>
-                    <div class="cheat-desc">Override specific phases with direct model assignments</div>
+                    <div class="cheat-desc"><span class="en">Override specific phases with direct model assignments</span><span class="ja">特定フェーズを直接のモデル指定で上書き</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>--roles roles.json</code><button class="copy-btn" data-cmd="--roles roles.json">COPY</button></div>
-                    <div class="cheat-desc">Load a full role configuration from a JSON file</div>
+                    <div class="cheat-desc"><span class="en">Load a full role configuration from a JSON file</span><span class="ja">JSON ファイルからロール設定全体を読み込み</span></div>
                 </div>
             </div>
             <div class="cheat-group">
-                <div class="cheat-group-head">Runtime Commands <span class="cg-tag">:ROLES</span></div>
+                <div class="cheat-group-head"><span class="en">Runtime Commands</span><span class="ja">実行中コマンド</span> <span class="cg-tag">:ROLES</span></div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:roles</code><button class="copy-btn" data-cmd=":roles">COPY</button></div>
-                    <div class="cheat-desc">View current role-to-model mappings</div>
+                    <div class="cheat-desc"><span class="en">View current role-to-model mappings</span><span class="ja">現在のロール→モデルの対応を表示</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:roles set recon gemma2:27b</code><button class="copy-btn" data-cmd=":roles set recon gemma2:27b">COPY</button></div>
-                    <div class="cheat-desc">Assign a model to a phase at runtime</div>
+                    <div class="cheat-desc"><span class="en">Assign a model to a phase at runtime</span><span class="ja">実行中にフェーズへモデルを割り当て</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:roles save my_config.json</code><button class="copy-btn" data-cmd=":roles save my_config.json">COPY</button></div>
-                    <div class="cheat-desc">Save current role mapping to a file</div>
+                    <div class="cheat-desc"><span class="en">Save current role mapping to a file</span><span class="ja">現在のロール設定をファイルに保存</span></div>
                 </div>
             </div>
         </div>
@@ -791,10 +838,13 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="sec-num">07</div>
             <div>
                 <span class="section-kicker">17 DOWNLOADABLE TOOLS</span>
-                <h2>Suggest-Only Arsenal</h2>
+                <h2><span class="en">Suggest-Only Arsenal</span><span class="ja">提案のみのツール群</span></h2>
             </div>
         </div>
-        <p class="lead">These tools are <strong>never auto-executed</strong>. XS-AI checks prerequisites, then shows download commands and usage instructions.</p>
+        <p class="lead">
+            <span class="en">These tools are <strong>never auto-executed</strong>. XS-AI checks prerequisites, then shows download commands and usage instructions.</span>
+            <span class="ja">これらのツールは<strong>自動実行されません</strong>。XS-AI は前提条件を確認したうえで、ダウンロードコマンドと使い方を表示します。</span>
+        </p>
         <div class="tool-grid">
             <div class="tool-chip"><span class="tool-name">linpeas</span><span class="tool-os">LINUX PRIVESC</span></div>
             <div class="tool-chip"><span class="tool-name">winPEAS</span><span class="tool-os">WINDOWS PRIVESC</span></div>
@@ -822,80 +872,80 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="sec-num">08</div>
             <div>
                 <span class="section-kicker">CHEAT SHEET</span>
-                <h2>Commands</h2>
+                <h2><span class="en">Commands</span><span class="ja">コマンド</span></h2>
             </div>
         </div>
         <div class="cheat">
             <div class="cheat-group">
-                <div class="cheat-group-head">Scanning <span class="cg-tag">RECON</span></div>
+                <div class="cheat-group-head"><span class="en">Scanning</span><span class="ja">スキャン</span> <span class="cg-tag">RECON</span></div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:scan</code><button class="copy-btn" data-cmd=":scan">COPY</button></div>
-                    <div class="cheat-desc">Quick nmap scan (top 100 ports)</div>
+                    <div class="cheat-desc"><span class="en">Quick nmap scan (top 100 ports)</span><span class="ja">クイック nmap スキャン（上位100ポート）</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:fullscan</code><button class="copy-btn" data-cmd=":fullscan">COPY</button></div>
-                    <div class="cheat-desc">Full 65535-port sweep</div>
+                    <div class="cheat-desc"><span class="en">Full 65535-port sweep</span><span class="ja">全65535ポートの走査</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:ports</code><button class="copy-btn" data-cmd=":ports">COPY</button></div>
-                    <div class="cheat-desc">List detected services and available checks</div>
+                    <div class="cheat-desc"><span class="en">List detected services and available checks</span><span class="ja">検出サービスと利用可能なチェックを一覧表示</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:svc &lt;port&gt;</code><button class="copy-btn" data-cmd=":svc">COPY</button></div>
-                    <div class="cheat-desc">Run service-specific enumeration on a port</div>
+                    <div class="cheat-desc"><span class="en">Run service-specific enumeration on a port</span><span class="ja">ポートに対しサービス別の列挙を実行</span></div>
                 </div>
             </div>
             <div class="cheat-group">
-                <div class="cheat-group-head">Session <span class="cg-tag">CONTROL</span></div>
+                <div class="cheat-group-head"><span class="en">Session</span><span class="ja">セッション</span> <span class="cg-tag">CONTROL</span></div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:phase &lt;name&gt;</code><button class="copy-btn" data-cmd=":phase">COPY</button></div>
-                    <div class="cheat-desc">Switch engagement phase (recon, enum, access, privesc, report)</div>
+                    <div class="cheat-desc"><span class="en">Switch engagement phase (recon, enum, access, privesc, report)</span><span class="ja">エンゲージメントのフェーズを切替（recon, enum, access, privesc, report）</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:os &lt;linux|windows&gt;</code><button class="copy-btn" data-cmd=":os">COPY</button></div>
-                    <div class="cheat-desc">Set target OS for privesc checks</div>
+                    <div class="cheat-desc"><span class="en">Set target OS for privesc checks</span><span class="ja">権限昇格チェック用にターゲットOSを設定</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:auto</code><button class="copy-btn" data-cmd=":auto">COPY</button></div>
-                    <div class="cheat-desc">Run all privesc checks for the detected OS</div>
+                    <div class="cheat-desc"><span class="en">Run all privesc checks for the detected OS</span><span class="ja">検出OS向けの権限昇格チェックを一括実行</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:report</code><button class="copy-btn" data-cmd=":report">COPY</button></div>
-                    <div class="cheat-desc">Generate markdown report with all findings</div>
+                    <div class="cheat-desc"><span class="en">Generate markdown report with all findings</span><span class="ja">全発見事項を含む Markdown レポートを生成</span></div>
                 </div>
             </div>
             <div class="cheat-group">
-                <div class="cheat-group-head">Access <span class="cg-tag">EXPLOITATION</span></div>
+                <div class="cheat-group-head"><span class="en">Access</span><span class="ja">アクセス</span> <span class="cg-tag">EXPLOITATION</span></div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:ssh user@host</code><button class="copy-btn" data-cmd=":ssh">COPY</button></div>
-                    <div class="cheat-desc">Open an SSH session to the target</div>
+                    <div class="cheat-desc"><span class="en">Open an SSH session to the target</span><span class="ja">ターゲットへ SSH セッションを開始</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:cred user password</code><button class="copy-btn" data-cmd=":cred">COPY</button></div>
-                    <div class="cheat-desc">Store discovered credentials</div>
+                    <div class="cheat-desc"><span class="en">Store discovered credentials</span><span class="ja">発見した資格情報を保存</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:tools</code><button class="copy-btn" data-cmd=":tools">COPY</button></div>
-                    <div class="cheat-desc">Show suggest-only tool recommendations</div>
+                    <div class="cheat-desc"><span class="en">Show suggest-only tool recommendations</span><span class="ja">提案のみのツール推奨を表示</span></div>
                 </div>
             </div>
             <div class="cheat-group">
-                <div class="cheat-group-head">Utility <span class="cg-tag">HELPERS</span></div>
+                <div class="cheat-group-head"><span class="en">Utility</span><span class="ja">ユーティリティ</span> <span class="cg-tag">HELPERS</span></div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:cheat &lt;file&gt;</code><button class="copy-btn" data-cmd=":cheat">COPY</button></div>
-                    <div class="cheat-desc">Load a cheat sheet into AI context</div>
+                    <div class="cheat-desc"><span class="en">Load a cheat sheet into AI context</span><span class="ja">チートシートをAIコンテキストに読み込み</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:history</code><button class="copy-btn" data-cmd=":history">COPY</button></div>
-                    <div class="cheat-desc">Show command history for the current session</div>
+                    <div class="cheat-desc"><span class="en">Show command history for the current session</span><span class="ja">現在のセッションのコマンド履歴を表示</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:clear</code><button class="copy-btn" data-cmd=":clear">COPY</button></div>
-                    <div class="cheat-desc">Clear AI conversation history</div>
+                    <div class="cheat-desc"><span class="en">Clear AI conversation history</span><span class="ja">AIの会話履歴をクリア</span></div>
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>:roles</code><button class="copy-btn" data-cmd=":roles">COPY</button></div>
-                    <div class="cheat-desc">View or modify role-to-model mappings</div>
+                    <div class="cheat-desc"><span class="en">View or modify role-to-model mappings</span><span class="ja">ロール→モデルの対応を表示・変更</span></div>
                 </div>
             </div>
         </div>
@@ -907,7 +957,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="sec-num">09</div>
             <div>
                 <span class="section-kicker">TYPICAL SESSION</span>
-                <h2>Usage Example</h2>
+                <h2><span class="en">Usage Example</span><span class="ja">使用例</span></h2>
             </div>
         </div>
         <div class="term">
@@ -956,21 +1006,21 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="sec-num">10</div>
             <div>
                 <span class="section-kicker">SETUP</span>
-                <h2>Quick Start</h2>
+                <h2><span class="en">Quick Start</span><span class="ja">クイックスタート</span></h2>
             </div>
         </div>
         <ol class="pipeline">
             <li>
-                <b>Windows Host Setup</b>
-                <span>Clone the repo and run the setup script. It pulls models, configures Ollama, and adds a firewall rule.</span>
+                <b><span class="en">Windows Host Setup</span><span class="ja">Windows ホストの準備</span></b>
+                <span><span class="en">Clone the repo and run the setup script. It pulls models, configures Ollama, and adds a firewall rule.</span><span class="ja">リポジトリをクローンしてセットアップスクリプトを実行します。モデルの取得、Ollama の設定、ファイアウォール規則の追加を行います。</span></span>
             </li>
             <li>
-                <b>Kali Client</b>
-                <span>No pip dependencies &mdash; pure Python 3 stdlib. Connect to your Windows host's IP.</span>
+                <b><span class="en">Kali Client</span><span class="ja">Kali クライアント</span></b>
+                <span><span class="en">No pip dependencies &mdash; pure Python 3 stdlib. Connect to your Windows host's IP.</span><span class="ja">pip 依存なし &mdash; 純粋な Python 3 標準ライブラリ。Windows ホストのIPに接続します。</span></span>
             </li>
             <li>
-                <b>Cloud API (Optional)</b>
-                <span>Swap to OpenAI or Anthropic Claude when you need more capable reasoning.</span>
+                <b><span class="en">Cloud API (Optional)</span><span class="ja">クラウドAPI（任意）</span></b>
+                <span><span class="en">Swap to OpenAI or Anthropic Claude when you need more capable reasoning.</span><span class="ja">より高度な推論が必要なときは OpenAI や Anthropic Claude に切り替えます。</span></span>
             </li>
         </ol>
         <div class="cheat" style="margin-top:1.4rem">
@@ -993,7 +1043,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 </div>
                 <div class="cheat-row">
                     <div class="cmd-line"><code>python3 client.py --host ignored --api openai --api-key sk-...</code><button class="copy-btn" data-cmd="python3 client.py --host ignored --api openai --api-key sk-...">COPY</button></div>
-                    <div class="cheat-desc">Use OpenAI instead of Ollama</div>
+                    <div class="cheat-desc"><span class="en">Use OpenAI instead of Ollama</span><span class="ja">Ollama の代わりに OpenAI を使用</span></div>
                 </div>
             </div>
         </div>
@@ -1005,46 +1055,47 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="sec-num">11</div>
             <div>
                 <span class="section-kicker">AUTHORIZATION</span>
-                <h2>Safety &amp; Ethics</h2>
+                <h2><span class="en">Safety &amp; Ethics</span><span class="ja">安全性と倫理</span></h2>
             </div>
         </div>
         <div class="gate">
             <div class="gate-step">
                 <span class="g-n">STEP 01</span>
-                <h3>AI Suggests</h3>
-                <p>The AI analyzes the current state and proposes a command or strategy. It never executes anything on its own.</p>
+                <h3><span class="en">AI Suggests</span><span class="ja">AIが提案</span></h3>
+                <p><span class="en">The AI analyzes the current state and proposes a command or strategy. It never executes anything on its own.</span><span class="ja">AIは現在の状況を分析し、コマンドや戦略を提案します。自ら実行することは決してありません。</span></p>
             </div>
             <div class="gate-step">
                 <span class="g-n">STEP 02</span>
-                <h3>You Approve</h3>
-                <p>Review every suggestion. Edit, skip, or override. The operator is always the final authority.</p>
+                <h3><span class="en">You Approve</span><span class="ja">あなたが承認</span></h3>
+                <p><span class="en">Review every suggestion. Edit, skip, or override. The operator is always the final authority.</span><span class="ja">すべての提案を確認し、編集・スキップ・上書きします。最終的な決定権は常にオペレーターにあります。</span></p>
             </div>
             <div class="gate-step">
                 <span class="g-n">STEP 03</span>
-                <h3>It Runs</h3>
-                <p>Only after explicit approval does the command execute. Full output is captured and fed back to the AI for the next step.</p>
+                <h3><span class="en">It Runs</span><span class="ja">実行される</span></h3>
+                <p><span class="en">Only after explicit approval does the command execute. Full output is captured and fed back to the AI for the next step.</span><span class="ja">明示的な承認の後にのみコマンドが実行されます。全出力が取得され、次の手順のためAIへ戻されます。</span></p>
             </div>
         </div>
         <div class="nope">
             <div>
-                <b>No Auto-Exploit</b>
-                <span>XS-AI never fires an exploit without you pressing enter.</span>
+                <b><span class="en">No Auto-Exploit</span><span class="ja">自動攻撃なし</span></b>
+                <span><span class="en">XS-AI never fires an exploit without you pressing enter.</span><span class="ja">あなたが Enter を押さない限り、XS-AI がエクスプロイトを発射することはありません。</span></span>
             </div>
             <div>
-                <b>No Exfiltration</b>
-                <span>No data leaves your engagement environment automatically.</span>
+                <b><span class="en">No Exfiltration</span><span class="ja">データ持ち出しなし</span></b>
+                <span><span class="en">No data leaves your engagement environment automatically.</span><span class="ja">エンゲージメント環境からデータが自動的に外へ出ることはありません。</span></span>
             </div>
             <div>
-                <b>No Scope Creep</b>
-                <span>Target is locked at session start. AI stays within your defined scope.</span>
+                <b><span class="en">No Scope Creep</span><span class="ja">スコープ逸脱なし</span></b>
+                <span><span class="en">Target is locked at session start. AI stays within your defined scope.</span><span class="ja">ターゲットはセッション開始時に固定。AIは定義されたスコープ内に留まります。</span></span>
             </div>
             <div>
-                <b>No Credentials Sent</b>
-                <span>API keys and credentials never leave your local machine.</span>
+                <b><span class="en">No Credentials Sent</span><span class="ja">資格情報の送信なし</span></b>
+                <span><span class="en">API keys and credentials never leave your local machine.</span><span class="ja">APIキーや資格情報がローカルマシンの外へ出ることはありません。</span></span>
             </div>
         </div>
         <div class="legal">
-            <strong>Authorized use only.</strong> XS-AI is designed for authorized penetration testing engagements, CTF competitions, and security research. Always obtain proper written authorization before testing any system you do not own. The operator is responsible for all actions taken with this tool.
+            <span class="en"><strong>Authorized use only.</strong> XS-AI is designed for authorized penetration testing engagements, CTF competitions, and security research. Always obtain proper written authorization before testing any system you do not own. The operator is responsible for all actions taken with this tool.</span>
+            <span class="ja"><strong>認可された用途のみ。</strong> XS-AI は、認可されたペネトレーションテスト、CTF、セキュリティ研究のために設計されています。自分が所有しないシステムをテストする前に、必ず適切な書面による認可を取得してください。本ツールで行うすべての操作の責任はオペレーターにあります。</span>
         </div>
     </section>
 
@@ -1054,7 +1105,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
         <div class="footer-grid">
             <div class="footer-identity">
                 <a href="../../" class="footer-mark">[SUDOXS]</a>
-                <span class="footer-tagline">OFFENSIVE SECURITY TOOLING</span>
+                <span class="footer-tagline"><span class="en">OFFENSIVE SECURITY TOOLING</span><span class="ja">攻撃的セキュリティ・ツール</span></span>
             </div>
             <nav class="footer-links">
                 <a href="https://app.hackthebox.com/public/users/2277802" target="_blank" rel="noopener" class="footer-link" aria-label="Hack The Box" style="--clr:#3adb5a">
@@ -1087,6 +1138,24 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
         document.documentElement.classList.toggle("theme-light", light);
         try{ localStorage.setItem("sx-theme", light ? "light" : "dark"); }catch(e){}
     });
+})();
+
+/* ═══ Language toggle (shared "sx-lang" key with the archive) ═══ */
+(function(){
+    var root = document.documentElement;
+    var langBtns = document.querySelectorAll("[data-set-lang]");
+    function setLang(l){
+        root.setAttribute("data-lang", l);
+        root.lang = l;
+        langBtns.forEach(function(b){
+            b.setAttribute("aria-pressed", b.getAttribute("data-set-lang") === l ? "true" : "false");
+        });
+        try{ localStorage.setItem("sx-lang", l); }catch(e){}
+    }
+    langBtns.forEach(function(b){
+        b.addEventListener("click", function(){ setLang(b.getAttribute("data-set-lang")); });
+    });
+    setLang(root.getAttribute("data-lang") === "ja" ? "ja" : "en");
 })();
 
 /* ═══ Copy buttons ═══ */
