@@ -503,7 +503,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
         <div class="eyebrow">
             <span><span class="en">PROJECT <b>005</b></span><span class="ja">プロジェクト <b>005</b></span></span>
             <span><span class="en">PENTEST ORCHESTRATOR</span><span class="ja">ペンテスト・オーケストレーター</span></span>
-            <span>v0.6</span>
+            <span>v0.7</span>
         </div>
 
         <h1 class="glitch" data-text="XS-AI">XS-AI<span aria-hidden="true">XS-AI</span><span aria-hidden="true">XS-AI</span></h1>
@@ -599,7 +599,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
   ██╔██╗ ╚════██║╚════╝██╔══██║██║
  ██╔╝ ██╗███████║      ██║  ██║██║
  ╚═╝  ╚═╝╚══════╝      ╚═╝  ╚═╝╚═╝
-   PENTEST AI ORCHESTRATOR  v0.6
+   PENTEST AI ORCHESTRATOR  v0.7
    <span class="ascii-by">by sudoxs</span></div>
     </section>
 
@@ -703,6 +703,16 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 <span class="f-id">FEAT_13</span>
                 <h3><span class="en">Parallel Enumeration</span><span class="ja">並列列挙</span></h3>
                 <p><span class="en">Run independent checks concurrently after a single batch approval — slow I/O-bound scans finish faster without breaking per-command approval.</span><span class="ja">一括承認のあと、独立したチェックを同時実行 &mdash; コマンドごとの承認を崩さずに、遅いI/O待ちのスキャンを高速化します。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_14</span>
+                <h3><span class="en">Re-test Guard</span><span class="ja">再テスト・ガード</span></h3>
+                <p><span class="en">xs-ai remembers every command already run. Before repeating one it warns and asks again, and <code>:auto</code> / <code>:svc</code> skip completed checks by default — add <code>redo</code> to force.</span><span class="ja">実行済みのすべてのコマンドを記憶します。再実行の前に警告して再確認し、<code>:auto</code> / <code>:svc</code> は完了済みチェックを既定でスキップ &mdash; <code>redo</code> で強制できます。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_15</span>
+                <h3><span class="en">Engagement Handoff</span><span class="ja">エンゲージメントの引き継ぎ</span></h3>
+                <p><span class="en">Export a self-contained bundle (history, findings, credentials, memory) with <code>:export</code>; another operator runs <code>:import</code> to merge it and continue — de-duplicated, and feeding their own re-test guard.</span><span class="ja"><code>:export</code> で自己完結型のバンドル（履歴・発見事項・資格情報・メモ）を出力。別のオペレーターが <code>:import</code> で統合して続行できます &mdash; 重複排除され、相手の再テスト・ガードにも反映されます。</span></p>
             </div>
         </div>
     </section>
@@ -947,6 +957,14 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                     <div class="cmd-line"><code>:roles</code><button class="copy-btn" data-cmd=":roles">COPY</button></div>
                     <div class="cheat-desc"><span class="en">View or modify role-to-model mappings</span><span class="ja">ロール→モデルの対応を表示・変更</span></div>
                 </div>
+                <div class="cheat-row">
+                    <div class="cmd-line"><code>:export &lt;file&gt;</code><button class="copy-btn" data-cmd=":export">COPY</button></div>
+                    <div class="cheat-desc"><span class="en">Export a handoff bundle for another operator</span><span class="ja">別のオペレーター向けに引き継ぎバンドルを出力</span></div>
+                </div>
+                <div class="cheat-row">
+                    <div class="cmd-line"><code>:import &lt;file&gt;</code><button class="copy-btn" data-cmd=":import">COPY</button></div>
+                    <div class="cheat-desc"><span class="en">Merge another operator's bundle into this session</span><span class="ja">別のオペレーターのバンドルを現在のセッションに統合</span></div>
+                </div>
             </div>
         </div>
     </section>
@@ -1120,7 +1138,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             </nav>
             <div class="footer-system">
                 <span class="status-light"></span>
-                v0.6
+                v0.7
             </div>
         </div>
     </footer>
