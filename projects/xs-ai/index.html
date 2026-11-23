@@ -503,7 +503,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
         <div class="eyebrow">
             <span><span class="en">PROJECT <b>005</b></span><span class="ja">プロジェクト <b>005</b></span></span>
             <span><span class="en">PENTEST ORCHESTRATOR</span><span class="ja">ペンテスト・オーケストレーター</span></span>
-            <span>v0.7</span>
+            <span>v1.3</span>
         </div>
 
         <h1 class="glitch" data-text="XS-AI">XS-AI<span aria-hidden="true">XS-AI</span><span aria-hidden="true">XS-AI</span></h1>
@@ -599,7 +599,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
   ██╔██╗ ╚════██║╚════╝██╔══██║██║
  ██╔╝ ██╗███████║      ██║  ██║██║
  ╚═╝  ╚═╝╚══════╝      ╚═╝  ╚═╝╚═╝
-   PENTEST AI ORCHESTRATOR  v0.7
+   PENTEST AI ORCHESTRATOR  v1.3
    <span class="ascii-by">by sudoxs</span></div>
     </section>
 
@@ -713,6 +713,36 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 <span class="f-id">FEAT_15</span>
                 <h3><span class="en">Engagement Handoff</span><span class="ja">エンゲージメントの引き継ぎ</span></h3>
                 <p><span class="en">Export a self-contained bundle (history, findings, credentials, memory) with <code>:export</code>; another operator runs <code>:import</code> to merge it and continue — de-duplicated, and feeding their own re-test guard.</span><span class="ja"><code>:export</code> で自己完結型のバンドル（履歴・発見事項・資格情報・メモ）を出力。別のオペレーターが <code>:import</code> で統合して続行できます &mdash; 重複排除され、相手の再テスト・ガードにも反映されます。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_16</span>
+                <h3><span class="en">Fail-Closed Scope</span><span class="ja">フェイルクローズ・スコープ</span></h3>
+                <p><span class="en">One central guard authorizes every target-touching route (CIDR/IP/host aware) and blocks commands embedding any out-of-scope IP. No scope configured means execution is blocked, with a full JSON audit trail.</span><span class="ja">一つの中央ガードが、ターゲットに触れるすべての経路（CIDR/IP/ホスト対応）を認可し、スコープ外のIPを含むコマンドを遮断。スコープ未設定なら実行はブロックされ、完全な JSON 監査ログが残ります。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_17</span>
+                <h3><span class="en">Service Research Engine</span><span class="ja">サービス調査エンジン</span></h3>
+                <p><span class="en"><code>:research &lt;port&gt;</code> fingerprints a service and produces ranked, evidence-based vulnerability hypotheses from an offline knowledge base (and NVD when online) — confidence and severity kept separate, CVEs never claimed from a product match alone.</span><span class="ja"><code>:research &lt;port&gt;</code> がサービスをフィンガープリントし、オフライン知識ベース（オンライン時は NVD も）から根拠に基づく脆弱性仮説をランク付けして生成。confidence と severity を分離し、製品名の一致だけで CVE を断定しません。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_18</span>
+                <h3><span class="en">Safe Credential Validation</span><span class="ja">安全な資格情報の検証</span></h3>
+                <p><span class="en">Five distinct auth states (no-auth / anonymous / default-possible / validated / unknown). <code>:validate</code> checks one documented credential or anonymous probe — approved, scoped, attempt-limited, recorded. No wordlists, no brute-force.</span><span class="ja">5つの明確な認証状態（認証なし／匿名／デフォルト可能性／検証済み／不明）。<code>:validate</code> は文書化された単一の資格情報か匿名プローブを確認 &mdash; 承認・スコープ・試行回数制限・記録つき。ワードリストもブルートフォースもなし。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_19</span>
+                <h3><span class="en">Attack Chain Analysis</span><span class="ja">攻撃チェーン分析</span></h3>
+                <p><span class="en"><code>:chains</code> links separate observations into coherent scenarios (exposed interface → weak auth → access → misconfig), stating the evidence, unverified assumptions, and potential impact — reasoned scenarios, never claims of exploitation.</span><span class="ja"><code>:chains</code> が個別の観測を筋の通ったシナリオに連結（露出インターフェース → 弱い認証 → アクセス → 設定不備）。根拠・未検証の仮定・潜在的影響を明示 &mdash; あくまで推論シナリオで、攻撃の成功を主張しません。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_20</span>
+                <h3><span class="en">Multi-Model Registry</span><span class="ja">マルチモデル・レジストリ</span></h3>
+                <p><span class="en">Declare any number of models (Ollama / OpenAI / Anthropic) with endpoints and capabilities; assign them to roles or auto-select by capability and context, with graceful fallback. Plus secure connection modes: direct, SSH tunnel, or VPN overlay.</span><span class="ja">任意の数のモデル（Ollama / OpenAI / Anthropic）をエンドポイントと能力つきで宣言し、ロールに割り当てるか能力とコンテキストで自動選択（フォールバック付き）。さらに安全な接続モード：direct・SSH トンネル・VPN オーバーレイ。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_21</span>
+                <h3><span class="en">Quality Benchmark</span><span class="ja">品質ベンチマーク</span></h3>
+                <p><span class="en">An offline, deterministic benchmark scores the engine's logic — service ID, CVE relevance, false-positive reduction, evidence quality, reporting accuracy — as a CI regression gate, not by how convincing a model sounds.</span><span class="ja">オフラインで決定論的なベンチマークが、エンジンのロジック（サービス識別・CVE 関連性・誤検知削減・根拠の質・レポート精度）を採点。モデルの説得力ではなく、CI の回帰ゲートとして機能します。</span></p>
             </div>
         </div>
     </section>
@@ -965,6 +995,26 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                     <div class="cmd-line"><code>:import &lt;file&gt;</code><button class="copy-btn" data-cmd=":import">COPY</button></div>
                     <div class="cheat-desc"><span class="en">Merge another operator's bundle into this session</span><span class="ja">別のオペレーターのバンドルを現在のセッションに統合</span></div>
                 </div>
+                <div class="cheat-row">
+                    <div class="cmd-line"><code>:scope [add &lt;t&gt;]</code><button class="copy-btn" data-cmd=":scope">COPY</button></div>
+                    <div class="cheat-desc"><span class="en">Show or modify the authorized target scope (fail-closed)</span><span class="ja">認可済みターゲットのスコープを表示・変更（フェイルクローズ）</span></div>
+                </div>
+                <div class="cheat-row">
+                    <div class="cmd-line"><code>:research &lt;port&gt;</code><button class="copy-btn" data-cmd=":research">COPY</button></div>
+                    <div class="cheat-desc"><span class="en">Research a service into ranked vulnerability hypotheses</span><span class="ja">サービスを調査し、ランク付けされた脆弱性仮説を生成</span></div>
+                </div>
+                <div class="cheat-row">
+                    <div class="cmd-line"><code>:validate &lt;id&gt;</code><button class="copy-btn" data-cmd=":validate">COPY</button></div>
+                    <div class="cheat-desc"><span class="en">Safely validate one hypothesis (approval + attempt-limited)</span><span class="ja">一つの仮説を安全に検証（承認＋試行回数制限）</span></div>
+                </div>
+                <div class="cheat-row">
+                    <div class="cmd-line"><code>:chains</code><button class="copy-btn" data-cmd=":chains">COPY</button></div>
+                    <div class="cheat-desc"><span class="en">Link findings/hypotheses into attack-chain scenarios</span><span class="ja">発見事項・仮説を攻撃チェーンのシナリオに連結</span></div>
+                </div>
+                <div class="cheat-row">
+                    <div class="cmd-line"><code>:models</code><button class="copy-btn" data-cmd=":models">COPY</button></div>
+                    <div class="cheat-desc"><span class="en">Show the multi-model registry and role routing</span><span class="ja">マルチモデル・レジストリとロールのルーティングを表示</span></div>
+                </div>
             </div>
         </div>
     </section>
@@ -1138,7 +1188,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             </nav>
             <div class="footer-system">
                 <span class="status-light"></span>
-                v0.7
+                v1.3
             </div>
         </div>
     </footer>
