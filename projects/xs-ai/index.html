@@ -503,7 +503,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
         <div class="eyebrow">
             <span><span class="en">PROJECT <b>005</b></span><span class="ja">プロジェクト <b>005</b></span></span>
             <span><span class="en">PENTEST ORCHESTRATOR</span><span class="ja">ペンテスト・オーケストレーター</span></span>
-            <span>v1.3</span>
+            <span>v1.7</span>
         </div>
 
         <h1 class="glitch" data-text="XS-AI">XS-AI<span aria-hidden="true">XS-AI</span><span aria-hidden="true">XS-AI</span></h1>
@@ -599,7 +599,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
   ██╔██╗ ╚════██║╚════╝██╔══██║██║
  ██╔╝ ██╗███████║      ██║  ██║██║
  ╚═╝  ╚═╝╚══════╝      ╚═╝  ╚═╝╚═╝
-   PENTEST AI ORCHESTRATOR  v1.3
+   PENTEST AI ORCHESTRATOR  v1.7
    <span class="ascii-by">by sudoxs</span></div>
     </section>
 
@@ -743,6 +743,41 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 <span class="f-id">FEAT_21</span>
                 <h3><span class="en">Quality Benchmark</span><span class="ja">品質ベンチマーク</span></h3>
                 <p><span class="en">An offline, deterministic benchmark scores the engine's logic — service ID, CVE relevance, false-positive reduction, evidence quality, reporting accuracy — as a CI regression gate, not by how convincing a model sounds.</span><span class="ja">オフラインで決定論的なベンチマークが、エンジンのロジック（サービス識別・CVE 関連性・誤検知削減・根拠の質・レポート精度）を採点。モデルの説得力ではなく、CI の回帰ゲートとして機能します。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_22</span>
+                <h3><span class="en">Technique Knowledge Base</span><span class="ja">テクニック知識ベース</span></h3>
+                <p><span class="en">Product-keyed technique files (<code>techniques/*.json</code>) with detection signals, preconditions, and parameterized validate/exploit steps. Non-CVE feature-abuse paths (Splunk app-upload RCE, PostgreSQL COPY PROGRAM, ManageEngine SAML) reach <strong>strongly_suspected/high</strong> from fingerprint alone — no CVE needed.</span><span class="ja">製品キーのテクニックファイル（<code>techniques/*.json</code>）に検出シグナル・前提条件・パラメータ付き検証/攻撃ステップを収録。非CVE機能悪用パス（Splunk/PostgreSQL/ManageEngine）はフィンガープリントだけで<strong>strongly_suspected/high</strong>に到達。CVE不要。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_23</span>
+                <h3><span class="en">Fingerprint Normalization</span><span class="ja">フィンガープリント正規化</span></h3>
+                <p><span class="en">Nmap banners map to canonical product IDs (<code>Splunkd httpd</code> → <code>splunk</code>). Routing keys on the <strong>product</strong>, not the port — a Splunk box on HTTP no longer gets Tomcat/Jenkins hypotheses. Associated ports auto-scanned.</span><span class="ja">Nmapバナーを正規の製品IDに変換（<code>Splunkd httpd</code> → <code>splunk</code>）。ポートではなく<strong>製品</strong>でルーティング &mdash; HTTP上のSplunkにTomcat/Jenkinsの仮説が出なくなります。関連ポートも自動スキャン。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_24</span>
+                <h3><span class="en">CVE Discipline</span><span class="ja">CVE規律</span></h3>
+                <p><span class="en">CVE IDs come <strong>only</strong> from NVD. Any CVE the LLM fabricates — in fields, as fake nvd.nist.gov links, or in prose — is stripped. NVD results without comparable version ranges are dropped to cut noise.</span><span class="ja">CVE IDは<strong>NVDからのみ</strong>取得。LLMが捏造したCVE（フィールド内・偽NVDリンク・文章中）はすべて除去。比較可能なバージョン範囲のないNVD結果もノイズ削減のため除外。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_25</span>
+                <h3><span class="en">Phase-Gated Exploit</span><span class="ja">フェーズゲート攻撃</span></h3>
+                <p><span class="en"><code>:validate</code> drives a technique's safe checks automatically. In <strong>access</strong> phase it shows the full parameterized exploit steps (reverse shell, LHOST/LPORT filled). In recon/enum, only validation — exploit is never shown.</span><span class="ja"><code>:validate</code>がテクニックの安全なチェックを自動実行。<strong>access</strong>フェーズでは完全なパラメータ付き攻撃ステップ（リバースシェル・LHOST/LPORT入力）を表示。recon/enumでは検証のみ &mdash; 攻撃は表示されません。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_26</span>
+                <h3><span class="en">GTFOBins Privesc</span><span class="ja">GTFOBins権限昇格</span></h3>
+                <p><span class="en">After a foothold, run <code>sudo -l</code> then <code>:gtfobins</code> — parses allowed binaries and matches them against 24 GTFOBins entries for concrete privesc paths (file-read, shell, file-write). Recorded as findings.</span><span class="ja">足場確保後、<code>sudo -l</code> を実行し <code>:gtfobins</code> &mdash; 許可されたバイナリを解析し、24のGTFOBinsエントリと照合して具体的な権限昇格パス（ファイル読取・シェル・ファイル書込）を提示。発見事項として記録。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_27</span>
+                <h3><span class="en">Multi-Provider API</span><span class="ja">マルチプロバイダAPI</span></h3>
+                <p><span class="en"><code>--provider ollama|openai|gemini</code> with a clean abstraction: Ollama, any OpenAI-compatible API (DeepSeek, Groq, Together, OpenRouter, LM Studio) via <code>--base-url</code>, and Google Gemini. Health check before session. <code>XS_API_KEY</code> for the key.</span><span class="ja"><code>--provider ollama|openai|gemini</code> でクリーンな抽象化：Ollama、OpenAI互換API（DeepSeek/Groq/Together/OpenRouter/LM Studio、<code>--base-url</code>指定）、Google Gemini。セッション前にヘルスチェック。キーは <code>XS_API_KEY</code>。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_28</span>
+                <h3><span class="en">Agent Mode</span><span class="ja">エージェントモード</span></h3>
+                <p><span class="en"><code>--agent</code> or <code>:agent start</code> — semi-autonomous pentest loop. The AI decides the next action; you approve or skip. Four levels (0=ask all, 1=safe auto, 2=low-risk auto, 3=full auto). Ctrl+C pauses. JSON action log. Subcommands: start, resume, pause, status, log, plan, level.</span><span class="ja"><code>--agent</code> または <code>:agent start</code> &mdash; 半自律ペンテストループ。AIが次のアクションを決定、オペレーターが承認/スキップ。4段階（0=全承認、1=安全自動、2=低リスク自動、3=完全自動）。Ctrl+Cで一時停止。JSONアクションログ。サブコマンド：start/resume/pause/status/log/plan/level。</span></p>
             </div>
         </div>
     </section>
@@ -1188,7 +1223,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             </nav>
             <div class="footer-system">
                 <span class="status-light"></span>
-                v1.3
+                v1.7
             </div>
         </div>
     </footer>
