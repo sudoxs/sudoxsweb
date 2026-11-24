@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="AirWarden — passive-first Wi-Fi vulnerability auditor for authorized engagements. Project page by sudoxs.">
+<meta name="description" content="AirWarden — AI-powered wireless security investigation and assessment platform for authorized engagements. Project page by sudoxs.">
 <meta name="author" content="sudoxs">
 <title>AirWarden // sudoxs projects</title>
 
@@ -307,7 +307,7 @@ html.theme-light .feature{background:var(--surface)}
 .feature p{color:var(--ink-dim);font-size:var(--fs-xs);line-height:1.8}
 
 /* modes */
-.modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}
+.modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
 .mode{display:flex;flex-direction:column;padding:1.3rem;border:1px solid var(--border);background:var(--surface);min-width:0}
 .mode .m-cmd{color:var(--danger-bright);font-size:var(--fs-xl);font-family:var(--font-display);font-weight:900;letter-spacing:.04em}
 .mode .m-kind{display:inline-block;margin:.35rem 0 .8rem;padding:.12rem .45rem;border:1px solid var(--border-strong);color:var(--signal);font-size:var(--fs-3xs);letter-spacing:.12em;align-self:flex-start}
@@ -392,7 +392,7 @@ html.theme-light .term{background:#f5f3ee}
 .gate-step .g-n{color:var(--danger-bright);font-size:var(--fs-3xs);letter-spacing:.16em}
 .gate-step h3{margin:.4rem 0 .5rem;color:var(--ink-bright);font-size:var(--fs-sm);font-weight:600}
 .gate-step p{color:var(--ink-dim);font-size:var(--fs-xs);line-height:1.8}
-.nope{margin-top:1.4rem;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}
+.nope{margin-top:1.4rem;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
 .nope div{padding:1.1rem;border:1px dashed var(--danger);background:rgba(var(--neon-a),.04)}
 .nope b{display:block;color:var(--danger-bright);font-size:var(--fs-sm);letter-spacing:.04em;margin-bottom:.35rem}
 .nope div > span{color:var(--ink-dim);font-size:var(--fs-xs);line-height:1.75}
@@ -434,7 +434,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
 /* ═══════════════════════ RESPONSIVE ═══════════════════════ */
 @media(max-width:1100px){
     .modes{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .nope{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .nope{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto}
     .footer-grid{grid-template-columns:1fr auto}
     .footer-system{display:none}
 }
@@ -506,17 +506,17 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
         <!-- ═══════════ HERO ═══════════ -->
         <section class="hero">
             <div>
-                <div class="eyebrow"><span><b>PROJECT // 004</b> · WI-FI SECURITY</span><span>PASSIVE-FIRST · PYTHON 3.11+</span></div>
+                <div class="eyebrow"><span><b>PROJECT // 004</b> · WI-FI SECURITY</span><span>AI-POWERED · v0.2.0 · PYTHON 3.11+</span></div>
                 <h1 class="glitch" aria-label="AirWarden">AIRWARDEN<span aria-hidden="true">AIRWARDEN</span><span aria-hidden="true">AIRWARDEN</span></h1>
                 <p class="hero-tagline">
-                    <span class="en">A passive-first Wi-Fi vulnerability auditor for <strong>authorized</strong> engagements.</span>
-                    <span class="ja"><strong>正式に許可された</strong>診断のための、パッシブ優先の Wi-Fi 脆弱性監査ツール。</span>
+                    <span class="en">An AI-powered wireless security investigation and assessment platform for <strong>authorized</strong> engagements.</span>
+                    <span class="ja"><strong>正式に許可された</strong>診断のための、AI 搭載ワイヤレスセキュリティ調査・評価プラットフォーム。</span>
                 </p>
                 <p class="hero-sub">
-                    <span class="en">It reads a pcap (or sniffs live), inventories every access point, and reports what is vulnerable now, what could become vulnerable, and what has leaked — without transmitting a single frame by default.</span>
-                    <span class="ja">pcap を読み込む（またはライブで受信する）だけで、周囲のすべてのアクセスポイントを棚卸しし、「今すぐ脆弱なもの」「条件次第で脆弱になり得るもの」「すでに漏えいしているもの」をレポートします。デフォルトでは 1 フレームも送信しません。</span>
+                    <span class="en">Passive audit meets AI investigation. AirWarden reads pcaps, sniffs live, inventories every AP — and now lets AI guide the entire assessment workflow: from hypothesis to evidence, through approval-gated actions, to a full report. No frame transmitted by default.</span>
+                    <span class="ja">パッシブ監査と AI 調査の融合。AirWarden は pcap を読み込み、ライブ受信し、全 AP を棚卸しします。さらに AI が仮説から証拠収集、承認ゲート付きアクション、最終レポートまで、ワークフロー全体をガイドします。デフォルトでは 1 フレームも送信しません。</span>
                 </p>
-                <div class="tag-row"><span>PYTHON</span><span>SCAPY</span><span>TSHARK</span><span>BETTERCAP</span><span>802.11</span><span>JSON · CSV · HTML</span></div>
+                <div class="tag-row"><span>PYTHON</span><span>SCAPY</span><span>TSHARK</span><span>BETTERCAP</span><span>802.11</span><span>FASTAPI</span><span>AI · LLM</span><span>JSON · CSV · HTML</span></div>
             </div>
 
         </section>
@@ -528,10 +528,10 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             <div class="button-container">
                 <div class="button-hexagons"><div class="hexagon"></div><div class="hexagon"></div><div class="hexagon"></div><div class="hexagon"></div><div class="hexagon"></div><div class="hexagon"></div></div>
                 <div class="digital-glyphs" aria-hidden="true">
-                    <div class="digital-glyph">AIRWARDEN.ANALYZE(capture.pcap)</div>
-                    <div class="digital-glyph">SCOPE.GATE // LOCKED</div>
-                    <div class="digital-glyph">EAPOL 1/4 · 2/4 · 3/4 · 4/4</div>
-                    <div class="digital-glyph">TX=0 · RX=∞</div>
+                    <div class="digital-glyph">AIRWARDEN.AI.INVESTIGATE(target)</div>
+                    <div class="digital-glyph">HYPOTHESIS // TESTING ▸ SUPPORTED</div>
+                    <div class="digital-glyph">WORKFLOW.DAG // 22 TECHNIQUES</div>
+                    <div class="digital-glyph">TX=0 · AI=∞ · APPROVE.GATE</div>
                 </div>
                 <a class="holo-button" href="https://github.com/sudoxs/AirWarden" target="_blank" rel="noopener">
                     <span class="button-text"><span class="en">View source</span><span class="ja">ソースを見る</span></span>
@@ -560,14 +560,10 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 </div>
             </div>
             <p class="lead en">
-                AirWarden is a <strong>defensive</strong> Wi-Fi audit tool for authorized penetration tests. Hand it a capture and it rebuilds the radio
-                picture: which networks exist, how they are protected, which clients talk to them, what key material is already sitting in the air,
-                and which data is leaking in cleartext. Every finding is classified, scored and written to <code>JSON</code>, <code>CSV</code> and <code>HTML</code>.
+                AirWarden is an <strong>AI-powered</strong> wireless security platform for authorized penetration tests. It combines a full passive audit engine with an AI investigation layer: hand it a capture and it rebuilds the radio picture, or launch the web dashboard and let AI guide you through hypothesis-driven investigation workflows — from evidence collection through approval-gated actions to a comprehensive report in <code>JSON</code>, <code>CSV</code> and <code>HTML</code>.
             </p>
             <p class="lead ja">
-                AirWarden は、正式に許可されたペネトレーションテストのための<strong>防御側</strong>の Wi-Fi 監査ツールです。キャプチャを渡すだけで、
-                どのネットワークが存在し、どう保護されているか、どのクライアントが接続しているか、どんな鍵情報がすでに電波上に流れているか、
-                そしてどのデータが平文で漏えいしているかを再構成します。すべての検出結果は分類・スコアリングされ、<code>JSON</code>・<code>CSV</code>・<code>HTML</code> に出力されます。
+                AirWarden は、正式に許可されたペネトレーションテストのための <strong>AI 搭載</strong>ワイヤレスセキュリティプラットフォームです。フルなパッシブ監査エンジンと AI 調査レイヤーを統合。キャプチャを渡して電波の全体像を再構成するか、Web ダッシュボードを起動して AI が導く仮説駆動型の調査ワークフローを実行できます — 証拠収集から承認ゲート付きアクション、そして <code>JSON</code>・<code>CSV</code>・<code>HTML</code> の包括的なレポートまで。
             </p>
 
             <div class="feature-grid">
@@ -616,6 +612,36 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                     <h3><span class="en">Risk score &amp; reports</span><span class="ja">リスクスコアとレポート</span></h3>
                     <p><span class="en">Per-AP risk scores, an exposure &amp; data-leak summary, and a sortable console table — all mirrored in JSON for tooling.</span><span class="ja">AP ごとのリスクスコア、露出・データ漏えいのサマリー、ソート済みのコンソール表。すべて JSON にも出力され、他ツールと連携できます。</span></p>
                 </article>
+                <article class="feature">
+                    <span class="f-id">AI // 10</span>
+                    <h3><span class="en">AI investigation engine</span><span class="ja">AI 調査エンジン</span></h3>
+                    <p><span class="en">Evidence-driven investigations with hypothesis management. The AI proposes, tests and refutes hypotheses as evidence arrives.</span><span class="ja">証拠駆動型の調査と仮説管理。AI が証拠の到着に応じて仮説を提案・検証・棄却します。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">AI // 11</span>
+                    <h3><span class="en">Wi-Fi knowledge base</span><span class="ja">Wi-Fi ナレッジベース</span></h3>
+                    <p><span class="en">22-node technique graph covering passive recon through WPA3-SAE analysis. Each node carries command templates, risk levels and prerequisites.</span><span class="ja">パッシブ偵察から WPA3-SAE 分析までをカバーする 22 ノードの技術グラフ。各ノードにコマンドテンプレート・リスクレベル・前提条件を格納。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">AI // 12</span>
+                    <h3><span class="en">DAG workflow planner</span><span class="ja">DAG ワークフロープランナー</span></h3>
+                    <p><span class="en">Builds directed acyclic assessment workflows with cycle detection, dependency tracking and automatic readiness cascading.</span><span class="ja">循環検出・依存関係追跡・自動レディネスカスケードを備えた有向非巡回グラフ型のワークフローを構築。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">AI // 13</span>
+                    <h3><span class="en">Multi-provider AI</span><span class="ja">マルチプロバイダー AI</span></h3>
+                    <p><span class="en">OpenAI, Anthropic, Google Gemini, Ollama and any OpenAI-compatible endpoint. Switch providers without changing investigation logic.</span><span class="ja">OpenAI・Anthropic・Google Gemini・Ollama および OpenAI 互換エンドポイント。調査ロジックを変更せずにプロバイダーを切り替え可能。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">AI // 14</span>
+                    <h3><span class="en">Web dashboard</span><span class="ja">Web ダッシュボード</span></h3>
+                    <p><span class="en">FastAPI dashboard with WebSocket real-time updates. Manage investigations, run terminals, browse the knowledge base and configure AI — all in the browser.</span><span class="ja">WebSocket によるリアルタイム更新を備えた FastAPI ダッシュボード。調査管理・ターミナル実行・ナレッジベース検索・AI 設定をすべてブラウザで。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">AI // 15</span>
+                    <h3><span class="en">Command registry &amp; validation</span><span class="ja">コマンドレジストリと検証</span></h3>
+                    <p><span class="en">Whitelist-validated command templates with shell injection prevention. AI never gets unrestricted shell access.</span><span class="ja">シェルインジェクション防止付きのホワイトリスト型コマンドテンプレート。AI は無制限のシェルアクセスを得ることはありません。</span></p>
+                </article>
             </div>
         </section>
 
@@ -625,7 +651,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 <div class="sec-num" aria-hidden="true">02</div>
                 <div>
                     <span class="section-kicker"><span class="en">OPERATING MODES</span><span class="ja">動作モード</span></span>
-                    <h2><span class="en">Four commands, one engine</span><span class="ja">4 つのコマンド、1 つのエンジン</span></h2>
+                    <h2><span class="en">Six commands, one engine</span><span class="ja">6 つのコマンド、1 つのエンジン</span></h2>
                 </div>
             </div>
             <div class="modes">
@@ -653,6 +679,18 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                     <p><span class="en">Bettercap-driven recon plus a tiny set of single-target actions (e.g. a PMKID request) — only for in-scope BSSIDs listed in a signed scope file.</span><span class="ja">Bettercap による偵察と、ごく限られた単一ターゲット操作（PMKID 要求など）。署名済みスコープファイルに記載された BSSID に対してのみ実行されます。</span></p>
                     <div class="m-plat"><span class="ok">Linux</span><span class="part">macOS</span><span class="no">Windows</span></div>
                 </article>
+                <article class="mode">
+                    <span class="m-cmd">ui</span>
+                    <span class="m-kind"><span class="en">AI · DASHBOARD</span><span class="ja">AI · ダッシュボード</span></span>
+                    <p><span class="en">Launches the FastAPI web dashboard with real-time WebSocket updates. Manage investigations, run terminals, browse the knowledge base, and configure AI providers — all from your browser.</span><span class="ja">リアルタイム WebSocket 更新付きの FastAPI Web ダッシュボードを起動。調査管理・ターミナル実行・ナレッジベース閲覧・AI プロバイダー設定をブラウザから操作。</span></p>
+                    <div class="m-plat"><span class="ok">Linux</span><span class="ok">macOS</span><span class="ok">Windows</span></div>
+                </article>
+                <article class="mode">
+                    <span class="m-cmd">ai-config</span>
+                    <span class="m-kind"><span class="en">AI · SETUP</span><span class="ja">AI · セットアップ</span></span>
+                    <p><span class="en">Shows or tests the current AI provider configuration. Set providers via environment variables or <code>~/.airwarden/ai_config.json</code> — API keys are always masked in output.</span><span class="ja">現在の AI プロバイダー設定の表示またはテスト。環境変数または <code>~/.airwarden/ai_config.json</code> で設定。API キーは出力では常にマスクされます。</span></p>
+                    <div class="m-plat"><span class="ok">Linux</span><span class="ok">macOS</span><span class="ok">Windows</span></div>
+                </article>
             </div>
         </section>
 
@@ -672,6 +710,8 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 <li><b><span class="en">Classify exposures</span><span class="ja">露出の分類</span></b><span><span class="en">What leaked, from where, and how abusable it is — confirmed or potential.</span><span class="ja">何が・どこから漏れ、どれほど悪用し得るか。「確定」か「潜在」かも判定。</span></span></li>
                 <li><b><span class="en">Score &amp; advise</span><span class="ja">スコア化と助言</span></b><span><span class="en">Per-AP risk, plus the single authorized follow-up that would reveal the most — described, never sent.</span><span class="ja">AP ごとのリスクと、最も多くを明らかにできる許可済みの次の一手を「説明」。実際の送信は行いません。</span></span></li>
                 <li><b><span class="en">Report</span><span class="ja">レポート出力</span></b><span><span class="en">Console table, <code>report.json</code>, <code>report.csv</code> and a readable <code>report.html</code>. MACs redacted by default.</span><span class="ja">コンソール表、<code>report.json</code>・<code>report.csv</code>、読みやすい <code>report.html</code>。MAC アドレスは既定で伏せ字化。</span></span></li>
+                <li><b><span class="en">AI investigate</span><span class="ja">AI 調査</span></b><span><span class="en">AI forms hypotheses from findings, plans a DAG workflow of next steps, and proposes validated commands — each active step waits for explicit approval.</span><span class="ja">AI が検出結果から仮説を立て、次のステップの DAG ワークフローを計画し、検証済みコマンドを提案。各アクティブステップは明示的な承認を待ちます。</span></span></li>
+                <li><b><span class="en">Feedback loop</span><span class="ja">フィードバックループ</span></b><span><span class="en">Command output flows back to the AI for analysis → updated hypotheses → refined workflow → next action. The loop continues until every hypothesis is resolved.</span><span class="ja">コマンド出力が AI に戻り分析 → 仮説更新 → ワークフロー精緻化 → 次のアクション。すべての仮説が解決するまでループが続きます。</span></span></li>
             </ol>
         </section>
 
@@ -684,14 +724,15 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                     <h2><span class="en">In the terminal</span><span class="ja">ターミナルで</span></h2>
                 </div>
             </div>
-            <p class="lead en">Install with <code>pipx install .</code> (Python 3.11+). No capture handy? <code>python make_sample.py</code> generates a tiny one so you can try the whole passive workflow on any OS.</p>
-            <p class="lead ja"><code>pipx install .</code> でインストール（Python 3.11 以上）。手元にキャプチャがなくても、<code>python make_sample.py</code> で小さなサンプルを生成でき、どの OS でもパッシブな一連の流れを試せます。</p>
+            <p class="lead en">Install with <code>pipx install .</code> (Python 3.11+). For AI features: <code>pip install 'airwarden[ai]'</code>. No capture handy? <code>python make_sample.py</code> generates a tiny one so you can try the whole passive workflow on any OS.</p>
+            <p class="lead ja"><code>pipx install .</code> でインストール（Python 3.11 以上）。AI 機能には <code>pip install 'airwarden[ai]'</code>。手元にキャプチャがなくても、<code>python make_sample.py</code> で小さなサンプルを生成でき、どの OS でもパッシブな一連の流れを試せます。</p>
 
             <div class="cheat">
                 <div class="cheat-group">
                     <div class="cheat-group-head"><span class="en">Install</span><span class="ja">インストール</span><span class="cg-tag">setup</span></div>
                     <div class="cheat-row"><div class="cmd-line"><code>pipx install .</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Install as an isolated global <code>airwarden</code> command (Python 3.11+).</span><span class="ja">分離されたグローバルコマンド <code>airwarden</code> としてインストール（Python 3.11 以上）。</span></div></div>
                     <div class="cheat-row"><div class="cmd-line"><code>pip install -e ".[dev]"</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Editable install with the test and lint tools.</span><span class="ja">テスト・Lint ツール付きの編集可能インストール。</span></div></div>
+                    <div class="cheat-row"><div class="cmd-line"><code>pip install "airwarden[ai]"</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Install with AI features (OpenAI, Anthropic, Gemini, FastAPI dashboard).</span><span class="ja">AI 機能付きインストール（OpenAI・Anthropic・Gemini・FastAPI ダッシュボード）。</span></div></div>
                     <div class="cheat-row"><div class="cmd-line"><code>python make_sample.py</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Generate a tiny sample.pcap so you can try the whole flow.</span><span class="ja">一連の流れを試せる小さな sample.pcap を生成。</span></div></div>
                     <div class="cheat-row"><div class="cmd-line"><code>airwarden --version</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Print the installed version.</span><span class="ja">インストール済みのバージョンを表示。</span></div></div>
                 </div>
@@ -722,6 +763,16 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                     <div class="cheat-row"><div class="cmd-line"><code>AIRWARDEN_AUTHORIZED=1 airwarden active --interface wlan0mon --pmkid 00:11:22:33:44:55</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Clientless PMKID request against one in-scope BSSID.</span><span class="ja">スコープ内の 1 BSSID に対するクライアントレス PMKID 要求。</span></div></div>
                     <div class="cheat-row"><div class="cmd-line"><code>export AIRWARDEN_SCOPE_PATH=scope.json</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Point at the signed scope file (targets + active_actions).</span><span class="ja">署名済みスコープファイル（targets と active_actions）を指定。</span></div></div>
                 </div>
+                <div class="cheat-group">
+                    <div class="cheat-group-head"><span class="en">ui</span><span class="ja">ui</span><span class="cg-tag">ai · dashboard</span></div>
+                    <div class="cheat-row"><div class="cmd-line"><code>airwarden ui</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Launch the web dashboard on <code>http://localhost:8000</code>.</span><span class="ja">Web ダッシュボードを <code>http://localhost:8000</code> で起動。</span></div></div>
+                    <div class="cheat-row"><div class="cmd-line"><code>airwarden ui --host 0.0.0.0 --port 9000</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Bind to all interfaces on a custom port.</span><span class="ja">全インターフェースにバインドしカスタムポートで起動。</span></div></div>
+                </div>
+                <div class="cheat-group">
+                    <div class="cheat-group-head"><span class="en">ai-config</span><span class="ja">ai-config</span><span class="cg-tag">ai · setup</span></div>
+                    <div class="cheat-row"><div class="cmd-line"><code>airwarden ai-config</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Show the current AI provider configuration (API keys are masked).</span><span class="ja">現在の AI プロバイダー設定を表示（API キーはマスク）。</span></div></div>
+                    <div class="cheat-row"><div class="cmd-line"><code>airwarden ai-config --test</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Test connectivity to the configured AI provider.</span><span class="ja">設定済み AI プロバイダーへの接続テスト。</span></div></div>
+                </div>
             </div>
 
             <div class="cheat-ref">
@@ -733,6 +784,10 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                         <div class="ref-row"><dt>INTERFACE</dt><dd><b>wlan0mon</b></dd></div>
                         <div class="ref-row"><dt>SCOPE_PATH</dt><dd><b>scope.json</b></dd></div>
                         <div class="ref-row"><dt>BETTERCAP_URL</dt><dd><b>http://127.0.0.1:8081</b></dd></div>
+                        <div class="ref-row"><dt>AI_PROVIDER</dt><dd><b>openai</b></dd></div>
+                        <div class="ref-row"><dt>AI_MODEL</dt><dd><b>gpt-4o</b></dd></div>
+                        <div class="ref-row"><dt>AI_API_KEY</dt><dd><span class="en"><b>(provider key)</b></span><span class="ja"><b>（プロバイダーキー）</b></span></dd></div>
+                        <div class="ref-row"><dt>AI_BASE_URL</dt><dd><span class="en"><b>(custom endpoint)</b></span><span class="ja"><b>（カスタムエンドポイント）</b></span></dd></div>
                     </dl>
                 </div>
                 <div class="ref-card">
@@ -799,8 +854,8 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                     <h2><span class="en">The authorization gate</span><span class="ja">認可ゲート</span></h2>
                 </div>
             </div>
-            <p class="lead en">The default mode is passive. Every active action goes through an <code>AuthorizationGate</code> that must pass three independent checks before anything is transmitted.</p>
-            <p class="lead ja">既定のモードはパッシブです。すべてのアクティブ操作は <code>AuthorizationGate</code> を通過する必要があり、何かを送信する前に 3 つの独立したチェックをすべて満たさなければなりません。</p>
+            <p class="lead en">The default mode is passive. Every active action — whether initiated by you or suggested by the AI — goes through an <code>AuthorizationGate</code> that must pass three independent checks before anything is transmitted. The AI never gets unrestricted shell access; every command is validated against a whitelist registry with shell injection prevention.</p>
+            <p class="lead ja">既定のモードはパッシブです。すべてのアクティブ操作は、ユーザーの手動操作でも AI の提案でも、<code>AuthorizationGate</code> を通過する必要があり、何かを送信する前に 3 つの独立したチェックをすべて満たさなければなりません。AI は無制限のシェルアクセスを持たず、すべてのコマンドはシェルインジェクション防止付きのホワイトリストレジストリで検証されます。</p>
             <div class="gate" style="margin-top:1.4rem">
                 <div class="gate-step">
                     <span class="g-n">CHECK // 01</span>
@@ -824,6 +879,8 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 <div><b><span class="en">No cracking</span><span class="ja">解読なし</span></b><span><span class="en">It records that key material was observed; it never tries to recover keys.</span><span class="ja">鍵情報を観測した事実を記録するのみで、鍵の復元は試みません。</span></span></div>
                 <div><b><span class="en">No evasion</span><span class="ja">回避機能なし</span></b><span><span class="en">No MAC spoofing helpers, no IDS/WIDS evasion, no stealth modes.</span><span class="ja">MAC 偽装の補助も、IDS/WIDS の回避も、ステルスモードもありません。</span></span></div>
                 <div><b><span class="en">No mass targeting</span><span class="ja">大量標的化なし</span></b><span><span class="en">One explicit, in-scope BSSID at a time — no "attack everything in range".</span><span class="ja">明示された範囲内の BSSID を 1 つずつ。「範囲内すべてを攻撃」は存在しません。</span></span></div>
+                <div><b><span class="en">No AI autonomy</span><span class="ja">AI の自律実行なし</span></b><span><span class="en">AI suggests and plans — it cannot execute active operations without explicit human approval at every step.</span><span class="ja">AI は提案と計画のみ。すべてのステップで明示的な人間の承認なしにアクティブ操作は実行できません。</span></span></div>
+                <div><b><span class="en">No key exposure</span><span class="ja">キーの露出なし</span></b><span><span class="en">API keys are never logged, reported or shown in output. The <code>mask_sensitive()</code> filter covers all display paths.</span><span class="ja">API キーはログ・レポート・出力に表示されません。<code>mask_sensitive()</code> フィルターが全表示パスをカバー。</span></span></div>
             </div>
 
             <p class="lead en" style="margin-top:1.4rem">Captures and reports contain identifying data, so MAC addresses are <strong>redacted by default</strong> (first three octets kept, the rest zeroed).</p>
