@@ -503,7 +503,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
         <div class="eyebrow">
             <span><span class="en">PROJECT <b>005</b></span><span class="ja">プロジェクト <b>005</b></span></span>
             <span><span class="en">PENTEST ORCHESTRATOR</span><span class="ja">ペンテスト・オーケストレーター</span></span>
-            <span>v1.7</span>
+            <span>v1.8</span>
         </div>
 
         <h1 class="glitch" data-text="XS-AI">XS-AI<span aria-hidden="true">XS-AI</span><span aria-hidden="true">XS-AI</span></h1>
@@ -599,7 +599,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
   ██╔██╗ ╚════██║╚════╝██╔══██║██║
  ██╔╝ ██╗███████║      ██║  ██║██║
  ╚═╝  ╚═╝╚══════╝      ╚═╝  ╚═╝╚═╝
-   PENTEST AI ORCHESTRATOR  v1.7
+   PENTEST AI ORCHESTRATOR  v1.8
    <span class="ascii-by">by sudoxs</span></div>
     </section>
 
@@ -778,6 +778,51 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 <span class="f-id">FEAT_28</span>
                 <h3><span class="en">Agent Mode</span><span class="ja">エージェントモード</span></h3>
                 <p><span class="en"><code>--agent</code> or <code>:agent start</code> — semi-autonomous pentest loop. The AI decides the next action; you approve or skip. Four levels (0=ask all, 1=safe auto, 2=low-risk auto, 3=full auto). Ctrl+C pauses. JSON action log. Subcommands: start, resume, pause, status, log, plan, level.</span><span class="ja"><code>--agent</code> または <code>:agent start</code> &mdash; 半自律ペンテストループ。AIが次のアクションを決定、オペレーターが承認/スキップ。4段階（0=全承認、1=安全自動、2=低リスク自動、3=完全自動）。Ctrl+Cで一時停止。JSONアクションログ。サブコマンド：start/resume/pause/status/log/plan/level。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_29</span>
+                <h3><span class="en">Website Crawler</span><span class="ja">ウェブサイトクローラー</span></h3>
+                <p><span class="en"><code>:crawl &lt;url&gt;</code> — BFS crawler with SSRF protection (blocked hosts, DNS rebinding prevention), scope guard enforcement, robots.txt support, redirect chain tracking, same-origin/subdomain scope, and pause/resume/cancel. Options: <code>--depth</code>, <code>--pages</code>, <code>--subdomains</code>.</span><span class="ja"><code>:crawl &lt;url&gt;</code> &mdash; SSRF防御（ブロックホスト・DNSリバインディング防止）、スコープガード、robots.txt対応、リダイレクトチェーン追跡、同一オリジン/サブドメインスコープ、一時停止/再開/キャンセル対応のBFSクローラー。オプション：<code>--depth</code>、<code>--pages</code>、<code>--subdomains</code>。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_30</span>
+                <h3><span class="en">Graph Explorer UI</span><span class="ja">グラフエクスプローラーUI</span></h3>
+                <p><span class="en"><code>:explore</code> — embedded single-page HTML/JS app served on <code>localhost:8477</code>. Canvas-based radial graph visualization of crawled pages, sidebar with search and filter by status/depth/content-type, and a page detail panel.</span><span class="ja"><code>:explore</code> &mdash; <code>localhost:8477</code>で配信する組み込みHTML/JSアプリ。クロール済みページのキャンバスベース放射状グラフ、ステータス/深度/コンテンツタイプで検索・フィルターできるサイドバー、ページ詳細パネル。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_31</span>
+                <h3><span class="en">Web Page Analysis</span><span class="ja">ウェブページ分析</span></h3>
+                <p><span class="en"><code>:web-analyze</code> — evidence-based classification into 8 categories (authentication, admin, API, search, file, parameterized, documentation, interesting). Heuristic signals for metadata-only classification plus AI-enhanced analysis. Investigation queue with add/exclude/pause/resume/cancel.</span><span class="ja"><code>:web-analyze</code> &mdash; 8カテゴリ（認証・管理・API・検索・ファイル・パラメータ付き・ドキュメント・興味深い）へのエビデンスベース分類。メタデータのみのヒューリスティック分類＋AI強化分析。追加/除外/一時停止/再開/キャンセル対応の調査キュー。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_32</span>
+                <h3><span class="en">Atomic Red Team</span><span class="ja">Atomic Red Team</span></h3>
+                <p><span class="en"><code>:atomic &lt;path&gt;</code> — import Atomic RT YAML test definitions via pure-stdlib mini-YAML parser (PyYAML fallback). Repository with import/dedup/search/platform-filter. <code>:atomic search &lt;q&gt;</code> to find tests. <strong>Never auto-executes</strong> — reference only.</span><span class="ja"><code>:atomic &lt;path&gt;</code> &mdash; 純正stdlib製ミニYAMLパーサー（PyYAMLフォールバック）でAtomic RT YAMLテスト定義をインポート。インポート/重複排除/検索/プラットフォームフィルター対応リポジトリ。<code>:atomic search &lt;q&gt;</code>でテスト検索。<strong>自動実行しない</strong> &mdash; 参照専用。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_33</span>
+                <h3><span class="en">ATT&amp;CK Navigator</span><span class="ja">ATT&amp;CKナビゲーター</span></h3>
+                <p><span class="en"><code>:navigator</code> — generate ATT&amp;CK Navigator layers (v4.5) from investigation data. 4 evidence levels: observed (red), evidence-supported (orange), AI-recommended (blue), unverified (grey). Hypothesis-to-annotation conversion with validation. <strong>Never represents AI recommendations as observed behavior.</strong></span><span class="ja"><code>:navigator</code> &mdash; 調査データからATT&amp;CKナビゲーターレイヤー（v4.5）を生成。4段階のエビデンスレベル：観測済（赤）、エビデンス裏付（橙）、AI推奨（青）、未検証（灰）。仮説からアノテーションへの変換と検証。<strong>AI推奨を観測された行動として表現しない。</strong></span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_34</span>
+                <h3><span class="en">Caldera Integration</span><span class="ja">Caldera連携</span></h3>
+                <p><span class="en"><code>:caldera [url]</code> — REST API client for importing abilities and adversaries from Apache Caldera. Duplicate prevention, technique lookup, search by keyword or technique ID. <strong>Passive by default</strong> — no operation creation, no ability execution.</span><span class="ja"><code>:caldera [url]</code> &mdash; Apache CalderaからアビリティとアドバーサリーをインポートするREST APIクライアント。重複防止、テクニック検索、キーワード/テクニックID検索。<strong>デフォルトでパッシブ</strong> &mdash; オペレーション作成なし、アビリティ実行なし。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_35</span>
+                <h3><span class="en">OT/ICS Detection</span><span class="ja">OT/ICS検出</span></h3>
+                <p><span class="en"><code>:caldera-ot &lt;ports&gt;</code> — detect 7 ICS/SCADA protocols (Modbus, DNP3, OPC-UA, BACnet, EtherNet/IP, S7comm, IEC 60870-5-104) by port. ICS ATT&amp;CK technique mapping, risk assessment. <strong>Separate from enterprise assessment</strong> — activates only on relevant ports. No commands sent.</span><span class="ja"><code>:caldera-ot &lt;ports&gt;</code> &mdash; ポートベースで7つのICS/SCADAプロトコル（Modbus・DNP3・OPC-UA・BACnet・EtherNet/IP・S7comm・IEC 60870-5-104）を検出。ICS ATT&amp;CKテクニックマッピング、リスク評価。<strong>エンタープライズ評価とは分離</strong> &mdash; 関連ポートでのみ有効化。コマンド送信なし。</span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_36</span>
+                <h3><span class="en">Vendor Advisories</span><span class="ja">ベンダーアドバイザリー</span></h3>
+                <p><span class="en"><code>:advisories &lt;product&gt;</code> — modular vendor advisory providers: MSRC (Microsoft), Apache, Splunk. Official security advisory search integrated with the research engine. Context injection for AI analysis. <strong>Never fabricates advisory information.</strong></span><span class="ja"><code>:advisories &lt;product&gt;</code> &mdash; モジュラーなベンダーアドバイザリープロバイダー：MSRC（Microsoft）、Apache、Splunk。リサーチエンジンと統合された公式セキュリティアドバイザリー検索。AI分析へのコンテキスト注入。<strong>アドバイザリー情報を捏造しない。</strong></span></p>
+            </div>
+            <div class="feature">
+                <span class="f-id">FEAT_37</span>
+                <h3><span class="en">Unified Investigation</span><span class="ja">統合調査</span></h3>
+                <p><span class="en"><code>:investigate</code> — cross-component coordination layer bridging crawler, web analysis, Atomic RT, Navigator, Caldera, OT, and vendor advisories with the existing ResearchEngine. Hypothesis enrichment from all modules. Full investigation export to JSON.</span><span class="ja"><code>:investigate</code> &mdash; クローラー・ウェブ分析・Atomic RT・ナビゲーター・Caldera・OT・ベンダーアドバイザリーを既存のResearchEngineと橋渡しするクロスコンポーネント調整レイヤー。全モジュールからの仮説エンリッチメント。JSON形式で完全な調査エクスポート。</span></p>
             </div>
         </div>
     </section>
@@ -1223,7 +1268,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
             </nav>
             <div class="footer-system">
                 <span class="status-light"></span>
-                v1.7
+                v1.8
             </div>
         </div>
     </footer>
