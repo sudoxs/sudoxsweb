@@ -642,6 +642,21 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                     <h3><span class="en">Command registry &amp; validation</span><span class="ja">コマンドレジストリと検証</span></h3>
                     <p><span class="en">Whitelist-validated command templates with shell injection prevention. AI never gets unrestricted shell access.</span><span class="ja">シェルインジェクション防止付きのホワイトリスト型コマンドテンプレート。AI は無制限のシェルアクセスを得ることはありません。</span></p>
                 </article>
+                <article class="feature">
+                    <span class="f-id">MON // 16</span>
+                    <h3><span class="en">Incremental capture parsing</span><span class="ja">インクリメンタルキャプチャ解析</span></h3>
+                    <p><span class="en">PCAP and PCAPNG binary formats parsed byte-by-byte as data arrives. Handles both byte orders, partial records, and block alignment without touching the original file.</span><span class="ja">PCAP と PCAPNG のバイナリ形式をデータ到着に合わせてバイト単位で解析。バイトオーダー・不完全レコード・ブロック整列に対応し、元ファイルは変更しません。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">MON // 17</span>
+                    <h3><span class="en">Event-driven AI triggers</span><span class="ja">イベント駆動型 AI トリガー</span></h3>
+                    <p><span class="en">24 event types with configurable batch size, cooldown and trigger rules. Slow AI requests never block packet parsing or file monitoring.</span><span class="ja">設定可能なバッチサイズ・クールダウン・トリガールール付きの 24 種のイベント。遅い AI リクエストがパケット解析やファイル監視をブロックすることはありません。</span></p>
+                </article>
+                <article class="feature">
+                    <span class="f-id">MON // 18</span>
+                    <h3><span class="en">Persistent checkpoints</span><span class="ja">永続チェックポイント</span></h3>
+                    <p><span class="en">JSON-based resume state tracks byte offset, record count and format state for every monitored file. Processing picks up exactly where it left off after a restart.</span><span class="ja">JSON ベースの再開状態が、監視中の各ファイルのバイトオフセット・レコード数・フォーマット状態を追跡。再起動後も正確に中断箇所から処理を再開します。</span></p>
+                </article>
             </div>
         </section>
 
@@ -651,7 +666,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 <div class="sec-num" aria-hidden="true">02</div>
                 <div>
                     <span class="section-kicker"><span class="en">OPERATING MODES</span><span class="ja">動作モード</span></span>
-                    <h2><span class="en">Six commands, one engine</span><span class="ja">6 つのコマンド、1 つのエンジン</span></h2>
+                    <h2><span class="en">Seven commands, one engine</span><span class="ja">7 つのコマンド、1 つのエンジン</span></h2>
                 </div>
             </div>
             <div class="modes">
@@ -671,6 +686,12 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                     <span class="m-cmd">survey</span>
                     <span class="m-kind"><span class="en">PASSIVE · ADVISORY</span><span class="ja">パッシブ · 助言</span></span>
                     <p><span class="en">Ingests airodump-ng CSV and <code>iw</code> scans, enriches them with pcap evidence (frame numbers + Wireshark filters) and builds an applicability matrix. <code>--follow</code> streams deduplicated live findings.</span><span class="ja">airodump-ng の CSV と <code>iw</code> スキャンを取り込み、pcap の証拠（フレーム番号と Wireshark フィルタ）で補強して適用可能性マトリクスを作成。<code>--follow</code> で重複排除済みの検出結果をライブ表示。</span></p>
+                    <div class="m-plat"><span class="ok">Linux</span><span class="ok">macOS</span><span class="ok">Windows</span></div>
+                </article>
+                <article class="mode">
+                    <span class="m-cmd">monitor</span>
+                    <span class="m-kind"><span class="en">PASSIVE · INCREMENTAL</span><span class="ja">パッシブ · インクリメンタル</span></span>
+                    <p><span class="en">Watches growing capture files (PCAP, PCAPNG, CSV, JSONL, log) and parses new data incrementally. Detects APs, handshakes, PMKIDs and anomalies as they appear — with persistent checkpoints for resume-after-restart.</span><span class="ja">増え続けるキャプチャファイル（PCAP・PCAPNG・CSV・JSONL・ログ）を監視し、新しいデータをインクリメンタルに解析。AP・ハンドシェイク・PMKID・異常をリアルタイムで検出。再起動後も永続チェックポイントから再開。</span></p>
                     <div class="m-plat"><span class="ok">Linux</span><span class="ok">macOS</span><span class="ok">Windows</span></div>
                 </article>
                 <article class="mode">
@@ -710,6 +731,7 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                 <li><b><span class="en">Classify exposures</span><span class="ja">露出の分類</span></b><span><span class="en">What leaked, from where, and how abusable it is — confirmed or potential.</span><span class="ja">何が・どこから漏れ、どれほど悪用し得るか。「確定」か「潜在」かも判定。</span></span></li>
                 <li><b><span class="en">Score &amp; advise</span><span class="ja">スコア化と助言</span></b><span><span class="en">Per-AP risk, plus the single authorized follow-up that would reveal the most — described, never sent.</span><span class="ja">AP ごとのリスクと、最も多くを明らかにできる許可済みの次の一手を「説明」。実際の送信は行いません。</span></span></li>
                 <li><b><span class="en">Report</span><span class="ja">レポート出力</span></b><span><span class="en">Console table, <code>report.json</code>, <code>report.csv</code> and a readable <code>report.html</code>. MACs redacted by default.</span><span class="ja">コンソール表、<code>report.json</code>・<code>report.csv</code>、読みやすい <code>report.html</code>。MAC アドレスは既定で伏せ字化。</span></span></li>
+                <li><b><span class="en">Monitor &amp; parse</span><span class="ja">監視と解析</span></b><span><span class="en">Watch growing capture files for new data, parse incrementally, feed frames to the wireless analyzer, and emit events for each discovery — with persistent checkpoints.</span><span class="ja">増え続けるキャプチャファイルを監視して新データをインクリメンタルに解析、フレームを無線アナライザーに送り、発見ごとにイベントを発行 — 永続チェックポイント付き。</span></span></li>
                 <li><b><span class="en">AI investigate</span><span class="ja">AI 調査</span></b><span><span class="en">AI forms hypotheses from findings, plans a DAG workflow of next steps, and proposes validated commands — each active step waits for explicit approval.</span><span class="ja">AI が検出結果から仮説を立て、次のステップの DAG ワークフローを計画し、検証済みコマンドを提案。各アクティブステップは明示的な承認を待ちます。</span></span></li>
                 <li><b><span class="en">Feedback loop</span><span class="ja">フィードバックループ</span></b><span><span class="en">Command output flows back to the AI for analysis → updated hypotheses → refined workflow → next action. The loop continues until every hypothesis is resolved.</span><span class="ja">コマンド出力が AI に戻り分析 → 仮説更新 → ワークフロー精緻化 → 次のアクション。すべての仮説が解決するまでループが続きます。</span></span></li>
             </ol>
@@ -762,6 +784,12 @@ html.theme-light .footer-icon-fx::after{background:var(--surface)}
                     <div class="cheat-row"><div class="cmd-line"><code>AIRWARDEN_AUTHORIZED=1 airwarden active --interface wlan0mon</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Bettercap recon; lists APs. No active action is taken.</span><span class="ja">Bettercap 偵察で AP を一覧表示。アクティブ操作はなし。</span></div></div>
                     <div class="cheat-row"><div class="cmd-line"><code>AIRWARDEN_AUTHORIZED=1 airwarden active --interface wlan0mon --pmkid 00:11:22:33:44:55</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Clientless PMKID request against one in-scope BSSID.</span><span class="ja">スコープ内の 1 BSSID に対するクライアントレス PMKID 要求。</span></div></div>
                     <div class="cheat-row"><div class="cmd-line"><code>export AIRWARDEN_SCOPE_PATH=scope.json</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Point at the signed scope file (targets + active_actions).</span><span class="ja">署名済みスコープファイル（targets と active_actions）を指定。</span></div></div>
+                </div>
+                <div class="cheat-group">
+                    <div class="cheat-group-head"><span class="en">monitor</span><span class="ja">monitor</span><span class="cg-tag">passive · incremental</span></div>
+                    <div class="cheat-row"><div class="cmd-line"><code>airwarden monitor capture.pcap</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Watch a pcap for new data and analyze incrementally.</span><span class="ja">pcap ファイルを監視し、新しいデータをインクリメンタルに解析。</span></div></div>
+                    <div class="cheat-row"><div class="cmd-line"><code>airwarden monitor live.pcap scan.csv --poll 0.5</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Multiple files, 0.5 s poll interval.</span><span class="ja">複数ファイルを 0.5 秒間隔でポーリング。</span></div></div>
+                    <div class="cheat-row"><div class="cmd-line"><code>airwarden monitor capture.pcapng --no-resume --batch-size 10</code><button type="button" class="copy-btn" aria-label="Copy command"><span class="cp-label">COPY</span></button></div><div class="cheat-desc"><span class="en">Start fresh (ignore checkpoints), AI triggers after 10 events.</span><span class="ja">チェックポイントを無視して再解析、10 イベントで AI トリガー。</span></div></div>
                 </div>
                 <div class="cheat-group">
                     <div class="cheat-group-head"><span class="en">ui</span><span class="ja">ui</span><span class="cg-tag">ai · dashboard</span></div>
